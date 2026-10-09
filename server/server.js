@@ -45,6 +45,7 @@ const nurseRoutes = require('./routes/nurseRoutes');
 const nurseAssignmentRoutes = require('./routes/nurseAssignmentRoutes');
 const marRoutes = require('./routes/marRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
+const vitalsRoutes = require('./routes/vitalsRoutes');
 
 const { verifyToken } = require('./middleware/auth');
 const { auditAccess } = require('./middleware/audit');
@@ -74,6 +75,7 @@ app.use('/api/nurse', verifyToken, nurseRoutes);
 app.use('/api/nurse-assignments', verifyToken, nurseAssignmentRoutes);
 app.use('/api/mar', verifyToken, marRoutes);
 app.use('/api/audit-logs', verifyToken, auditLogRoutes);
+app.use('/api/vitals', verifyToken, vitalsRoutes);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

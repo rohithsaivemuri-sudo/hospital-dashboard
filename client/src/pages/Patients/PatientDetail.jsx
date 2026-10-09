@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
+import VitalsPanel from './VitalsPanel';
 import { getPatient, getPatientHistory, createLabOrder, getLabTests, createPrescription, getMedicines, createAdmission, getAvailableBeds, getLabResult, downloadLabResultReport, createConsultation, createSurgeryRequest, dischargePatient, encounterAction, getPatientAdmissions, getPatientAppointments, isForbidden, cancelPrescription } from '../../services/api';
 import AccessDenied from '../../components/AccessDenied';
 import { AuthContext } from '../../context/AuthContext';
@@ -20,8 +21,8 @@ const CLINICAL_ROLES = ['DOCTOR', 'NURSE'];
 const FREQUENCY_TEXT = { OD: 'Once daily', BD: 'Twice daily', TDS: 'Three times daily', QID: 'Four times daily', Q6H: 'Every 6 hours', Q8H: 'Every 8 hours', STAT: 'Immediately, once', PRN: 'As needed' };
 const ROUTES = ['ORAL', 'IV', 'IM', 'SC', 'SUBLINGUAL', 'INHALED', 'TOPICAL', 'RECTAL', 'OTHER'];
 const TABS_BY_ROLE = {
-  DOCTOR: ['Overview', 'Visits', 'Admissions', 'Lab Tests', 'Prescriptions', 'Surgery'],
-  NURSE: ['Admissions', 'Lab Tests', 'Prescriptions', 'Appointments'],
+  DOCTOR: ['Overview', 'Visits', 'Vitals', 'Admissions', 'Lab Tests', 'Prescriptions', 'Surgery'],
+  NURSE: ['Admissions', 'Vitals', 'Lab Tests', 'Prescriptions', 'Appointments'],
   ADMIN: ['Appointments', 'Admissions'],
   RECEPTIONIST: ['Appointments', 'Admissions'],
 };
@@ -32,7 +33,8 @@ export default function PatientDetail() {
   
   const [patient, setPatient] = useState(null);
   const [history, setHistory] = useState(null);
-  const [activeTab, setActiveTab] = useState('Overview');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'Overview');
   const [denied, setDenied] = useState(false);
   // Chart tabs per role (report Section E): nurses do not see consultation notes or surgery requests;
   // the front desk and administrators see demographics, appointments and admissions only.
@@ -370,6 +372,8 @@ export default function PatientDetail() {
       </div>
 
       {/* CONTENT */}
+      {activeTab === 'Vitals' && <VitalsPanel patientId={id} />}
+
       {activeTab === 'Overview' && (
         <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)' }}>
           <h2>Quick Actions</h2>

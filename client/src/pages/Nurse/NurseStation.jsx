@@ -4,9 +4,29 @@ import toast from 'react-hot-toast';
 import { FaUserNurse } from 'react-icons/fa';
 import { getNurseStation, encounterAction, isForbidden } from '../../services/api';
 import AccessDenied from '../../components/AccessDenied';
+import { useVitals, VitalsEntryForm } from '../Patients/VitalsPanel';
 import { hasAllergies } from '../../utils/patientIds';
 
 const card = { background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)' };
+
+// Vitals at triage for one open visit, filed against that visit.
+function VitalsModal({ visit, onClose, onSaved }) {
+  const { data, denied } = useVitals(visit.patient_id);
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div role="dialog" aria-label="Record vitals" style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', width: '640px', maxWidth: 'calc(100vw - 32px)', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ margin: 0 }}>Vitals · {visit.patient_name}</h2>
+          <button onClick={onClose} aria-label="Close" style={{ border: 'none', background: 'transparent', fontSize: '20px', cursor: 'pointer' }}>&times;</button>
+        </div>
+        <div style={{ marginTop: '16px' }}>
+          {denied ? <p>This patient is not assigned to you.</p> : !data ? <p>Loading…</p>
+            : <VitalsEntryForm patientId={visit.patient_id} data={data} encounterId={visit.encounter_id} onSaved={onSaved} />}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Nurse landing page: the wards this nurse covers (beds and patients) and the open visits waiting
 // for triage.
@@ -14,6 +34,7 @@ export default function NurseStation() {
   const [data, setData] = useState(null);
   const [denied, setDenied] = useState(false);
   const [busy, setBusy] = useState(null);
+  const [vitalsFor, setVitalsFor] = useState(null);
 
   const load = async () => {
     try {
@@ -65,6 +86,7 @@ export default function NurseStation() {
                       <>
                         <Link to={`/patients/${b.patient_id}`} style={{ display: 'block', marginTop: '4px' }}>{b.patient_name}</Link>
                         <Link to={`/mar/${b.patient_id}`} data-testid="bed-mar-link" style={{ fontSize: '12px' }}>Medication record</Link>
+                        {' · '}<Link to={`/patients/${b.patient_id}?tab=Vitals`} data-testid="bed-vitals-link" style={{ fontSize: '12px' }}>Vitals</Link>
                         <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{b.age} yrs · {b.gender} · {b.doctor_name}</div>
                         {hasAllergies(b.allergies) && <div style={{ fontSize: '12px', color: 'var(--danger)', fontWeight: 'bold' }}>Allergies: {b.allergies}</div>}
                       </>
@@ -89,6 +111,7 @@ export default function NurseStation() {
                   <td style={{ padding: '8px' }}>{v.doctor_name}</td>
                   <td style={{ padding: '8px' }}>{v.status.replace('_', ' ')}</td>
                   <td style={{ padding: '8px' }}>
+                    <button data-testid="record-vitals" onClick={() => setVitalsFor(v)} style={{ padding: '4px 10px', marginRight: '6px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Record vitals</button>
                     {v.status === 'ARRIVED' && <button disabled={busy === v.encounter_id} onClick={() => triage(v)} style={{ padding: '4px 10px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Mark Triaged</button>}
                   </td>
                 </tr>
@@ -97,6 +120,7 @@ export default function NurseStation() {
           </table>
         )}
       </div>
+      {vitalsFor && <VitalsModal visit={vitalsFor} onClose={() => setVitalsFor(null)} onSaved={() => { setVitalsFor(null); load(); }} />}
     </div>
   );
 }

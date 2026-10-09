@@ -122,6 +122,8 @@ export const getWards = () => api.get('/wards');
 
 // Medication administration record
 export const getPatientMar = (patientId) => api.get(`/mar/patients/${patientId}`);
+export const getPatientVitals = (patientId) => api.get(`/vitals/patients/${patientId}`);
+export const recordVitals = (data) => api.post('/vitals', data);
 export const administerDose = (id, data) => api.post(`/mar/doses/${id}/administer`, data);
 export const refuseDose = (id, data) => api.post(`/mar/doses/${id}/refuse`, data);
 export const missDose = (id, data) => api.post(`/mar/doses/${id}/missed`, data);

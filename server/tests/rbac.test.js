@@ -99,6 +99,8 @@ const matrix = () => [
   ['GET', '/medicines', [AD, DR, NU, PH]],
   ['GET', '/medicines/1/batches', [AD, PH]],
   ['POST', '/prescriptions/999999/cancel', [DR]],
+  ['GET', `/vitals/patients/${P}`, [NU, DR]],
+  ['POST', '/vitals', [NU], {}],
   ['GET', `/mar/patients/${P}`, [NU, DR]],
   ['POST', '/mar/doses/999999/administer', [NU], {}],
   ['POST', '/mar/doses/999999/refuse', [NU], {}],
