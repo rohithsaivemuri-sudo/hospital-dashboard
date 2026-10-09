@@ -3,7 +3,7 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
-const { APP, login, closeDb, clickButton } = require('./lib/harness');
+const { login, closeDb, open, clickButton, waitForText } = require('./lib/harness');
 
 let browser, page;
 before(async () => {
@@ -14,7 +14,7 @@ before(async () => {
 after(async () => { await browser.close(); await closeDb(); });
 
 async function openDialog() {
-  await page.goto(`${APP}/patients/1`);
+  await open(page, '/patients/1');
   await clickButton(page, '+ Order Lab Tests');
   await page.waitForSelector('select[name="test_id"]');
 }
@@ -51,7 +51,7 @@ test('with nothing chosen, Order Tests explains instead of sending', async () =>
   const watch = (r) => { if (r.url().endsWith('/api/lab/orders') && r.method() === 'POST') sent = true; };
   page.on('request', watch);
   await clickButton(page, 'Order Tests');
-  await page.waitForFunction(() => document.body.innerText.includes('Choose at least one test'));
+  await waitForText(page, 'Choose at least one test');
   page.off('request', watch);
   assert.equal(sent, false);
 });

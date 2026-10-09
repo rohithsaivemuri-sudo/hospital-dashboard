@@ -69,7 +69,10 @@ async function guard(page) {
 
 let patched = false;
 // Launches Chromium with every new page (default or isolated contexts) guarded.
-async function launch(options = { args: ['--no-sandbox'] }) {
+// headless: 'shell' because the default headless Chrome on macOS intermittently stops delivering
+// mouse and keyboard input to a tab (no pointer or key events reach the page), which made real
+// clicks time out at random.
+async function launch(options = { headless: 'shell', args: ['--no-sandbox'] }) {
   const browser = await puppeteer.launch(options);
   if (!patched) {
     let proto = Object.getPrototypeOf(browser.defaultBrowserContext());

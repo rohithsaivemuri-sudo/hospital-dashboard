@@ -30,11 +30,21 @@ async function db() {
 }
 async function closeDb() { if (connection) { await connection.end(); connection = null; } }
 
-// Clicks the first button whose text matches, like a user would (real mouse click on the element).
+// Opens a page and waits until its data requests have finished (the screen has settled).
+async function open(page, path) {
+  await page.goto(APP + path, { waitUntil: 'networkidle0' });
+}
+
+// Clicks the first visible button whose text matches, with a real mouse click like a user.
 async function clickButton(page, text, scope = 'body') {
   const handle = await page.waitForFunction((scope, text) => [...document.querySelectorAll(`${scope} button`)]
-    .find(b => b.innerText.trim() === text && b.getBoundingClientRect().width > 0), {}, scope, text);
+    .find(b => b.innerText.trim() === text && b.getBoundingClientRect().width > 0), { polling: 50, timeout: 10000 }, scope, text);
   await handle.asElement().click();
 }
 
-module.exports = { ROOT, APP, API, PASSWORD, TEST_DB, call, tokenOf, login, db, closeDb, clickButton };
+// Waits for text anywhere on the page. Interval polling: animation-frame polling can stall in a
+// headless tab, missing short-lived messages such as toasts.
+const waitForText = (page, text, timeout = 5000) =>
+  page.waitForFunction((text) => document.body.innerText.includes(text), { polling: 100, timeout }, text);
+
+module.exports = { ROOT, APP, API, PASSWORD, TEST_DB, call, tokenOf, login, db, closeDb, open, clickButton, waitForText };

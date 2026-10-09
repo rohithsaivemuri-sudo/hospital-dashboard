@@ -281,19 +281,29 @@ export default function PatientDetail() {
   };
 
   // Presc Handlers
-  const handleAddMedItem = () => {
-    if (!currentMed || !currentDosage || !currentFreq || !currentDuration || !currentQty) return toast.error("Fill all medicine fields");
-    if (currentCode && !['STAT', 'PRN'].includes(currentCode) && !currentDays) return toast.error('Enter the number of days for a scheduled frequency');
+  // The medicine row being edited: null when untouched, { error } when incomplete, else { item }.
+  const pendingMedItem = () => {
+    if (!currentMed && !currentDosage && !currentFreq && !currentDuration && !currentQty && !currentCode && !currentDays && !currentUnits) return null;
+    if (!currentMed || !currentDosage || !currentFreq || !currentDuration || !currentQty) return { error: "Fill all medicine fields" };
+    if (currentCode && !['STAT', 'PRN'].includes(currentCode) && !currentDays) return { error: 'Enter the number of days for a scheduled frequency' };
     const medObj = medicines.find(m => m.medicine_id == currentMed);
-    setPrescriptionItems([...prescriptionItems, {
+    return { item: {
       medicine_id: currentMed, name: medObj?.name || 'Unknown', dosage: currentDosage, frequency: currentFreq, duration: currentDuration, quantity: parseInt(currentQty),
       ...(currentCode ? { frequency_code: currentCode } : {}),
       ...(currentDays ? { duration_days: parseInt(currentDays) } : {}),
       ...(currentRoute ? { route: currentRoute } : {}),
       ...(currentUnits ? { units_per_dose: parseInt(currentUnits) } : {}),
-    }]);
+    } };
+  };
+  const clearMedRow = () => {
     setCurrentMed(''); setCurrentDosage(''); setCurrentFreq(''); setCurrentDuration(''); setCurrentQty('');
     setCurrentCode(''); setCurrentDays(''); setCurrentRoute('ORAL'); setCurrentUnits('');
+  };
+  const handleAddMedItem = () => {
+    const pending = pendingMedItem();
+    if (!pending || pending.error) return toast.error(pending?.error || "Fill all medicine fields");
+    setPrescriptionItems([...prescriptionItems, pending.item]);
+    clearMedRow();
   };
   const handleCancelPrescription = async (prescriptionId) => {
     if (!window.confirm('Cancel this prescription? Any doses still due on the ward will be cancelled.')) return;
@@ -305,11 +315,16 @@ export default function PatientDetail() {
   };
   const handleCreatePrescription = async (e) => {
     e.preventDefault();
-    if (prescriptionItems.length === 0) return toast.error("Add at least one medicine");
+    // A fully filled-in medicine row that was not added with "+ Add Medicine" is included; a
+    // half-filled one is pointed out rather than silently dropped.
+    const pending = pendingMedItem();
+    if (pending?.error) return toast.error(`${pending.error}, or clear the medicine row`);
+    const items = pending ? [...prescriptionItems, pending.item] : prescriptionItems;
+    if (items.length === 0) return toast.error("Add at least one medicine");
     try {
-      await createPrescription({ patient_id: id, doctor_id: user.doctor_id, notes: prescNotes, items: prescriptionItems });
+      await createPrescription({ patient_id: id, doctor_id: user.doctor_id, notes: prescNotes, items });
       toast.success('Prescription created successfully');
-      setShowPrescriptionModal(false); setPrescriptionItems([]); setPrescNotes(''); fetchPatientData();
+      setShowPrescriptionModal(false); setPrescriptionItems([]); clearMedRow(); setPrescNotes(''); fetchPatientData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed to create prescription'); }
   };
 
@@ -674,11 +689,11 @@ export default function PatientDetail() {
             <h2 style={{ marginTop: 0 }}>CREATE PRESCRIPTION</h2>
             <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                <select value={currentMed} onChange={e => setCurrentMed(e.target.value)} style={{ padding: '8px' }}><option value="">-- Select Medicine --</option>{medicines.map(m => (<option key={m.medicine_id} value={m.medicine_id}>{m.name} (Stock: {m.stock_quantity})</option>))}</select>
-                <input type="text" placeholder="Dosage (e.g. 500mg)" value={currentDosage} onChange={e => setCurrentDosage(e.target.value)} style={{ padding: '8px' }} />
-                <input type="text" placeholder="Frequency (e.g. Twice daily)" value={currentFreq} onChange={e => setCurrentFreq(e.target.value)} style={{ padding: '8px' }} />
-                <input type="text" placeholder="Duration (e.g. 5 days)" value={currentDuration} onChange={e => setCurrentDuration(e.target.value)} style={{ padding: '8px' }} />
-                <input type="number" placeholder="Total Qty" value={currentQty} onChange={e => setCurrentQty(e.target.value)} style={{ padding: '8px' }} />
+                <select name="medicine_id" value={currentMed} onChange={e => setCurrentMed(e.target.value)} style={{ padding: '8px' }}><option value="">-- Select Medicine --</option>{medicines.map(m => (<option key={m.medicine_id} value={m.medicine_id}>{m.name} (Stock: {m.stock_quantity})</option>))}</select>
+                <input type="text" name="dosage" placeholder="Dosage (e.g. 500mg)" value={currentDosage} onChange={e => setCurrentDosage(e.target.value)} style={{ padding: '8px' }} />
+                <input type="text" name="frequency" placeholder="Frequency (e.g. Twice daily)" value={currentFreq} onChange={e => setCurrentFreq(e.target.value)} style={{ padding: '8px' }} />
+                <input type="text" name="duration" placeholder="Duration (e.g. 5 days)" value={currentDuration} onChange={e => setCurrentDuration(e.target.value)} style={{ padding: '8px' }} />
+                <input type="number" name="quantity" placeholder="Total Qty" value={currentQty} onChange={e => setCurrentQty(e.target.value)} style={{ padding: '8px' }} />
                 <select name="frequency_code" value={currentCode} onChange={e => { const c = e.target.value; setCurrentCode(c); if (c && !currentFreq) setCurrentFreq(FREQUENCY_TEXT[c]); }} style={{ padding: '8px' }}>
                   <option value="">Frequency code (optional)</option>
                   {Object.entries(FREQUENCY_TEXT).map(([code, text]) => <option key={code} value={code}>{code} — {text}</option>)}
