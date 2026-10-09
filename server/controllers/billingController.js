@@ -1,8 +1,9 @@
 const pool = require('../config/db');
+const BILL_ITEM_CATEGORIES = ['CONSULTATION', 'BED', 'ICU', 'LABORATORY', 'MEDICINE', 'PROCEDURE', 'AMBULANCE', 'OTHER'];
 exports.create = async (req, res) => {
   try {
     const { patient_id, admission_id, total_amount } = req.body;
-    const [result] = await pool.execute('INSERT INTO bills (patient_id, admission_id, total_amount, paid_amount, status, generated_at) VALUES (?, ?, ?, 0, "UNPAID", NOW())', [patient_id, admission_id || null, total_amount]);
+    const [result] = await pool.execute('INSERT INTO bills (patient_id, admission_id, total_amount, paid_amount, status, bill_date) VALUES (?, ?, ?, 0, "PENDING", NOW())', [patient_id, admission_id || null, total_amount]);
     res.status(201).json({ success: true, data: { id: result.insertId } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
@@ -28,7 +29,9 @@ exports.getById = async (req, res) => {
 exports.addItem = async (req, res) => {
   try {
     const { description, amount } = req.body;
-    await pool.execute('INSERT INTO bill_items (bill_id, description, amount) VALUES (?, ?, ?)', [req.params.id, description, amount]);
+    // bill_items has no amount column: a single line item of `amount`, categorised OTHER unless a valid category is sent.
+    const category = BILL_ITEM_CATEGORIES.includes(req.body.category) ? req.body.category : 'OTHER';
+    await pool.execute('INSERT INTO bill_items (bill_id, description, category, quantity, unit_price, total_price) VALUES (?, ?, ?, 1, ?, ?)', [req.params.id, description, category, amount, amount]);
     await pool.execute('UPDATE bills SET total_amount = total_amount + ? WHERE bill_id = ?', [amount, req.params.id]);
     res.json({ success: true, message: 'Item added' });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
