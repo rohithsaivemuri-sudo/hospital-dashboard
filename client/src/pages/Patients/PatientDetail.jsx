@@ -665,7 +665,7 @@ export default function PatientDetail() {
               <div style={{ display: 'flex', gap: '8px' }}>
                 <select name="test_id" value={currentTestId} onChange={(e) => setCurrentTestId(e.target.value)} style={{ flex: 1, padding: '8px' }}>
                   <option value="">-- Choose a Test --</option>
-                  {labTests.map(t => (<option key={t.test_id} value={t.test_id}>{t.name} (₹{t.price})</option>))}
+                  {labTests.map(t => (<option key={t.test_id} value={t.test_id}>{t.name}{t.cost != null ? ` (₹${Number(t.cost).toLocaleString('en-IN', { maximumFractionDigits: 2 })})` : ''}</option>))}
                 </select>
                 <button type="button" onClick={handleAddTest} style={{ padding: '8px 16px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '4px' }}>+ Add Test</button>
               </div>

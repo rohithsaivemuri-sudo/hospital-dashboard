@@ -3,7 +3,7 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
-const { login, closeDb, open, clickButton, waitForText } = require('./lib/harness');
+const { login, db, closeDb, open, clickButton, waitForText } = require('./lib/harness');
 
 let browser, page;
 before(async () => {
@@ -54,6 +54,20 @@ test('with nothing chosen, Order Tests explains instead of sending', async () =>
   await waitForText(page, 'Choose at least one test');
   page.off('request', watch);
   assert.equal(sent, false);
+});
+
+// Bug 4: each test shows its price from lab_tests.cost; never empty brackets.
+test('the test list shows each test\'s price', async () => {
+  await openDialog();
+  const options = await page.$$eval('select[name="test_id"] option', os => os.filter(o => o.value).map(o => o.textContent));
+  const [tests] = await (await db()).query('SELECT name, cost FROM lab_tests ORDER BY test_id');
+  assert.equal(options.length, tests.length);
+  for (const t of tests) {
+    const expected = `${t.name} (₹${Number(t.cost).toLocaleString('en-IN', { maximumFractionDigits: 2 })})`;
+    assert.ok(options.includes(expected), `expected option "${expected}" in ${JSON.stringify(options)}`);
+  }
+  assert.ok(options.every(o => !o.includes('(₹)') && !o.includes('undefined')));
+  assert.ok(options.includes('Lipid Profile (₹' + Number(tests.find(t => t.name === 'Lipid Profile').cost).toLocaleString('en-IN', { maximumFractionDigits: 2 }) + ')'));
 });
 
 test('no unreadable button was clicked', () => assert.deepEqual(violations, []));
