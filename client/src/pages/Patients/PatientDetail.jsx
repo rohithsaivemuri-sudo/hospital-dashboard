@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
-import { getPatient, getPatientHistory, createLabOrder, getLabTests, createPrescription, getMedicines, createAdmission, getAvailableBeds } from '../../services/api';
+import { getPatient, getPatientHistory, createLabOrder, getLabTests, createPrescription, getMedicines, createAdmission, getAvailableBeds, getLabResult, downloadLabResultReport } from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
@@ -37,6 +37,9 @@ export default function PatientDetail() {
   const [selectedTests, setSelectedTests] = useState([]);
   const [currentTestId, setCurrentTestId] = useState('');
   const [labNotes, setLabNotes] = useState('');
+
+  // Lab result viewer
+  const [labView, setLabView] = useState(null);
 
   // Presc form
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
@@ -134,6 +137,37 @@ export default function PatientDetail() {
       toast.success('Patient discharged successfully');
       fetchPatientData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed to discharge'); }
+  };
+
+  const openLabResult = async (order) => {
+    try {
+      const res = await getLabResult(order.order_id);
+      setLabView({ ...res.data.data, test_name: order.test_name });
+    } catch (err) { toast.error(err.response?.data?.message || 'Unable to load lab result'); }
+  };
+
+  // Reports are fetched as an authenticated blob and opened from a local object URL, never a public link.
+  const viewLabReport = async (resultId, attachment) => {
+    const tab = window.open('', '_blank');
+    try {
+      const res = await downloadLabResultReport(resultId, attachment.attachment_id);
+      const url = URL.createObjectURL(new Blob([res.data], { type: attachment.mime_type }));
+      if (tab) tab.location.href = url;
+      else {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = attachment.original_filename;
+        link.click();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      if (tab) tab.close();
+      let message = null;
+      if (err.response?.data instanceof Blob) {
+        try { message = JSON.parse(await err.response.data.text()).message; } catch { /* not JSON */ }
+      }
+      toast.error(message || 'Unable to open report');
+    }
   };
 
   const openAdmissionModal = async () => {
@@ -309,13 +343,18 @@ export default function PatientDetail() {
           </div>
           {history.labs?.length > 0 ? (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr style={{ textAlign: 'left', background: '#f1f5f9' }}><th style={{ padding: '8px' }}>Date</th><th style={{ padding: '8px' }}>Test Name</th><th style={{ padding: '8px' }}>Status</th></tr></thead>
+              <thead><tr style={{ textAlign: 'left', background: '#f1f5f9' }}><th style={{ padding: '8px' }}>Date</th><th style={{ padding: '8px' }}>Test Name</th><th style={{ padding: '8px' }}>Status</th>{user?.role === 'DOCTOR' && <th style={{ padding: '8px' }}>Result</th>}</tr></thead>
               <tbody>
                 {history.labs.map(l => (
                   <tr key={l.order_id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '8px' }}>{new Date(l.order_date).toLocaleDateString()}</td>
                     <td style={{ padding: '8px' }}>{l.test_name}</td>
                     <td style={{ padding: '8px' }}><strong>{l.status}</strong></td>
+                    {user?.role === 'DOCTOR' && (
+                      <td style={{ padding: '8px' }}>
+                        {l.status === 'COMPLETED' && <button onClick={() => openLabResult(l)} style={{ padding: '4px 10px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>View Result</button>}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -440,6 +479,35 @@ export default function PatientDetail() {
                 <button type="submit" style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px' }}>Submit Request</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {labView && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', width: '560px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ marginTop: 0 }}>{labView.test_name} — Result</h2>
+            {labView.result ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                <div><strong>Value:</strong> {labView.result.result_value} {labView.result.unit}</div>
+                <div><strong>Interpretation:</strong> <span style={{ fontWeight: 'bold', color: labView.result.interpretation && labView.result.interpretation !== 'NORMAL' ? 'var(--danger)' : 'inherit' }}>{labView.result.interpretation || '—'}</span></div>
+                <div><strong>Reference Range:</strong> {labView.result.reference_range || '—'}</div>
+                <div><strong>Reported:</strong> {new Date(labView.result.result_date).toLocaleString()}</div>
+                <div style={{ gridColumn: '1 / -1' }}><strong>Technician Notes:</strong> {labView.result.technician_notes || 'None'}</div>
+              </div>
+            ) : <p>No result recorded yet.</p>}
+            {labView.attachments?.length > 0 && (
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ marginBottom: '8px' }}>Reports</h3>
+                {labView.attachments.map(a => (
+                  <div key={a.attachment_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '4px', marginBottom: '8px' }}>
+                    <span>{a.original_filename}</span>
+                    <button onClick={() => viewLabReport(labView.result.result_id, a)} style={{ padding: '4px 10px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>View Report</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ textAlign: 'right' }}><button onClick={() => setLabView(null)} style={{ padding: '8px 16px' }}>Close</button></div>
           </div>
         </div>
       )}

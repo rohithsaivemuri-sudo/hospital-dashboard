@@ -10,4 +10,5 @@ router.post('/results', controller.addResult);
 router.get('/results/:orderId', controller.getResult);
 router.post('/results/:orderId/attachments', controller.uploadReport, controller.saveAttachment);
 router.get('/attachments/:id', controller.downloadAttachment);
+router.get('/reports/:result_id/download', controller.downloadReport);
 module.exports = router;

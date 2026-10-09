@@ -8,6 +8,9 @@ server/node_modules/
 server/.env
 client/.env
 
+# Uploaded lab reports (PHI): never commit. The server creates the directory at startup.
+server/uploads/
+
 # Build output
 client/dist/
 build/

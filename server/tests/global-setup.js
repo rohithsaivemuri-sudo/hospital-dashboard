@@ -2,7 +2,8 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const { buildTestDb, TEST_DB } = require('../scripts/test-db');
-const { TEST_PORT } = require('./helpers');
+const fs = require('fs');
+const { TEST_PORT, LAB_REPORT_DIR } = require('./helpers');
 
 let server;
 
@@ -20,10 +21,12 @@ async function waitForServer(url, timeoutMs = 15000) {
 
 async function globalSetup() {
   await buildTestDb({ log: () => {} });
+  fs.rmSync(LAB_REPORT_DIR, { recursive: true, force: true });
+  fs.mkdirSync(LAB_REPORT_DIR, { recursive: true });
   server = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
     cwd: path.join(__dirname, '..'),
     // dotenv never overrides variables that are already set, so these win over server/.env.
-    env: { ...process.env, DB_NAME: TEST_DB, PORT: String(TEST_PORT) },
+    env: { ...process.env, DB_NAME: TEST_DB, PORT: String(TEST_PORT), LAB_REPORT_DIR },
     stdio: ['ignore', 'ignore', 'inherit'],
   });
   await waitForServer(`http://localhost:${TEST_PORT}/api/auth/me`);

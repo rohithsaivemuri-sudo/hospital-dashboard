@@ -6,6 +6,8 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const TEST_PORT = Number(process.env.TEST_PORT || 5099);
 const BASE = `http://localhost:${TEST_PORT}/api`;
 const TEST_DB = process.env.TEST_DB_NAME || 'hospital_db_test';
+// Lab report uploads made by the test server land here, never in server/uploads.
+const LAB_REPORT_DIR = path.join(require('os').tmpdir(), 'hms-test-lab-reports');
 const PASSWORD = 'password123';
 
 // Seeded users, one per role.
@@ -28,6 +30,12 @@ async function api(method, urlPath, { token, body } = {}) {
   let data;
   try { data = JSON.parse(text); } catch { data = text; }
   return { status: res.status, body: data };
+}
+
+// Raw fetch for multipart uploads and binary downloads.
+async function rawRequest(method, urlPath, { token, body } = {}) {
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  return fetch(BASE + urlPath, { method, headers, body });
 }
 
 const tokenCache = {};
@@ -56,4 +64,4 @@ async function closeDb() {
   if (pool) { await pool.end(); pool = undefined; }
 }
 
-module.exports = { TEST_PORT, BASE, TEST_DB, USERS, api, login, db, closeDb };
+module.exports = { TEST_PORT, BASE, TEST_DB, LAB_REPORT_DIR, USERS, api, rawRequest, login, db, closeDb };

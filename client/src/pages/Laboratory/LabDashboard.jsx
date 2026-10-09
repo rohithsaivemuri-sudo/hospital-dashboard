@@ -67,7 +67,7 @@ export default function LabDashboard() {
       const res = await getLabResult(id);
       setView(res.data.data);
     } catch (e) {
-      toast.error('Unable to load result');
+      toast.error(e.response?.data?.message || 'Unable to load result');
     }
   };
   
@@ -82,7 +82,12 @@ export default function LabDashboard() {
       link.click();
       link.parentNode.removeChild(link);
     } catch (e) {
-      toast.error('Failed to download report');
+      // Blob responses carry the server's JSON error as a Blob; surface its message when there is one.
+      let message = null;
+      if (e.response?.data instanceof Blob) {
+        try { message = JSON.parse(await e.response.data.text()).message; } catch { /* not JSON */ }
+      }
+      toast.error(message || 'Failed to download report');
     }
   };
 

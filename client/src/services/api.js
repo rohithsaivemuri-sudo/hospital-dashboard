@@ -90,6 +90,7 @@ export const updateLabOrderStatus = (id, status) => api.put(`/lab/orders/${id}/s
 export const addLabResult = (data) => api.post('/lab/results', data);
 export const getLabResult = (orderId) => api.get(`/lab/results/${orderId}`);
 export const downloadLabReport = (id) => api.get(`/lab/attachments/${id}`, { responseType: 'blob' });
+export const downloadLabResultReport = (resultId, attachmentId) => api.get(`/lab/reports/${resultId}/download`, { params: attachmentId ? { attachment_id: attachmentId } : {}, responseType: 'blob' });
 export const uploadLabReport = (orderId, data) => api.post(`/lab/results/${orderId}/attachments`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
 
 // Billing
@@ -112,7 +113,7 @@ export default {
   getAdmissions, getCurrentAdmissions, createAdmission, dischargePatient,
   createConsultation,
   getPrescriptions, createPrescription, dispensePrescription, getPrescription, updateMedicineStock,
-  getLabTests, createLabOrder, getLabOrders, updateLabOrderStatus, addLabResult, getLabResult, uploadLabReport, downloadLabReport,
+  getLabTests, createLabOrder, getLabOrders, updateLabOrderStatus, addLabResult, getLabResult, uploadLabReport, downloadLabReport, downloadLabResultReport,
   getBills, getBill, createBill, addBillItem, payBill, generateBill
 };
 export const getMedicines = () => api.get('/medicines');
