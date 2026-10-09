@@ -40,6 +40,9 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const medicineRoutes = require('./routes/medicineRoutes');
 const surgeryRoutes = require('./routes/surgeryRoutes');
 const encounterRoutes = require('./routes/encounterRoutes');
+const userRoutes = require('./routes/userRoutes');
+const nurseRoutes = require('./routes/nurseRoutes');
+const nurseAssignmentRoutes = require('./routes/nurseAssignmentRoutes');
 
 const { verifyToken } = require('./middleware/auth');
 const { auditAccess } = require('./middleware/audit');
@@ -64,6 +67,9 @@ app.use('/api/dashboard', verifyToken, dashboardRoutes);
 app.use('/api/medicines', verifyToken, medicineRoutes);
 app.use('/api/surgery', verifyToken, surgeryRoutes);
 app.use('/api/encounters', verifyToken, encounterRoutes);
+app.use('/api/users', verifyToken, userRoutes);
+app.use('/api/nurse', verifyToken, nurseRoutes);
+app.use('/api/nurse-assignments', verifyToken, nurseAssignmentRoutes);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

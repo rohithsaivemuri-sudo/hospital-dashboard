@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../../context/AuthContext';
 import { getAdmissions, dischargePatient } from '../../services/api';
 import toast from 'react-hot-toast';
 import { FaProcedures, FaSpinner, FaSignOutAlt } from 'react-icons/fa';
 
 export default function AdmissionList() {
+  const { user } = useContext(AuthContext);
+  // Discharge is a clinical decision: administrators and the patient's own doctor (checked by the server).
+  const canDischarge = ['ADMIN', 'DOCTOR'].includes(user?.role);
   const [admissions, setAdmissions] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -86,7 +90,7 @@ export default function AdmissionList() {
                     </span>
                   </td>
                   <td style={{ padding: '12px' }}>
-                    {adm.status !== 'DISCHARGED' && (
+                    {adm.status !== 'DISCHARGED' && canDischarge && (
                       <button 
                         onClick={() => handleDischarge(adm.admission_id)}
                         style={{ 

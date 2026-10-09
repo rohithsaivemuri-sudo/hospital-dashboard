@@ -1,4 +1,5 @@
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const api = axios.create({ baseURL: '/api' });
 
@@ -15,9 +16,16 @@ api.interceptors.response.use(
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
+    if (error.response?.status === 403) {
+      // Permission is enforced by the server; tell the user why, once per distinct reason.
+      const message = error.response.data?.message || 'You do not have access to this.';
+      toast.error(message, { id: `forbidden:${message}` });
+    }
     return Promise.reject(error);
   }
 );
+
+export const isForbidden = (error) => error?.response?.status === 403;
 
 // Auth
 export const login = (credentials) => api.post('/auth/login', credentials);
@@ -32,6 +40,8 @@ export const getPatient = (id) => api.get(`/patients/${id}`);
 export const createPatient = (data) => api.post('/patients', data);
 export const updatePatient = (id, data) => api.put(`/patients/${id}`, data);
 export const getPatientHistory = (id) => api.get(`/patients/${id}/history`);
+export const getPatientAdmissions = (id) => api.get(`/patients/${id}/admissions`);
+export const getPatientAppointments = (id) => api.get(`/patients/${id}/appointments`);
 
 // Doctors
 export const getDoctors = (params) => api.get('/doctors', { params });
@@ -93,6 +103,19 @@ export const downloadLabReport = (id) => api.get(`/lab/attachments/${id}`, { res
 export const downloadLabResultReport = (resultId, attachmentId) => api.get(`/lab/reports/${resultId}/download`, { params: attachmentId ? { attachment_id: attachmentId } : {}, responseType: 'blob' });
 export const uploadLabReport = (orderId, data) => api.post(`/lab/results/${orderId}/attachments`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
 
+// Staff accounts (admin)
+export const getUsers = () => api.get('/users');
+export const registerUser = (data) => api.post('/auth/register', data);
+export const deactivateUser = (id) => api.put(`/users/${id}/deactivate`);
+export const reactivateUser = (id) => api.put(`/users/${id}/reactivate`);
+
+// Nursing
+export const getNurseStation = () => api.get('/nurse/station');
+export const getNurseAssignments = () => api.get('/nurse-assignments');
+export const createNurseAssignment = (data) => api.post('/nurse-assignments', data);
+export const endNurseAssignment = (id, data = {}) => api.put(`/nurse-assignments/${id}`, data);
+export const getWards = () => api.get('/wards');
+
 // Encounters
 export const getEncounterQueue = () => api.get('/encounters/queue');
 export const checkInAppointment = (appointmentId) => api.post('/encounters', { appointment_id: appointmentId });
@@ -123,6 +146,9 @@ export default {
   getPrescriptions, createPrescription, dispensePrescription, getPrescription, updateMedicineStock,
   getLabTests, createLabOrder, getLabOrders, updateLabOrderStatus, addLabResult, getLabResult, uploadLabReport, downloadLabReport, downloadLabResultReport,
   getEncounterQueue, checkInAppointment, encounterAction,
+  getUsers, registerUser, deactivateUser, reactivateUser,
+  getNurseStation, getNurseAssignments, createNurseAssignment, endNurseAssignment, getWards,
+  getPatientAdmissions, getPatientAppointments,
   createSurgeryRequest,
   getBills, getBill, createBill, addBillItem, payBill, generateBill
 };

@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { FaHospital, FaUserInjured, FaUserMd, FaBed, FaAmbulance, FaExclamationTriangle, FaCalendarAlt, FaFlask, FaPills, FaFileInvoiceDollar, FaChartBar, FaSignOutAlt } from 'react-icons/fa';
+import { FaHospital, FaUserInjured, FaUserMd, FaBed, FaAmbulance, FaExclamationTriangle, FaCalendarAlt, FaFlask, FaPills, FaFileInvoiceDollar, FaChartBar, FaSignOutAlt, FaUsersCog, FaUserNurse } from 'react-icons/fa';
 
 export default function Sidebar() {
   const { logout, user } = useContext(AuthContext);
@@ -16,10 +16,12 @@ export default function Sidebar() {
     { name: 'Ambulances', path: '/ambulances', icon: <FaAmbulance />, roles: ['ADMIN', 'RECEPTIONIST'] },
     { name: 'Appointments', path: '/appointments', icon: <FaCalendarAlt />, roles: ['ADMIN', 'DOCTOR', 'RECEPTIONIST'] },
     { name: 'Admissions', path: '/admissions', icon: <FaBed />, roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] },
-    { name: 'Laboratory', path: '/laboratory', icon: <FaFlask />, roles: ['ADMIN', 'LABORATORY'] },
+    { name: 'Laboratory', path: '/laboratory', icon: <FaFlask />, roles: ['LABORATORY'] },
     { name: 'Pharmacy', path: '/pharmacy', icon: <FaPills />, roles: ['ADMIN', 'PHARMACY'] },
     { name: 'Billing', path: '/billing', icon: <FaFileInvoiceDollar />, roles: ['ADMIN', 'RECEPTIONIST'] },
     { name: 'Reports', path: '/reports', icon: <FaChartBar />, roles: ['ADMIN'] },
+    { name: 'Staff Accounts', path: '/staff', icon: <FaUsersCog />, roles: ['ADMIN'] },
+    { name: 'Nurse Assignments', path: '/nurse-assignments', icon: <FaUserNurse />, roles: ['ADMIN'] },
   ].filter(nav => !nav.roles || nav.roles.includes(user?.role));
 
   return (

@@ -120,6 +120,24 @@ export default function Dashboard() {
           color="var(--warning)" 
         />
       </div>
+
+      {/* Laboratory workload: counts only. The work queue itself belongs to laboratory staff. */}
+      {stats?.labWorkload && (
+        <div data-testid="lab-workload" style={{ marginTop: '24px', background: 'var(--bg-card)', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: '24px' }}>
+          <h2 style={{ margin: '0 0 16px', fontSize: '18px' }}>Laboratory workload</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px' }}>
+            {[['Awaiting processing', stats.labWorkload.ordered, 'var(--warning)'],
+              ['In progress', stats.labWorkload.processing, 'var(--primary)'],
+              ['Completed today', stats.labWorkload.completedToday, 'var(--success)'],
+              ['Overdue (> 24 h)', stats.labWorkload.overdue, 'var(--danger)']].map(([label, value, color]) => (
+              <div key={label}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{label}</div>
+                <div style={{ fontSize: '24px', fontWeight: 700, color }}>{value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

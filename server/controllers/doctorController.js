@@ -61,6 +61,9 @@ exports.getSchedule = async (req, res) => {
 exports.updateStatus = async (req, res) => {
   try {
     const { status } = req.body;
+    if (req.user.role === 'DOCTOR' && Number(req.params.id) !== Number(req.user.doctor_id)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: doctors can only change their own status' });
+    }
     await withTransaction(req, async (connection, audit) => {
       const [[before]] = await connection.execute('SELECT doctor_id, status FROM doctors WHERE doctor_id = ? FOR UPDATE', [req.params.id]);
       await connection.execute('UPDATE doctors SET status = ? WHERE doctor_id = ?', [status, req.params.id]);

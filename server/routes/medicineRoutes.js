@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const { writeAudit } = require('../utils/audit');
+const { authorize } = require('../middleware/auth.js');
 
-router.get('/', async (req, res) => {
+router.get('/', authorize('ADMIN', 'DOCTOR', 'NURSE', 'PHARMACY'), async (req, res) => {
   try {
     const [rows] = await pool.execute('SELECT * FROM medicines');
     res.json({ success: true, data: rows });
@@ -12,8 +13,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/:id/stock', async (req, res) => {
-  if (req.user.role !== 'PHARMACY') return res.status(403).json({ success: false, message: 'Forbidden' });
+router.post('/:id/stock', authorize('PHARMACY'), async (req, res) => {
   const connection = await pool.getConnection();
   try {
     const { quantity, type, reason, notes } = req.body;

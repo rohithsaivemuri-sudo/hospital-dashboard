@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { getDoctor, getAppointments, getPatients, getDoctorAnalytics, getCurrentAdmissions, updateAppointmentStatus as putAppointmentStatus, encounterAction } from '../../services/api';
+import { getDoctor, getAppointments, getPatients, getDoctorAnalytics, getCurrentAdmissions, encounterAction } from '../../services/api';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FaUserMd, FaHospitalUser, FaExclamationTriangle, FaCalendarCheck, FaNotesMedical, FaUserInjured, FaBed, FaBell } from 'react-icons/fa';
@@ -55,8 +55,8 @@ export default function DoctorDashboard() {
   const updateAppointmentStatus = async (id, status) => {
     const app = appointments.find(a => a.appointment_id === id);
     try {
-      if (app?.encounter_id) await encounterAction(app.encounter_id, status === 'IN_PROGRESS' ? 'start' : 'finish');
-      else await putAppointmentStatus(id, status);
+      if (!app?.encounter_id) return toast.error('This patient has not been checked in yet');
+      await encounterAction(app.encounter_id, status === 'IN_PROGRESS' ? 'start' : 'finish');
       toast.success(status === 'IN_PROGRESS' ? 'Visit started' : 'Visit signed and closed');
       fetchDashboardData(); // Refetch
     } catch (err) {

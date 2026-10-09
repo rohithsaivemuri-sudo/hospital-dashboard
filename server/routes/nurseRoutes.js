@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/dashboardController.js');
+const controller = require('../controllers/nurseController.js');
 const { authorize } = require('../middleware/auth.js');
 
-router.get('/stats', authorize('ADMIN'), controller.getStats);
+router.get('/station', authorize('NURSE'), controller.station);
 module.exports = router;

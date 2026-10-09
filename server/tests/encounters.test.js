@@ -68,9 +68,10 @@ test('backfilled in-flight appointment still works with the doctor dashboard but
     WHERE e.backfilled_from IS NOT NULL AND a.status = 'CHECKED_IN' LIMIT 1`);
   const [[owner]] = await db().query('SELECT u.username FROM doctors d JOIN users u ON u.user_id = d.user_id WHERE d.doctor_id = ?', [appt.doctor_id]);
   const { token } = await login(owner.username);
-  assert.equal((await api('PUT', `/appointments/${appt.appointment_id}/status`, { token, body: { status: 'IN_PROGRESS' } })).status, 200);
+  // The dashboard buttons call the encounter endpoints (doctors no longer change appointment status directly).
+  assert.equal((await api('POST', `/encounters/${appt.encounter_id}/start`, { token })).status, 200);
   await assertMirrored(appt.appointment_id, 'IN_PROGRESS');
-  assert.equal((await api('PUT', `/appointments/${appt.appointment_id}/status`, { token, body: { status: 'COMPLETED' } })).status, 200);
+  assert.equal((await api('POST', `/encounters/${appt.encounter_id}/finish`, { token })).status, 200);
   await assertMirrored(appt.appointment_id, 'FINISHED');
 });
 
@@ -117,14 +118,24 @@ test('triage is not a gate: a doctor can start straight from ARRIVED', async () 
   await act(enc.encounter_id, 'finish', doctor);
 });
 
-test('the existing appointment status endpoint drives the same state machine', async () => {
+test('the existing appointment status endpoint drives the same state machine (front desk), and cannot start or finish visits', async () => {
   const appointmentId = await book();
   const put = (status, user = reception) => api('PUT', `/appointments/${appointmentId}/status`, { token: user.token, body: { status } });
   assert.equal((await put('CHECKED_IN')).status, 200);
   await assertMirrored(appointmentId, 'ARRIVED');
-  assert.equal((await put('IN_PROGRESS', doctor)).status, 200);
+  // Starting/finishing is the assigned doctor's action, through the encounter.
+  for (const user of [reception, admin]) {
+    const res = await put('IN_PROGRESS', user);
+    assert.equal(res.status, 403);
+    assert.match(res.body.message, /started and finished by the doctor/);
+  }
+  assert.equal((await put('IN_PROGRESS', doctor)).status, 403);
+  await assertMirrored(appointmentId, 'ARRIVED');
+  const { encounter_id } = await state(appointmentId);
+  assert.equal((await act(encounter_id, 'start', doctor)).status, 200);
   await assertMirrored(appointmentId, 'IN_PROGRESS');
-  assert.equal((await put('COMPLETED', doctor)).status, 200);
+  assert.equal((await put('COMPLETED', reception)).status, 403);
+  assert.equal((await act(encounter_id, 'finish', doctor)).status, 200);
   await assertMirrored(appointmentId, 'FINISHED');
   const list = await api('GET', '/appointments', { token: reception.token });
   const row = list.body.data.find(a => a.appointment_id === appointmentId);
@@ -171,7 +182,6 @@ test('invalid transitions are rejected with 409 and change nothing', async () =>
   await reject(await api('PUT', `/appointments/${appointmentId}/status`, { token: reception.token, body: { status: 'NO_SHOW' } }), /Cannot mark a CHECKED_IN appointment as NO_SHOW/);
   await reject(await api('PUT', `/appointments/${appointmentId}/status`, { token: reception.token, body: { status: 'BOOKED' } }), /cannot be moved back to BOOKED/);
   await reject(await api('PUT', `/appointments/${appointmentId}/status`, { token: reception.token, body: { status: 'CHECKED_IN' } }), /already CHECKED_IN/);
-  await reject(await api('PUT', `/appointments/${appointmentId}/status`, { token: doctor.token, body: { status: 'COMPLETED' } }), /Cannot finish an encounter that is ARRIVED/);
   await assertMirrored(appointmentId, 'ARRIVED');
 
   await act(enc.encounter_id, 'start', doctor);

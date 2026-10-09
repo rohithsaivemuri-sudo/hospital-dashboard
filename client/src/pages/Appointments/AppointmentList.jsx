@@ -60,11 +60,11 @@ export default function AppointmentList() {
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
             <FaCalendarAlt color="var(--primary)" /> Appointments
           </h2>
-          <Link to="/appointments/new" style={{ textDecoration: 'none' }}>
+          {isFrontDesk && <Link to="/appointments/new" style={{ textDecoration: 'none' }}>
             <button style={{ backgroundColor: 'var(--primary)', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <FaPlus /> New Appointment
             </button>
-          </Link>
+          </Link>}
         </div>
         
         {appointments.length === 0 ? (

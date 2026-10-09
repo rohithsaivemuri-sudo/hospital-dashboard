@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
-import { getPatient, getPatientHistory, createLabOrder, getLabTests, createPrescription, getMedicines, createAdmission, getAvailableBeds, getLabResult, downloadLabResultReport, createConsultation, createSurgeryRequest, dischargePatient, encounterAction } from '../../services/api';
+import { getPatient, getPatientHistory, createLabOrder, getLabTests, createPrescription, getMedicines, createAdmission, getAvailableBeds, getLabResult, downloadLabResultReport, createConsultation, createSurgeryRequest, dischargePatient, encounterAction, getPatientAdmissions, getPatientAppointments, isForbidden } from '../../services/api';
+import AccessDenied from '../../components/AccessDenied';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -14,6 +15,14 @@ const ageOf = (dob) => {
 // Display MRN derived from the patient id (no separate MRN column yet).
 const mrnOf = (id) => `MRN-${String(id).padStart(6, '0')}`;
 
+const CLINICAL_ROLES = ['DOCTOR', 'NURSE'];
+const TABS_BY_ROLE = {
+  DOCTOR: ['Overview', 'Visits', 'Admissions', 'Lab Tests', 'Prescriptions', 'Surgery'],
+  NURSE: ['Admissions', 'Lab Tests', 'Prescriptions', 'Appointments'],
+  ADMIN: ['Appointments', 'Admissions'],
+  RECEPTIONIST: ['Appointments', 'Admissions'],
+};
+
 export default function PatientDetail() {
   const { id } = useParams();
   const { user } = useContext(AuthContext);
@@ -21,6 +30,12 @@ export default function PatientDetail() {
   const [patient, setPatient] = useState(null);
   const [history, setHistory] = useState(null);
   const [activeTab, setActiveTab] = useState('Overview');
+  const [denied, setDenied] = useState(false);
+  // Chart tabs per role (report Section E): nurses do not see consultation notes or surgery requests;
+  // the front desk and administrators see demographics, appointments and admissions only.
+  const tabs = TABS_BY_ROLE[user?.role] || TABS_BY_ROLE.RECEPTIONIST;
+  const canViewResults = ['DOCTOR', 'NURSE'].includes(user?.role);
+  useEffect(() => { if (!tabs.includes(activeTab)) setActiveTab(tabs[0]); }, [user]);
   const [loading, setLoading] = useState(true);
 
   // Encounter form
@@ -79,14 +94,23 @@ export default function PatientDetail() {
   const fetchPatientData = async () => {
     try {
       setLoading(true);
-      const [patientRes, historyRes] = await Promise.all([
-        getPatient(id),
-        getPatientHistory(id)
-      ]);
-      setPatient(patientRes.data.success ? patientRes.data.data : (patientRes.data || {}));
-      setHistory(historyRes.data.success ? historyRes.data.data : (historyRes.data || { admissions: [], appointments: [], labs: [], prescriptions: [], consultations: [], surgeries: [] }));
+      if (CLINICAL_ROLES.includes(user?.role)) {
+        const [patientRes, historyRes] = await Promise.all([
+          getPatient(id),
+          getPatientHistory(id)
+        ]);
+        setPatient(patientRes.data.success ? patientRes.data.data : (patientRes.data || {}));
+        setHistory(historyRes.data.success ? historyRes.data.data : (historyRes.data || { admissions: [], appointments: [], labs: [], prescriptions: [], consultations: [], surgeries: [] }));
+      } else {
+        // Front desk and administrators: demographics, appointments and admissions only.
+        const [patientRes, admRes, apptRes] = await Promise.all([getPatient(id), getPatientAdmissions(id), getPatientAppointments(id)]);
+        setPatient(patientRes.data.data);
+        setHistory({ admissions: admRes.data.data || [], appointments: apptRes.data.data || [], labs: [], prescriptions: [], consultations: [], surgeries: [], encounters: [] });
+      }
+      setDenied(false);
     } catch (err) {
-      toast.error('Failed to load patient details');
+      if (isForbidden(err)) setDenied(true);
+      else toast.error('Failed to load patient details');
     } finally {
       setLoading(false);
     }
@@ -254,6 +278,7 @@ export default function PatientDetail() {
     } catch (err) { toast.error(err.response?.data?.message || 'Failed to create prescription'); }
   };
 
+  if (denied) return <AccessDenied message="This patient is not under your care." />;
   if (loading) return <div style={{ padding: '24px' }}>Loading workspace...</div>;
   if (!patient) return <div style={{ padding: '24px' }}>Patient not found.</div>;
 
@@ -289,7 +314,7 @@ export default function PatientDetail() {
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 16px', marginTop: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
           <span>DOB {patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString() : 'N/A'}</span>
           <span>Contact {patient.phone || '—'}</span>
-          {openEncounter ? (
+          {!CLINICAL_ROLES.includes(user?.role) ? null : openEncounter ? (
             <span data-testid="current-visit" style={{ color: 'var(--text-primary)' }}>
               <strong>Current visit:</strong> {openEncounter.status.replace('_', ' ')} with {openEncounter.doctor_name}
               {isMyEncounter && ['ARRIVED', 'TRIAGED'].includes(openEncounter.status) && (
@@ -305,7 +330,7 @@ export default function PatientDetail() {
 
       {/* TABS */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', borderBottom: '2px solid var(--border)', paddingBottom: '8px' }}>
-        {['Overview', 'Visits', 'Admissions', 'Lab Tests', 'Prescriptions', 'Surgery'].map(tab => (
+        {tabs.map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: '8px 16px', background: activeTab === tab ? 'var(--primary)' : 'transparent', color: activeTab === tab ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
             {tab}
           </button>
@@ -366,6 +391,26 @@ export default function PatientDetail() {
         </div>
       )}
 
+      {activeTab === 'Appointments' && (
+        <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)' }}>
+          <h2>Appointments</h2>
+          {history.appointments?.length > 0 ? (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr style={{ textAlign: 'left', background: '#f1f5f9' }}><th style={{ padding: '8px' }}>Date</th><th style={{ padding: '8px' }}>Time</th><th style={{ padding: '8px' }}>Status</th></tr></thead>
+              <tbody>
+                {[...history.appointments].sort((a, b) => String(b.appointment_date).localeCompare(String(a.appointment_date))).map(a => (
+                  <tr key={a.appointment_id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '8px' }}>{new Date(a.appointment_date).toLocaleDateString()}</td>
+                    <td style={{ padding: '8px' }}>{a.appointment_time}</td>
+                    <td style={{ padding: '8px' }}><strong>{a.status}</strong></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : <p>No appointments.</p>}
+        </div>
+      )}
+
       {activeTab === 'Lab Tests' && (
         <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -374,14 +419,14 @@ export default function PatientDetail() {
           </div>
           {history.labs?.length > 0 ? (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr style={{ textAlign: 'left', background: '#f1f5f9' }}><th style={{ padding: '8px' }}>Date</th><th style={{ padding: '8px' }}>Test Name</th><th style={{ padding: '8px' }}>Status</th>{user?.role === 'DOCTOR' && <th style={{ padding: '8px' }}>Result</th>}</tr></thead>
+              <thead><tr style={{ textAlign: 'left', background: '#f1f5f9' }}><th style={{ padding: '8px' }}>Date</th><th style={{ padding: '8px' }}>Test Name</th><th style={{ padding: '8px' }}>Status</th>{canViewResults && <th style={{ padding: '8px' }}>Result</th>}</tr></thead>
               <tbody>
                 {history.labs.map(l => (
                   <tr key={l.order_id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '8px' }}>{new Date(l.order_date).toLocaleDateString()}</td>
                     <td style={{ padding: '8px' }}>{l.test_name}</td>
                     <td style={{ padding: '8px' }}><strong>{l.status}</strong></td>
-                    {user?.role === 'DOCTOR' && (
+                    {canViewResults && (
                       <td style={{ padding: '8px' }}>
                         {l.status === 'COMPLETED' && <button onClick={() => openLabResult(l)} style={{ padding: '4px 10px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>View Result</button>}
                       </td>

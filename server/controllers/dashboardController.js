@@ -22,6 +22,14 @@ exports.getStats = async (req, res) => {
     
     const [recentEmergencies] = await pool.execute('SELECT * FROM emergency_cases ORDER BY arrival_time DESC LIMIT 10');
 
+    // Laboratory workload for administrators (counts only; the work queue itself is lab staff only).
+    // Overdue: still open more than 24 hours after ordering (report Section C turnaround metric).
+    const [[lab]] = await pool.execute(`
+      SELECT SUM(status = 'ORDERED') AS ordered, SUM(status = 'PROCESSING') AS processing,
+             SUM(status = 'COMPLETED' AND updated_at >= CURDATE()) AS completedToday,
+             SUM(status IN ('ORDERED', 'SAMPLE_COLLECTED', 'PROCESSING') AND order_date < NOW() - INTERVAL 24 HOUR) AS overdue
+      FROM lab_orders`);
+
     res.json({
       success: true,
       data: {
@@ -37,7 +45,13 @@ exports.getStats = async (req, res) => {
         incomingAmbulances: Number(incomingAmbulances),
         todayAppointments: Number(todayAppointments),
         hospitalOccupancy,
-        recentEmergencies
+        recentEmergencies,
+        labWorkload: {
+          ordered: Number(lab.ordered || 0),
+          processing: Number(lab.processing || 0),
+          completedToday: Number(lab.completedToday || 0),
+          overdue: Number(lab.overdue || 0),
+        }
       }
     });
   } catch (error) { 

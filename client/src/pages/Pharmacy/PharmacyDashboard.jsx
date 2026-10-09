@@ -23,8 +23,9 @@ export default function PharmacyDashboard() {
 
   const load = async () => {
     try {
-      const [pRes, mRes] = await Promise.all([getPrescriptions(), getMedicines()]);
-      setPrescriptions(pRes.data.data || []);
+      // Administrators see inventory only; the prescription queue is pharmacy staff only.
+      const [pRes, mRes] = await Promise.all([canDispense ? getPrescriptions() : Promise.resolve(null), getMedicines()]);
+      setPrescriptions(pRes?.data?.data || []);
       setMedicines(mRes.data.data || []);
     } catch (e) {
       toast.error('Failed to load pharmacy data');
@@ -101,10 +102,11 @@ export default function PharmacyDashboard() {
 
   return (
     <div style={{ padding: '24px' }}>
-      <h1>Pharmacy Work Center</h1>
+      <h1>{canDispense ? 'Pharmacy Work Center' : 'Pharmacy Inventory'}</h1>
       
       {/* SUMMARY CARDS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
+        {canDispense && <>
         <div className="stat-card" style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: '8px', boxShadow: 'var(--shadow)' }}>
           <div style={{ color: 'var(--text-secondary)' }}>Pending Prescriptions</div>
           <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{stats.pending}</div>
@@ -113,6 +115,7 @@ export default function PharmacyDashboard() {
           <div style={{ color: 'var(--text-secondary)' }}>Dispensed Today</div>
           <div style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--success)' }}>{stats.dispensedToday}</div>
         </div>
+        </>}
         <div className="stat-card" style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: '8px', boxShadow: 'var(--shadow)' }}>
           <div style={{ color: 'var(--text-secondary)' }}>Low Stock Items</div>
           <div style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--warning)' }}>{stats.lowStock}</div>
@@ -125,7 +128,8 @@ export default function PharmacyDashboard() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
         
-        {/* PRESCRIPTION QUEUE */}
+        {/* PRESCRIPTION QUEUE (pharmacy staff only) */}
+        {canDispense && (
         <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '8px', boxShadow: 'var(--shadow)' }}>
           <h2 style={{ marginTop: 0 }}>Prescription Queue</h2>
           <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
@@ -160,7 +164,10 @@ export default function PharmacyDashboard() {
               {filteredPrescriptions.map(p => (
                 <tr key={p.prescription_id}>
                   <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>#{p.prescription_id}</td>
-                  <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>{p.patientName}</td>
+                  <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
+                    {p.patientName} <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{p.patient_age != null ? `${p.patient_age} yrs` : ''}</span>
+                    {p.patient_allergies && <div style={{ color: 'var(--danger)', fontSize: '12px', fontWeight: 'bold' }}>Allergies: {p.patient_allergies}</div>}
+                  </td>
                   <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>{p.medication}</td>
                   <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
                     <span style={{ 
@@ -182,6 +189,7 @@ export default function PharmacyDashboard() {
             </tbody>
           </table>
         </div>
+        )}
 
         {/* INVENTORY */}
         <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '8px', boxShadow: 'var(--shadow)' }}>
@@ -214,6 +222,7 @@ export default function PharmacyDashboard() {
                       </span>
                     </td>
                     <td style={{ padding: '12px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '8px' }}>
+                      {canDispense && <>
                       <button 
                         onClick={() => { setReceiveStockMedicine(m); setStockForm({ quantity: '', type: 'RECEIPT', reason: 'Restock', notes: '' }); }}
                         style={{ padding: '6px 12px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
@@ -222,6 +231,7 @@ export default function PharmacyDashboard() {
                         onClick={() => { setAdjustStockMedicine(m); setStockForm({ quantity: '', type: 'ADJUSTMENT', reason: 'DAMAGED', notes: '' }); }}
                         style={{ padding: '6px 12px', background: 'var(--warning)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                       >Adjust</button>
+                      </>}
                     </td>
                   </tr>
                 );
@@ -241,6 +251,12 @@ export default function PharmacyDashboard() {
               <button onClick={() => { setDetail(null); setDispenseError(null); }} disabled={dispensing} style={{ border: 'none', background: 'transparent', fontSize: '20px', cursor: 'pointer' }}>&times;</button>
             </div>
             
+            <div data-testid="rx-patient" style={{ padding: '12px 16px', marginBottom: '16px', background: 'var(--bg-primary)', borderRadius: '6px', borderLeft: '4px solid var(--primary)' }}>
+              <strong>{detail.patient_name}</strong> · {detail.patient_age ?? '—'} yrs
+              <span style={{ marginLeft: '16px', color: detail.patient_allergies ? 'var(--danger)' : 'var(--text-secondary)', fontWeight: detail.patient_allergies ? 'bold' : 'normal' }}>
+                Allergies: {detail.patient_allergies || 'Not recorded'}
+              </span>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
               <div><strong>Status:</strong> {detail.status}</div>
               <div><strong>Date:</strong> {new Date(detail.prescription_date).toLocaleString()}</div>

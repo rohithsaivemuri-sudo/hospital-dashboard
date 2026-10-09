@@ -105,14 +105,21 @@ test('role escalation: receptionist (and other non-clinical roles) get 403', asy
       const res = await api('GET', url, { token });
       assert.equal(res.status, 403, `${username} ${url}`);
       assert.equal(res.body.success, false);
-      assert.match(res.body.message, /laboratory staff and the treating doctor/);
+      // Non-clinical roles are stopped by the route's role gate, which names who may use it.
+      assert.match(res.body.message, /available to laboratory staff, doctors, nurses only/);
     }
   }
 });
 
-test('nurses are denied until ward assignments exist (step 4b)', async () => {
-  const { token } = await login(USERS.NURSE);
-  for (const url of endpoints()) assert.equal((await api('GET', url, { token })).status, 403, url);
+test('a nurse is denied reports of a patient who is not assigned to them', async () => {
+  const { token, user } = await login(USERS.NURSE);
+  const { isNurseAssignedPatient } = require('../utils/patientAccess');
+  assert.equal(await isNurseAssignedPatient(user.user_id, fixture.patientId, db()), false, 'fixture patient must be outside the nurse\'s assignments');
+  for (const url of endpoints()) {
+    const res = await api('GET', url, { token });
+    assert.equal(res.status, 403, url);
+    assert.match(res.body.message, /laboratory staff and the patient's own doctors and nurses/);
+  }
 });
 
 test('lateral escalation: a doctor outside the patient\'s care set gets 403', async () => {

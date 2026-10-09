@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 const { withTransaction } = require('../utils/audit');
-const { isInDoctorCareSet } = require('../utils/patientAccess');
+const { isInDoctorCareSet, isNurseAssignedPatient } = require('../utils/patientAccess');
 const { EncounterError, arriveAppointment, arriveWalkIn, transitionEncounter } = require('../utils/encounters');
 
 const isId = (v) => /^[1-9]\d{0,9}$/.test(String(v));
@@ -45,6 +45,9 @@ exports.getById = async (req, res) => {
         && !(await isInDoctorCareSet(req.user.doctor_id, encounter.patient_id))) {
       return res.status(403).json({ success: false, message: 'Forbidden: patient is not under your care' });
     }
+    if (req.user.role === 'NURSE' && !(await isNurseAssignedPatient(req.user.user_id, encounter.patient_id))) {
+      return res.status(403).json({ success: false, message: 'Forbidden: patient is not assigned to you' });
+    }
     const ids = async (table, key) => (await pool.execute(`SELECT ${key} FROM ${table} WHERE encounter_id = ? ORDER BY ${key}`, [encounter.encounter_id]))[0].map(r => r[key]);
     res.json({ success: true, data: {
       ...encounter,
@@ -76,7 +79,14 @@ const transition = (action, authorizeFor) => async (req, res) => {
   } catch (error) { fail(res, error); }
 };
 
-exports.triage = transition('triage');
+// Nurses triage their assigned patients (every open outpatient visit counts as assigned).
+const assignedNurseOnly = (req) => async (encounter) => {
+  if (!(await isNurseAssignedPatient(req.user.user_id, encounter.patient_id))) {
+    throw new EncounterError(403, 'Forbidden: patient is not assigned to you');
+  }
+};
+
+exports.triage = transition('triage', assignedNurseOnly);
 exports.start = transition('start', ownDoctorOnly);
 exports.finish = transition('finish', ownDoctorOnly);
 exports.cancel = transition('cancel');

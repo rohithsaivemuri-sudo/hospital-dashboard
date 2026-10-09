@@ -2,20 +2,8 @@ const pool = require('../config/db');
 const { withTransaction } = require('../utils/audit');
 const { resolveEncounterForRecord } = require('../utils/encounters');
 
-const checkDoctorAuth = async (req, patient_id) => {
-  if (req.user.role !== 'DOCTOR') return true;
-  const doctorId = req.user.doctor_id;
-  const [rows] = await pool.execute(`
-    SELECT 1 FROM (
-      SELECT patient_id FROM appointments WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM admissions WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM consultations WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM lab_orders WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM prescriptions WHERE doctor_id = ? AND patient_id = ?
-    ) as auth LIMIT 1
-  `, [doctorId, patient_id, doctorId, patient_id, doctorId, patient_id, doctorId, patient_id, doctorId, patient_id]);
-  return rows.length > 0;
-};
+const { canAccessPatient } = require('../utils/patientAccess');
+const checkDoctorAuth = (req, patientId) => canAccessPatient(req.user, patientId, 'clinical');
 
 exports.create = async (req, res) => {
   try {

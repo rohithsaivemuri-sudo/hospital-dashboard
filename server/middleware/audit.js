@@ -7,7 +7,7 @@ const { logAccess } = require('../utils/audit');
 // Routers whose GET responses contain patient data.
 const PHI_ROUTERS = new Set([
   '/api/patients', '/api/appointments', '/api/consultations', '/api/prescriptions', '/api/lab',
-  '/api/admissions', '/api/bills', '/api/surgery', '/api/emergency', '/api/encounters',
+  '/api/admissions', '/api/bills', '/api/surgery', '/api/emergency', '/api/encounters', '/api/nurse',
 ]);
 
 const numeric = (v) => (/^\d+$/.test(String(v ?? '')) ? Number(v) : null);

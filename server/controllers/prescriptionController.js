@@ -3,25 +3,14 @@ const { lockMedicines } = require('../utils/medicineLocks');
 const { writeAudit } = require('../utils/audit');
 const { resolveEncounterForRecord } = require('../utils/encounters');
 
-const checkDoctorAuth = async (req, patient_id) => {
-  if (req.user.role !== 'DOCTOR') return true;
-  const doctorId = req.user.doctor_id;
-  const [rows] = await pool.execute(`
-    SELECT 1 FROM (
-      SELECT patient_id FROM appointments WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM admissions WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM consultations WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM lab_orders WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM prescriptions WHERE doctor_id = ? AND patient_id = ?
-    ) as auth LIMIT 1
-  `, [doctorId, patient_id, doctorId, patient_id, doctorId, patient_id, doctorId, patient_id, doctorId, patient_id]);
-  return rows.length > 0;
-};
+const { canAccessPatient, patientFilter } = require('../utils/patientAccess');
+const checkDoctorAuth = (req, patientId, scope = 'prescriptions') => canAccessPatient(req.user, patientId, scope);
 
 exports.list = async (req, res) => {
   try {
     let query = `
       SELECT p.*, pat.name as patientName,
+        TIMESTAMPDIFF(YEAR, pat.date_of_birth, CURDATE()) as patient_age, pat.allergies as patient_allergies,
         (SELECT GROUP_CONCAT(m.name SEPARATOR ', ')
          FROM prescription_items pi
          JOIN medicines m ON pi.medicine_id = m.medicine_id
@@ -32,15 +21,20 @@ exports.list = async (req, res) => {
     `;
     let params = [];
     if (req.user.role === 'DOCTOR') {
+      // Doctors keep seeing the prescriptions they wrote.
       query += ` WHERE p.doctor_id = ? `;
       params.push(req.user.doctor_id);
+    } else if (req.user.role === 'NURSE') {
+      const scope = patientFilter(req.user, 'prescriptions', 'p.patient_id');
+      query += ` WHERE ${scope.sql} `;
+      params.push(...scope.params);
     }
     
     query += ` ORDER BY p.prescription_date DESC`;
     
-    const [rows] = await pool.execute(query, params);
+    const [rows] = await pool.query(query, params);
     res.json({ success: true, data: rows });
-  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+  } catch (error) { res.status(error.status || 500).json({ success: false, message: error.message }); }
 };
 
 exports.create = async (req, res) => {
@@ -56,7 +50,7 @@ exports.create = async (req, res) => {
         await connection.rollback();
         return res.status(403).json({ success: false, message: 'Forbidden: Cannot create prescription for another doctor' });
       }
-      const auth = await checkDoctorAuth(req, patient_id);
+      const auth = await checkDoctorAuth(req, patient_id, 'clinical');
       if (!auth) {
         await connection.rollback();
         return res.status(403).json({ success: false, message: 'Forbidden: Patient not associated' });
@@ -86,13 +80,14 @@ exports.create = async (req, res) => {
 
 exports.getById = async (req, res) => {
   try {
-    const [rows] = await pool.execute('SELECT * FROM prescriptions WHERE prescription_id = ?', [req.params.id]);
+    const [rows] = await pool.execute(`
+      SELECT p.*, pat.name AS patient_name, TIMESTAMPDIFF(YEAR, pat.date_of_birth, CURDATE()) AS patient_age, pat.allergies AS patient_allergies
+      FROM prescriptions p JOIN patients pat ON pat.patient_id = p.patient_id
+      WHERE p.prescription_id = ?`, [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Not found' });
+    res.locals.auditPatientId = rows[0].patient_id;
     
-    if (req.user.role === 'DOCTOR') {
-      const auth = await checkDoctorAuth(req, rows[0].patient_id);
-      if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
-    }
+    if (!(await checkDoctorAuth(req, rows[0].patient_id))) return res.status(403).json({ success: false, message: 'Forbidden: this patient is not under your care' });
 
     const [items] = await pool.execute(`
       SELECT pi.*, m.name as medicine_name, m.stock_quantity 
@@ -106,10 +101,7 @@ exports.getById = async (req, res) => {
 
 exports.getByPatient = async (req, res) => {
   try {
-    if (req.user.role === 'DOCTOR') {
-      const auth = await checkDoctorAuth(req, req.params.patientId);
-      if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
-    }
+    if (!(await checkDoctorAuth(req, req.params.patientId))) return res.status(403).json({ success: false, message: 'Forbidden: this patient is not under your care' });
     
     let query = `
       SELECT p.*, pat.name as patientName,

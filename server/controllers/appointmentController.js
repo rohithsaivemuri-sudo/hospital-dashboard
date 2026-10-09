@@ -78,6 +78,11 @@ exports.updateStatus = async (req, res) => {
       if (rows.length === 0) return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
+    // Starting and finishing a visit is the assigned doctor's action (POST /api/encounters/:id/start|finish).
+    if (['IN_PROGRESS', 'COMPLETED'].includes(status)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: visits are started and finished by the doctor from the visit itself' });
+    }
+
     // Status changes go through the encounter state machine, which keeps the appointment and its
     // encounter in step (same transaction) and rejects invalid transitions with 409.
     await withTransaction(req, (connection) => applyAppointmentStatus(connection, req, req.params.id, status));

@@ -3,20 +3,8 @@ const { withTransaction, changedFields } = require('../utils/audit');
 
 const PATIENT_FIELDS = ['name', 'date_of_birth', 'gender', 'blood_group', 'phone', 'address', 'emergency_contact'];
 
-const checkDoctorAuth = async (req, patient_id) => {
-  if (req.user.role !== 'DOCTOR') return true;
-  const doctorId = req.user.doctor_id;
-  const [rows] = await pool.execute(`
-    SELECT 1 FROM (
-      SELECT patient_id FROM appointments WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM admissions WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM consultations WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM lab_orders WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM prescriptions WHERE doctor_id = ? AND patient_id = ?
-    ) as auth LIMIT 1
-  `, [doctorId, patient_id, doctorId, patient_id, doctorId, patient_id, doctorId, patient_id, doctorId, patient_id]);
-  return rows.length > 0;
-};
+const { canAccessPatient, patientFilter } = require('../utils/patientAccess');
+const allowed = (req, patientId, scope) => canAccessPatient(req.user, patientId, scope);
 
 exports.list = async (req, res) => {
   try {
@@ -26,28 +14,20 @@ exports.list = async (req, res) => {
     let query = `SELECT * FROM patients WHERE name LIKE ?`;
     let queryParams = [`%${search}%`];
     
-    if (req.user.role === 'DOCTOR') {
-      const doctorId = req.user.doctor_id;
-      query += ` AND patient_id IN (
-        SELECT patient_id FROM appointments WHERE doctor_id = ?
-        UNION SELECT patient_id FROM admissions WHERE doctor_id = ?
-        UNION SELECT patient_id FROM consultations WHERE doctor_id = ?
-        UNION SELECT patient_id FROM lab_orders WHERE doctor_id = ?
-        UNION SELECT patient_id FROM prescriptions WHERE doctor_id = ?
-      )`;
-      queryParams.push(doctorId, doctorId, doctorId, doctorId, doctorId);
-    }
+    // Doctors see their care set, nurses their assigned patients; front desk and admin see everyone.
+    const scope = patientFilter(req.user, 'demographics');
+    if (scope) { query += ` AND ${scope.sql}`; queryParams.push(...scope.params); }
     
     query += ` LIMIT ? OFFSET ?`;
     queryParams.push(parseInt(limit), parseInt(offset));
     
-    const [rows] = await pool.execute(query, queryParams);
+    const [rows] = await pool.query(query, queryParams);
     res.json({ success: true, data: rows });
-  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+  } catch (error) { res.status(error.status || 500).json({ success: false, message: error.message }); }
 };
 exports.getById = async (req, res) => {
   try {
-    const auth = await checkDoctorAuth(req, req.params.id);
+    const auth = await allowed(req, req.params.id, 'demographics');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
     const [rows] = await pool.execute('SELECT * FROM patients WHERE patient_id = ?', [req.params.id]);
@@ -81,7 +61,7 @@ exports.update = async (req, res) => {
 exports.getHistory = async (req, res) => {
   try {
     const patient_id = req.params.id;
-    const auth = await checkDoctorAuth(req, patient_id);
+    const auth = await allowed(req, patient_id, 'clinical');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
     const [admissions] = await pool.execute('SELECT * FROM admissions WHERE patient_id = ? ORDER BY admission_date DESC', [patient_id]);
@@ -106,12 +86,14 @@ exports.getHistory = async (req, res) => {
       FROM encounters e JOIN doctors d ON d.doctor_id = e.doctor_id
       WHERE e.patient_id = ? ORDER BY COALESCE(e.arrived_at, e.created_at) DESC`, [patient_id]);
 
-    res.json({ success: true, data: { admissions, appointments, prescriptions, labs, consultations, surgeries, encounters } });
+    // Nurses get the same shape without consultation notes or surgery requests.
+    const isNurse = req.user.role === 'NURSE';
+    res.json({ success: true, data: { admissions, appointments, prescriptions, labs, consultations: isNurse ? [] : consultations, surgeries: isNurse ? [] : surgeries, encounters } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.getAdmissions = async (req, res) => {
   try {
-    const auth = await checkDoctorAuth(req, req.params.id);
+    const auth = await allowed(req, req.params.id, 'demographics');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
     const [rows] = await pool.execute('SELECT * FROM admissions WHERE patient_id = ?', [req.params.id]);
@@ -120,7 +102,7 @@ exports.getAdmissions = async (req, res) => {
 };
 exports.getAppointments = async (req, res) => {
   try {
-    const auth = await checkDoctorAuth(req, req.params.id);
+    const auth = await allowed(req, req.params.id, 'demographics');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
     const [rows] = await pool.execute('SELECT * FROM appointments WHERE patient_id = ?', [req.params.id]);
@@ -129,7 +111,7 @@ exports.getAppointments = async (req, res) => {
 };
 exports.getPrescriptions = async (req, res) => {
   try {
-    const auth = await checkDoctorAuth(req, req.params.id);
+    const auth = await allowed(req, req.params.id, 'prescriptions');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
     const [rows] = await pool.execute('SELECT * FROM prescriptions WHERE patient_id = ?', [req.params.id]);
@@ -138,7 +120,7 @@ exports.getPrescriptions = async (req, res) => {
 };
 exports.getLabResults = async (req, res) => {
   try {
-    const auth = await checkDoctorAuth(req, req.params.id);
+    const auth = await allowed(req, req.params.id, 'lab');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
     const [rows] = await pool.execute('SELECT l.*, r.* FROM lab_orders l LEFT JOIN lab_results r ON l.order_id = r.order_id WHERE l.patient_id = ?', [req.params.id]);
