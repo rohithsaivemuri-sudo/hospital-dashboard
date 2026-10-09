@@ -269,11 +269,14 @@ export default function PatientDetail() {
   };
   const handleOrderLab = async (e) => {
     e.preventDefault();
-    if (selectedTests.length === 0) return toast.error("Add at least one test");
+    // A test chosen in the dropdown but not yet added with "+ Add Test" is ordered too.
+    const tests = currentTestId && !selectedTests.some(t => t.test_id == currentTestId)
+      ? [...selectedTests, { test_id: currentTestId }] : selectedTests;
+    if (tests.length === 0) return toast.error("Choose at least one test");
     try {
-      await createLabOrder({ patient_id: id, doctor_id: user.doctor_id, tests: selectedTests.map(t => ({ test_id: t.test_id })), notes: labNotes });
+      await createLabOrder({ patient_id: id, doctor_id: user.doctor_id, tests: tests.map(t => ({ test_id: t.test_id })), notes: labNotes });
       toast.success('Lab tests ordered successfully');
-      setShowLabModal(false); setSelectedTests([]); setLabNotes(''); fetchPatientData();
+      setShowLabModal(false); setSelectedTests([]); setCurrentTestId(''); setLabNotes(''); fetchPatientData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed to order lab tests'); }
   };
 
@@ -637,7 +640,7 @@ export default function PatientDetail() {
             <h2 style={{ marginTop: 0 }}>ORDER LAB TESTS</h2>
             <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <select value={currentTestId} onChange={(e) => setCurrentTestId(e.target.value)} style={{ flex: 1, padding: '8px' }}>
+                <select name="test_id" value={currentTestId} onChange={(e) => setCurrentTestId(e.target.value)} style={{ flex: 1, padding: '8px' }}>
                   <option value="">-- Choose a Test --</option>
                   {labTests.map(t => (<option key={t.test_id} value={t.test_id}>{t.name} (₹{t.price})</option>))}
                 </select>

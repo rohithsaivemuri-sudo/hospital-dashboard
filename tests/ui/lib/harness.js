@@ -1,0 +1,40 @@
+// Shared helpers for the browser tests. They drive the real client (Vite, :5173) against the API
+// server (:5000) running on hospital_db_test only — never the development database.
+const path = require('path');
+const ROOT = path.join(__dirname, '..', '..', '..');
+const mysql = require(path.join(ROOT, 'server', 'node_modules', 'mysql2', 'promise'));
+require(path.join(ROOT, 'server', 'node_modules', 'dotenv')).config({ path: path.join(ROOT, 'server', '.env') });
+
+const APP = 'http://localhost:5173';
+const API = 'http://localhost:5000/api';
+const PASSWORD = 'password123';
+const TEST_DB = 'hospital_db_test';
+
+async function call(method, p, token, body) {
+  const res = await fetch(API + p, { method, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  return { status: res.status, body: await res.json().catch(() => null) };
+}
+const tokenOf = async (username) => (await call('POST', '/auth/login', null, { username, password: PASSWORD })).body.token;
+
+async function login(page, username) {
+  await page.goto(`${APP}/login`);
+  await page.type('input[placeholder="Username"]', username);
+  await page.type('input[placeholder="Password"]', PASSWORD);
+  await Promise.all([page.waitForNavigation(), page.click('button[type="submit"]')]);
+}
+
+let connection;
+async function db() {
+  if (!connection) connection = await mysql.createConnection({ host: process.env.DB_HOST, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: TEST_DB });
+  return connection;
+}
+async function closeDb() { if (connection) { await connection.end(); connection = null; } }
+
+// Clicks the first button whose text matches, like a user would (real mouse click on the element).
+async function clickButton(page, text, scope = 'body') {
+  const handle = await page.waitForFunction((scope, text) => [...document.querySelectorAll(`${scope} button`)]
+    .find(b => b.innerText.trim() === text && b.getBoundingClientRect().width > 0), {}, scope, text);
+  await handle.asElement().click();
+}
+
+module.exports = { ROOT, APP, API, PASSWORD, TEST_DB, call, tokenOf, login, db, closeDb, clickButton };
