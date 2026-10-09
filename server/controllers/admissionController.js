@@ -1,0 +1,147 @@
+const pool = require('../config/db');
+exports.list = async (req, res) => {
+  try {
+    let query = `
+      SELECT a.*, p.name as patient_name, b.bed_number
+      FROM admissions a
+      LEFT JOIN patients p ON a.patient_id = p.patient_id
+      LEFT JOIN beds b ON a.bed_id = b.bed_id
+    `;
+    let params = [];
+    
+    if (req.user.role === 'DOCTOR') {
+      query += ` WHERE a.doctor_id = ?`;
+      params.push(req.user.doctor_id);
+    }
+    
+    query += ` ORDER BY a.admission_date DESC`;
+    
+    const [rows] = await pool.execute(query, params);
+    res.json({ success: true, data: rows });
+  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+};
+exports.getCurrent = async (req, res) => {
+  try {
+    let query = `
+      SELECT a.*, p.name as patient_name, b.bed_number as bed_name 
+      FROM admissions a
+      LEFT JOIN patients p ON a.patient_id = p.patient_id
+      LEFT JOIN beds b ON a.bed_id = b.bed_id
+      WHERE a.status = "ACTIVE"
+    `;
+    let params = [];
+    if (req.user.role === 'DOCTOR') {
+      query += ' AND a.doctor_id = ?';
+      params.push(req.user.doctor_id);
+    }
+    const [rows] = await pool.execute(query, params);
+    res.json({ success: true, data: rows });
+  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+};
+exports.getById = async (req, res) => {
+  try {
+    let query = 'SELECT * FROM admissions WHERE admission_id = ?';
+    let params = [req.params.id];
+    if (req.user.role === 'DOCTOR') {
+      query += ' AND doctor_id = ?';
+      params.push(req.user.doctor_id);
+    }
+    const [rows] = await pool.execute(query, params);
+    if (rows.length === 0) return res.status(404).json({ success: false, message: 'Not found' });
+    res.json({ success: true, data: rows[0] });
+  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+};
+exports.create = async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const { patient_id, doctor_id, bed_id, department_id, diagnosis, notes } = req.body;
+    let assignedDoctorId = doctor_id;
+    let assignedDepartmentId = department_id;
+    
+    // Doctors can only admit patients already in their authorized care set.
+    if (req.user.role === 'DOCTOR') {
+      const [[authorizedPatient]] = await connection.execute(`
+        SELECT 1 FROM (
+          SELECT patient_id FROM appointments WHERE doctor_id = ? AND patient_id = ?
+          UNION SELECT patient_id FROM admissions WHERE doctor_id = ? AND patient_id = ?
+          UNION SELECT patient_id FROM consultations WHERE doctor_id = ? AND patient_id = ?
+          UNION SELECT patient_id FROM lab_orders WHERE doctor_id = ? AND patient_id = ?
+          UNION SELECT patient_id FROM prescriptions WHERE doctor_id = ? AND patient_id = ?
+        ) AS authorized_patients LIMIT 1
+      `, [req.user.doctor_id, patient_id, req.user.doctor_id, patient_id, req.user.doctor_id, patient_id, req.user.doctor_id, patient_id, req.user.doctor_id, patient_id]);
+
+      if (!authorizedPatient) {
+        await connection.rollback();
+        return res.status(403).json({ success: false, message: 'Forbidden: patient is not under your care' });
+      }
+
+      const [[activeAdmission]] = await connection.execute(
+        'SELECT admission_id FROM admissions WHERE patient_id = ? AND status = "ACTIVE" FOR UPDATE',
+        [patient_id]
+      );
+      if (activeAdmission) {
+        await connection.rollback();
+        return res.status(409).json({ success: false, message: 'Patient already has an active admission' });
+      }
+
+      assignedDoctorId = req.user.doctor_id;
+    }
+    
+    // Lock the selected available bed. For doctors, derive the admission department
+    // from that bed's ward instead of trusting a client-supplied department id.
+    const [[bed]] = await connection.execute(`
+      SELECT b.bed_id, w.department_id
+      FROM beds b
+      JOIN wards w ON w.ward_id = b.ward_id
+      WHERE b.bed_id = ? AND b.status = "AVAILABLE"
+      FOR UPDATE
+    `, [bed_id]);
+    if (!bed) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: 'Bed is not available' });
+    }
+    if (req.user.role === 'DOCTOR') assignedDepartmentId = bed.department_id;
+
+    // The after_admission_insert trigger handles bed status, doctor workload, and log insertion
+    const [result] = await connection.execute('INSERT INTO admissions (patient_id, doctor_id, bed_id, department_id, admission_date, status, diagnosis, notes) VALUES (?, ?, ?, ?, NOW(), "ACTIVE", ?, ?)', [patient_id, assignedDoctorId, bed_id, assignedDepartmentId, diagnosis, notes]);
+
+    await connection.commit();
+    res.status(201).json({ success: true, data: { id: result.insertId } });
+  } catch (error) { 
+    await connection.rollback();
+    res.status(500).json({ success: false, message: error.message }); 
+  } finally {
+    connection.release();
+  }
+};
+exports.discharge = async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    
+    const [adms] = await connection.execute('SELECT * FROM admissions WHERE admission_id = ? AND status = "ACTIVE" FOR UPDATE', [req.params.id]);
+    if (adms.length === 0) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: 'Admission not active or not found' });
+    }
+    const admission = adms[0];
+
+    // Security check: ONLY assigned doctor (or ADMIN) can discharge
+    if (req.user.role === 'DOCTOR' && parseInt(admission.doctor_id) !== parseInt(req.user.doctor_id)) {
+      await connection.rollback();
+      return res.status(403).json({ success: false, message: 'Forbidden: Cannot discharge another doctor\'s patient' });
+    }
+
+    // The after_admission_discharge trigger handles bed status, doctor workload, and log updating.
+    await connection.execute('UPDATE admissions SET status = "DISCHARGED", discharge_date = NOW() WHERE admission_id = ?', [req.params.id]);
+
+    await connection.commit();
+    res.json({ success: true, message: 'Discharged successfully' });
+  } catch (error) { 
+    await connection.rollback();
+    res.status(500).json({ success: false, message: error.message }); 
+  } finally {
+    connection.release();
+  }
+};
