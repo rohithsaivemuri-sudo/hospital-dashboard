@@ -20,6 +20,14 @@ const mrnOf = (id) => `MRN-${String(id).padStart(6, '0')}`;
 const CLINICAL_ROLES = ['DOCTOR', 'NURSE'];
 const FREQUENCY_TEXT = { OD: 'Once daily', BD: 'Twice daily', TDS: 'Three times daily', QID: 'Four times daily', Q6H: 'Every 6 hours', Q8H: 'Every 8 hours', STAT: 'Immediately, once', PRN: 'As needed' };
 const ROUTES = ['ORAL', 'IV', 'IM', 'SC', 'SUBLINGUAL', 'INHALED', 'TOPICAL', 'RECTAL', 'OTHER'];
+// A labelled form field (the label wraps the control, so it is also its accessible name).
+const Field = ({ label, children }) => (
+  <label style={{ display: 'grid', gap: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+    {label}
+    {children}
+  </label>
+);
+
 const TABS_BY_ROLE = {
   DOCTOR: ['Overview', 'Visits', 'Vitals', 'Admissions', 'Lab Tests', 'Prescriptions', 'Surgery'],
   NURSE: ['Admissions', 'Vitals', 'Lab Tests', 'Prescriptions', 'Appointments'],
@@ -689,21 +697,25 @@ export default function PatientDetail() {
             <h2 style={{ marginTop: 0 }}>CREATE PRESCRIPTION</h2>
             <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                <select name="medicine_id" value={currentMed} onChange={e => setCurrentMed(e.target.value)} style={{ padding: '8px' }}><option value="">-- Select Medicine --</option>{medicines.map(m => (<option key={m.medicine_id} value={m.medicine_id}>{m.name} (Stock: {m.stock_quantity})</option>))}</select>
-                <input type="text" name="dosage" placeholder="Dosage (e.g. 500mg)" value={currentDosage} onChange={e => setCurrentDosage(e.target.value)} style={{ padding: '8px' }} />
-                <input type="text" name="frequency" placeholder="Frequency (e.g. Twice daily)" value={currentFreq} onChange={e => setCurrentFreq(e.target.value)} style={{ padding: '8px' }} />
-                <input type="text" name="duration" placeholder="Duration (e.g. 5 days)" value={currentDuration} onChange={e => setCurrentDuration(e.target.value)} style={{ padding: '8px' }} />
-                <input type="number" name="quantity" placeholder="Total Qty" value={currentQty} onChange={e => setCurrentQty(e.target.value)} style={{ padding: '8px' }} />
-                <select name="frequency_code" value={currentCode} onChange={e => { const c = e.target.value; setCurrentCode(c); if (c && !currentFreq) setCurrentFreq(FREQUENCY_TEXT[c]); }} style={{ padding: '8px' }}>
-                  <option value="">Frequency code (optional)</option>
-                  {Object.entries(FREQUENCY_TEXT).map(([code, text]) => <option key={code} value={code}>{code} — {text}</option>)}
-                </select>
-                <input type="number" min="1" name="duration_days" placeholder="Days (for the ward schedule)" value={currentDays} onChange={e => { setCurrentDays(e.target.value); if (e.target.value && !currentDuration) setCurrentDuration(`${e.target.value} days`); }} style={{ padding: '8px' }} />
-                <select name="route" value={currentRoute} onChange={e => setCurrentRoute(e.target.value)} style={{ padding: '8px' }}>
-                  {ROUTES.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
-                <input type="number" min="1" name="units_per_dose" placeholder="Units per dose (default 1)" value={currentUnits} onChange={e => setCurrentUnits(e.target.value)} style={{ padding: '8px' }} />
-                <button type="button" onClick={handleAddMedItem} style={{ padding: '8px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '4px' }}>+ Add Medicine</button>
+                <Field label="Medicine"><select name="medicine_id" value={currentMed} onChange={e => setCurrentMed(e.target.value)} style={{ padding: '8px' }}><option value="">-- Select Medicine --</option>{medicines.map(m => (<option key={m.medicine_id} value={m.medicine_id}>{m.name} (Stock: {m.stock_quantity})</option>))}</select></Field>
+                <Field label="Dose"><input type="text" name="dosage" placeholder="e.g. 500mg" value={currentDosage} onChange={e => setCurrentDosage(e.target.value)} style={{ padding: '8px' }} /></Field>
+                <Field label="Frequency (as written)"><input type="text" name="frequency" placeholder="e.g. Twice daily" value={currentFreq} onChange={e => setCurrentFreq(e.target.value)} style={{ padding: '8px' }} /></Field>
+                <Field label="Duration (as written)"><input type="text" name="duration" placeholder="e.g. 5 days" value={currentDuration} onChange={e => setCurrentDuration(e.target.value)} style={{ padding: '8px' }} /></Field>
+                <Field label="Total quantity"><input type="number" min="1" name="quantity" placeholder="e.g. 10" value={currentQty} onChange={e => setCurrentQty(e.target.value)} style={{ padding: '8px' }} /></Field>
+                <Field label="Frequency code (ward schedule, optional)">
+                  <select name="frequency_code" value={currentCode} onChange={e => { const c = e.target.value; setCurrentCode(c); if (c && !currentFreq) setCurrentFreq(FREQUENCY_TEXT[c]); }} style={{ padding: '8px' }}>
+                    <option value="">None</option>
+                    {Object.entries(FREQUENCY_TEXT).map(([code, text]) => <option key={code} value={code}>{code} — {text}</option>)}
+                  </select>
+                </Field>
+                <Field label="Days (ward schedule)"><input type="number" min="1" name="duration_days" placeholder="e.g. 5" value={currentDays} onChange={e => { setCurrentDays(e.target.value); if (e.target.value && !currentDuration) setCurrentDuration(`${e.target.value} days`); }} style={{ padding: '8px' }} /></Field>
+                <Field label="Route">
+                  <select name="route" value={currentRoute} onChange={e => setCurrentRoute(e.target.value)} style={{ padding: '8px' }}>
+                    {ROUTES.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </Field>
+                <Field label="Units per dose"><input type="number" min="1" name="units_per_dose" placeholder="Default 1" value={currentUnits} onChange={e => setCurrentUnits(e.target.value)} style={{ padding: '8px' }} /></Field>
+                <button type="button" onClick={handleAddMedItem} style={{ alignSelf: 'end', padding: '8px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '4px' }}>+ Add Medicine</button>
               </div>
             </div>
             {prescriptionItems.length > 0 && (
@@ -720,7 +732,7 @@ export default function PatientDetail() {
               </table>
             )}
             <form onSubmit={handleCreatePrescription}>
-              <div style={{ marginBottom: '16px' }}><label>Notes</label><textarea value={prescNotes} onChange={(e) => setPrescNotes(e.target.value)} style={{ width: '100%', padding: '8px', height: '60px' }} /></div>
+              <div style={{ marginBottom: '16px' }}><Field label="Notes"><textarea name="prescription_notes" value={prescNotes} onChange={(e) => setPrescNotes(e.target.value)} style={{ width: '100%', padding: '8px', height: '60px', boxSizing: 'border-box' }} /></Field></div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                 <button type="button" onClick={() => setShowPrescriptionModal(false)} style={{ padding: '8px 16px' }}>Cancel</button>
                 <button type="submit" style={{ padding: '8px 16px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px' }}>Create Prescription</button>

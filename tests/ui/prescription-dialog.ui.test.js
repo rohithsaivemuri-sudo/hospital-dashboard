@@ -65,4 +65,23 @@ test('a half-filled row is pointed out and nothing is sent', async () => {
   assert.equal(sent, false);
 });
 
+
+// Bug 3: every field in the dialog has a visible label that is also its accessible name.
+test('every Create Prescription field is labelled', async () => {
+  await openDialog();
+  const fields = await page.evaluate(() => {
+    const dialog = document.querySelector('select[name="medicine_id"]').closest('div[style*="max-height"]');
+    return [...dialog.querySelectorAll('input, select, textarea')].map(el => {
+      const label = el.closest('label') || (el.id && document.querySelector(`label[for="${el.id}"]`));
+      const text = label ? label.innerText.replace(el.innerText || '', '').trim().split('\n')[0] : '';
+      const r = label?.getBoundingClientRect();
+      return { name: el.name, label: text, visible: !!r && r.width > 0 && r.height > 0 };
+    });
+  });
+  assert.deepEqual(fields.map(f => f.name), ['medicine_id', 'dosage', 'frequency', 'duration', 'quantity', 'frequency_code', 'duration_days', 'route', 'units_per_dose', 'prescription_notes']);
+  for (const f of fields) assert.ok(f.label && f.visible, `${f.name} has no visible label`);
+  assert.deepEqual(fields.map(f => f.label), ['Medicine', 'Dose', 'Frequency (as written)', 'Duration (as written)', 'Total quantity',
+    'Frequency code (ward schedule, optional)', 'Days (ward schedule)', 'Route', 'Units per dose', 'Notes']);
+});
+
 test('no unreadable button was clicked', () => assert.deepEqual(violations, []));
