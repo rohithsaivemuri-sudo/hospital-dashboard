@@ -1,14 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { getPrescriptions, dispensePrescription, getPrescription, getMedicines, updateMedicineStock } from '../../services/api';
+import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function PharmacyDashboard() {
+  const { user } = useContext(AuthContext);
+  const canDispense = user?.role === 'PHARMACY';
   const [prescriptions, setPrescriptions] = useState([]);
   const [medicines, setMedicines] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   
   const [detail, setDetail] = useState(null);
+  const [dispensing, setDispensing] = useState(false);
+  const [dispenseError, setDispenseError] = useState(null);
   
   // Inventory Modals
   const [receiveStockMedicine, setReceiveStockMedicine] = useState(null);
@@ -46,6 +51,7 @@ export default function PharmacyDashboard() {
   const openDetail = async (id) => {
     try {
       const res = await getPrescription(id);
+      setDispenseError(null);
       setDetail(res.data.data);
     } catch (e) {
       toast.error('Failed to load prescription detail');
@@ -54,13 +60,23 @@ export default function PharmacyDashboard() {
 
   const handleDispense = async (id) => {
     if (!window.confirm("Verify items and dispense?")) return;
+    setDispensing(true);
+    setDispenseError(null);
     try {
       await dispensePrescription(id);
       toast.success('Prescription dispensed successfully');
       setDetail(null);
       load();
     } catch (e) {
-      toast.error(e.response?.data?.message || 'Unable to dispense prescription');
+      // The dispense runs in one transaction: on any failure nothing was dispensed and no stock changed.
+      setDispenseError(e.response?.data?.message || 'Unable to dispense prescription');
+      try {
+        const res = await getPrescription(id);
+        setDetail(res.data.data);
+      } catch { /* keep the current detail if the refresh fails */ }
+      load();
+    } finally {
+      setDispensing(false);
     }
   };
 
@@ -222,7 +238,7 @@ export default function PharmacyDashboard() {
           <div style={modalContentStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '16px' }}>
               <h2 style={{ margin: 0 }}>Prescription #{detail.prescription_id}</h2>
-              <button onClick={() => setDetail(null)} style={{ border: 'none', background: 'transparent', fontSize: '20px', cursor: 'pointer' }}>&times;</button>
+              <button onClick={() => { setDetail(null); setDispenseError(null); }} disabled={dispensing} style={{ border: 'none', background: 'transparent', fontSize: '20px', cursor: 'pointer' }}>&times;</button>
             </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
@@ -254,16 +270,27 @@ export default function PharmacyDashboard() {
               </tbody>
             </table>
             
-            {detail.status === 'CREATED' && (
+            {dispenseError && (
+              <div role="alert" style={{ padding: '12px 16px', marginBottom: '16px', background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '4px', color: '#b91c1c' }}>
+                <strong>Dispense cancelled — nothing was dispensed and no stock was changed.</strong>
+                <div style={{ marginTop: '4px' }}>{dispenseError}</div>
+              </div>
+            )}
+
+            {detail.status === 'CREATED' && canDispense && (
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                <button onClick={() => setDetail(null)} style={{ padding: '10px 16px', border: '1px solid var(--border)', background: 'white', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                <button onClick={() => { setDetail(null); setDispenseError(null); }} disabled={dispensing} style={{ padding: '10px 16px', border: '1px solid var(--border)', background: 'white', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
                 <button 
                   onClick={() => handleDispense(detail.prescription_id)} 
-                  style={{ padding: '10px 16px', border: 'none', background: 'var(--primary)', color: 'white', borderRadius: '4px', cursor: 'pointer' }}
+                  disabled={dispensing}
+                  style={{ padding: '10px 16px', border: 'none', background: 'var(--primary)', color: 'white', borderRadius: '4px', cursor: dispensing ? 'wait' : 'pointer', opacity: dispensing ? 0.7 : 1 }}
                 >
-                  Confirm Dispense All
+                  {dispensing ? 'Dispensing…' : 'Confirm Dispense All'}
                 </button>
               </div>
+            )}
+            {detail.status === 'CREATED' && !canDispense && (
+              <p style={{ textAlign: 'right', color: 'var(--text-secondary)', margin: 0 }}>Only pharmacy staff can dispense prescriptions.</p>
             )}
           </div>
         </div>

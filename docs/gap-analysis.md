@@ -5,7 +5,7 @@ This analysis checks the codebase (`main` @ `70b0729`) against *Professional HIS
 ## 1. Gap analysis (Sections G, I, K, L)
 | # | Feature (report ref) | Status | Evidence | Action |
 |---|---|---|---|---|
-| 1 | Deadlock-free dispensing (G, I-1, K-1, L-1) | **Partial** | `prescriptionController.js:133-137` locks medicines via JOIN in item order (unsorted, not deduped). Role check `:123` only blocks DOCTOR/LAB (Nurse/Reception/Admin can dispense). CHECK `stock_quantity>=0` and the trigger fail-safe exist ✔ | Aggregate qty per medicine_id, sort ASC, lock `medicines` rows sequentially FOR UPDATE, then return 400 `Insufficient Stock for Medicine ID X` (same shape). PHARMACY only. Loading state and error modal in PharmacyDashboard |
+| 1 | Deadlock-free dispensing (G, I-1, K-1, L-1) | **Done** (Phase 1 step 1; was Partial) | `prescriptionController.js:133-137` locks medicines via JOIN in item order (unsorted, not deduped). Role check `:123` only blocks DOCTOR/LAB (Nurse/Reception/Admin can dispense). CHECK `stock_quantity>=0` and the trigger fail-safe exist ✔ | Aggregate qty per medicine_id, sort ASC, lock `medicines` rows sequentially FOR UPDATE, then return 400 `Insufficient Stock for Medicine ID X` (same shape). PHARMACY only. Loading state and error modal in PharmacyDashboard |
 | 2 | Secure lab report retrieval (G, I-2, K-2, L-2) | **Partial** | Files in `server/uploads/lab-reports` are **not** publicly served (no `express.static` in server.js) ✔; DB stores `stored_filename` only ✔. But `downloadAttachment` (`labController.js:15`) and `getResult` (`:13`) have **no role or ownership check**, `listOrders` (`:10`) returns all orders to everyone, and there is no path containment check | Keep storage dir (already non-public). Add `GET /api/lab/reports/:result_id/download` (optional `?attachment_id`) and the same checks on the existing `/lab/attachments/:id`: LAB all, DOCTOR care-set, NURSE assigned, others 403. Add `path.resolve` containment check, then `fs.createReadStream`. Doctor "View Report" button in PatientDetail |
 | 3 | Audit logs + middleware (G, I-3, K-4) | **Missing** (stock ledger only) | No `audit_logs` table. `pharmacy_stock_movements` covers stock only | New `audit_logs`, made immutable by BEFORE UPDATE/DELETE triggers that SIGNAL. Non-blocking `res.on('finish')` middleware on PHI routers, with sanitized details JSON. LOGIN_SUCCESS/FAILED and 401/403 logged. In-transaction domain events for dispense/MAR |
 | 4 | Encounter lifecycle (G, I-4, K-3) | **Missing** | Consultations are tied to `appointment_id` (`schema.sql:191`). Appointment status updates accept any value from any role (`appointmentController.js:61-73`). DoctorDashboard drives CHECKED_IN→IN_PROGRESS→COMPLETED (`DoctorDashboard.jsx:130-131`) | New `encounters` table + state machine (see §3). Nullable `encounter_id` on consultations, lab_orders, prescriptions, surgery_requests, with backfill |
@@ -18,6 +18,15 @@ This analysis checks the codebase (`main` @ `70b0729`) against *Professional HIS
 | 10 | Vitals flowsheet (G, I-10, K-10) | **Missing** | none | `vital_signs` table with CHECK ranges, linked to encounter/admission. Nurse entry form + inline-SVG trend chart (no chart library) |
 | 11 | Socket.IO arrival event (I-11) | **Missing** | No per-doctor rooms; socket JWT is sent by the client but never verified | Verify JWT in `io.use`. `doctor:<id>` room. Emit `encounter:updated` on arrive/triage/start/finish; DoctorDashboard refreshes its queue |
 | L-tests | Deadlock, atomic rollback, 401, 403 role, 403 lateral, path traversal | **Missing** | no runner | Covered in §2 / per-feature tests |
+
+**Lock-order audit (step 1).** These paths lock or write `medicines` rows:
+- Dispense: fixed.
+- `POST /prescriptions`: its item inserts take shared FK locks in item order, a second deadlock source with dispense (872 deadlocks in a 300×4 stress run). It now takes those locks in sorted order first.
+- `POST /medicines/:id/stock`: holds one medicines row and never waits for another, so it cannot form a cycle.
+- `after_prescription_dispense` trigger: only touches rows dispense already holds.
+- `before_medicine_stock_update` trigger: takes no locks.
+
+The rule lives in `server/utils/medicineLocks.js`. Dispense also takes no `prescription_items` index gap locks before its medicines locks.
 
 **Already correct, left untouched:** JWT on all API routers; emergency allocation locking (`emergencyAllocationService.js`); doctor care-set isolation (definition kept, encounters added to it); multi-test ordering in one transaction (`labController.js:9`); multi-item prescriptions; negative-stock CHECK + trigger; stock movement ledger; upload type/size filter (`labController.js:4`); lab ORDERED→PROCESSING→COMPLETED with FOR UPDATE.
 

@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { lockMedicines } = require('../utils/medicineLocks');
 
 const checkDoctorAuth = async (req, patient_id) => {
   if (req.user.role !== 'DOCTOR') return true;
@@ -62,6 +63,9 @@ exports.create = async (req, res) => {
 
     const [result] = await connection.execute('INSERT INTO prescriptions (consultation_id, patient_id, doctor_id, prescription_date, status, notes) VALUES (?, ?, ?, NOW(), "CREATED", ?)', [consultation_id || null, patient_id, doctor_id, notes || null]);
     const prescription_id = result.insertId;
+    // Each prescription_items insert takes a shared FK lock on its medicines row. Take those
+    // locks up front in medicine_id order so prescribing cannot deadlock with dispensing.
+    await lockMedicines(connection, items.map(item => item.medicine_id), 'share');
     for (const item of items) {
       await connection.execute('INSERT INTO prescription_items (prescription_id, medicine_id, dosage, frequency, duration, quantity) VALUES (?, ?, ?, ?, ?, ?)', [prescription_id, item.medicine_id, item.dosage, item.frequency, item.duration, item.quantity]);
     }
@@ -120,7 +124,7 @@ exports.getByPatient = async (req, res) => {
 };
 
 exports.dispense = async (req, res) => {
-  if (req.user.role === 'DOCTOR' || req.user.role === 'LABORATORY') return res.status(403).json({ success: false, message: 'Forbidden: Cannot dispense medicine' });
+  if (req.user.role !== 'PHARMACY') return res.status(403).json({ success: false, message: 'Forbidden: Only pharmacy staff can dispense medicine' });
 
   const connection = await pool.getConnection();
   try {
@@ -130,24 +134,41 @@ exports.dispense = async (req, res) => {
       await connection.rollback();
       return res.status(409).json({ success: false, message: 'Prescription is not available for dispensing' });
     }
-    const [items] = await connection.execute(`
-      SELECT pi.item_id, pi.medicine_id, pi.quantity, m.stock_quantity
-      FROM prescription_items pi JOIN medicines m ON m.medicine_id = pi.medicine_id
-      WHERE pi.prescription_id = ? AND pi.dispensed = FALSE FOR UPDATE
-    `, [req.params.id]);
+    // Plain (non-locking) read: the prescriptions row lock above already serialises every
+    // dispenser of this prescription, and nothing else modifies its items. A locking read here
+    // would take gap locks on the prescription_items index ahead of the medicines locks, which
+    // can deadlock with a concurrent prescription create (medicines locks, then item inserts).
+    const [items] = await connection.execute(
+      'SELECT item_id, medicine_id, quantity FROM prescription_items WHERE prescription_id = ? AND dispensed = FALSE',
+      [req.params.id]
+    );
     if (!items.length) {
       await connection.rollback();
       return res.status(409).json({ success: false, message: 'No remaining items to dispense' });
     }
-    const unavailable = items.find(item => item.stock_quantity < item.quantity);
-    if (unavailable) {
-      await connection.rollback();
-      return res.status(400).json({ success: false, message: 'Insufficient stock for prescription item' });
+
+    // Deadlock prevention: total the quantity per medicine, then lock the medicines rows in
+    // ascending medicine_id order (see utils/medicineLocks.js) before checking stock.
+    const required = new Map();
+    for (const item of items) required.set(item.medicine_id, (required.get(item.medicine_id) || 0) + item.quantity);
+    const locked = await lockMedicines(connection, [...required.keys()]);
+    for (const medicineId of [...required.keys()].sort((a, b) => a - b)) {
+      const medicine = locked.get(medicineId);
+      if (!medicine || medicine.stock_quantity < required.get(medicineId)) {
+        await connection.rollback();
+        return res.status(400).json({ success: false, message: `Insufficient Stock for Medicine ID ${medicineId}` });
+      }
     }
     
     
     // Update items first to trigger stock reduction (actually wait, let's insert into pharmacy_stock_movements manually because the trigger only updates stock_quantity but doesn't log movement)
-    await connection.execute('UPDATE prescription_items SET dispensed = TRUE, dispensed_at = NOW() WHERE prescription_id = ? AND dispensed = FALSE', [req.params.id]);
+    // Update by primary key so only these item records are locked (no index gap locks).
+    const itemIds = items.map(item => item.item_id);
+    const [updated] = await connection.query('UPDATE prescription_items SET dispensed = TRUE, dispensed_at = NOW() WHERE item_id IN (?) AND dispensed = FALSE', [itemIds]);
+    if (updated.affectedRows !== itemIds.length) {
+      await connection.rollback();
+      return res.status(409).json({ success: false, message: 'Prescription is not available for dispensing' });
+    }
     
     // Log movements
     for (const item of items) {
