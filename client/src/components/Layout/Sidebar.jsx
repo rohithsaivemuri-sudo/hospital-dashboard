@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { FaHospital, FaUserInjured, FaUserMd, FaBed, FaAmbulance, FaExclamationTriangle, FaCalendarAlt, FaFlask, FaPills, FaFileInvoiceDollar, FaChartBar, FaSignOutAlt, FaUsersCog, FaUserNurse } from 'react-icons/fa';
+import { FaHospital, FaUserInjured, FaUserMd, FaBed, FaAmbulance, FaExclamationTriangle, FaCalendarAlt, FaFlask, FaPills, FaFileInvoiceDollar, FaChartBar, FaSignOutAlt, FaUsersCog, FaUserNurse, FaClipboardList } from 'react-icons/fa';
 
 export default function Sidebar() {
   const { logout, user } = useContext(AuthContext);
@@ -22,6 +22,7 @@ export default function Sidebar() {
     { name: 'Reports', path: '/reports', icon: <FaChartBar />, roles: ['ADMIN'] },
     { name: 'Staff Accounts', path: '/staff', icon: <FaUsersCog />, roles: ['ADMIN'] },
     { name: 'Nurse Assignments', path: '/nurse-assignments', icon: <FaUserNurse />, roles: ['ADMIN'] },
+    { name: 'Audit Log', path: '/audit', icon: <FaClipboardList />, roles: ['ADMIN'] },
   ].filter(nav => !nav.roles || nav.roles.includes(user?.role));
 
   return (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { Link } from 'react-router-dom';
 import { getDashboardStats } from '../services/api';
 import { SocketContext } from '../context/SocketContext';
 import { FaUserMd, FaBed, FaAmbulance, FaChartLine } from 'react-icons/fa';
@@ -120,6 +121,17 @@ export default function Dashboard() {
           color="var(--warning)" 
         />
       </div>
+
+      {/* Security: requests refused (401/403) in the last 24 hours, from the audit trail. */}
+      {stats?.deniedAccessLast24h !== undefined && (
+        <div data-testid="denied-access" style={{ marginTop: '24px', background: 'var(--bg-card)', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Denied access (last 24 hours)</div>
+            <div style={{ fontSize: '24px', fontWeight: 700, color: stats.deniedAccessLast24h ? 'var(--danger)' : 'var(--success)' }}>{stats.deniedAccessLast24h}</div>
+          </div>
+          <Link to={`/audit?outcome=DENIED&from=${(() => { const d = new Date(Date.now() - 864e5); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })()}`}>Review in audit log</Link>
+        </div>
+      )}
 
       {/* Laboratory workload: counts only. The work queue itself belongs to laboratory staff. */}
       {stats?.labWorkload && (

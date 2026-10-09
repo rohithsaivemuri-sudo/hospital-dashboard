@@ -38,6 +38,8 @@ const matrix = () => [
   ['POST', '/auth/register', [AD], {}],
   ['GET', '/dashboard/stats', [AD]],
   ['GET', '/users', [AD]],
+  ['GET', '/audit-logs', [AD]],
+  ['GET', '/audit-logs/actions', [AD]],
   ['PUT', '/users/999999/deactivate', [AD]],
   ['PUT', '/users/999999/reactivate', [AD]],
   ['GET', '/nurse-assignments', [AD, NU]],

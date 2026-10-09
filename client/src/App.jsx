@@ -28,6 +28,7 @@ import NurseStation from './pages/Nurse/NurseStation';
 import MedicationRecord from './pages/Nurse/MedicationRecord';
 import StaffAccounts from './pages/Admin/StaffAccounts';
 import NurseAssignments from './pages/Admin/NurseAssignments';
+import AuditLog from './pages/Admin/AuditLog';
 import AccessDenied from './components/AccessDenied';
 import { Toaster } from 'react-hot-toast';
 
@@ -99,6 +100,7 @@ function App() {
               <Route path="mar/:patientId" element={<RoleRoute roles={['NURSE', 'DOCTOR']}><MedicationRecord /></RoleRoute>} />
               <Route path="staff" element={<RoleRoute roles={['ADMIN']}><StaffAccounts /></RoleRoute>} />
               <Route path="nurse-assignments" element={<RoleRoute roles={['ADMIN']}><NurseAssignments /></RoleRoute>} />
+              <Route path="audit" element={<RoleRoute roles={['ADMIN']}><AuditLog /></RoleRoute>} />
             </Route>
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

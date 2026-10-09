@@ -107,6 +107,8 @@ export const uploadLabReport = (orderId, data) => api.post(`/lab/results/${order
 
 // Staff accounts (admin)
 export const getUsers = () => api.get('/users');
+export const getAuditLogs = (params) => api.get('/audit-logs', { params });
+export const getAuditActions = () => api.get('/audit-logs/actions');
 export const registerUser = (data) => api.post('/auth/register', data);
 export const deactivateUser = (id) => api.put(`/users/${id}/deactivate`);
 export const reactivateUser = (id) => api.put(`/users/${id}/reactivate`);
