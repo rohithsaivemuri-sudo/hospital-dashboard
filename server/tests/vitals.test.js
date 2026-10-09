@@ -198,3 +198,20 @@ test('the flowsheet returns readings oldest first with reference ranges, abnorma
   }
   assert.ok(read.length >= 1, 'flowsheet reads are logged');
 });
+
+test('nurse station visits carry the time of the last vitals recorded on each visit', async () => {
+  const p = await freePatient();
+  const walkIn = await api('POST', '/encounters', { token: reception.token, body: { patient_id: p, doctor_id: doctor.user.doctor_id } });
+  const id = walkIn.body.data.encounter_id;
+  const visit = async () => (await api('GET', '/nurse/station', { token: nurse.token })).body.data.open_visits.find(v => v.encounter_id === id);
+  assert.equal((await visit()).last_vitals_at, null);
+  const first = await record({ patient_id: p, encounter_id: id, pulse_bpm: 70 });
+  assert.equal((await visit()).last_vitals_at, first.body.data.recorded_at);
+  await new Promise(r => setTimeout(r, 1100));
+  const second = await record({ patient_id: p, encounter_id: id, pulse_bpm: 72 });
+  const v = await visit();
+  assert.equal(v.last_vitals_at, second.body.data.recorded_at, 'the latest reading');
+  assert.ok(v.last_vitals_at > first.body.data.recorded_at);
+  assert.ok(!('last_vitals_utc' in v));
+  await api('POST', `/encounters/${id}/cancel`, { token: reception.token });
+});

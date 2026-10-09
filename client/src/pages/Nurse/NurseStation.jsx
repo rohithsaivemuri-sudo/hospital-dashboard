@@ -9,6 +9,9 @@ import { useVitals, VitalsEntryForm } from '../Patients/VitalsPanel';
 import { hasAllergies } from '../../utils/patientIds';
 
 const card = { background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)' };
+// Visit status in the words the triage desk uses.
+const VISIT_STATUS = { ARRIVED: 'Arrived, waiting for triage', TRIAGED: 'Triaged, waiting for doctor', IN_PROGRESS: 'With the doctor' };
+const istTime = (iso) => `${new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' })} IST`;
 
 // Vitals at triage for one open visit, filed against that visit.
 function VitalsModal({ visit, onClose, onSaved }) {
@@ -112,15 +115,16 @@ export default function NurseStation() {
         <h2 style={{ marginTop: 0 }}>Outpatient visits</h2>
         {data.open_visits.length === 0 ? <p>No patients waiting.</p> : (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead><tr style={{ background: 'var(--bg-primary)' }}><th style={{ padding: '8px' }}>Patient</th><th style={{ padding: '8px' }}>Doctor</th><th style={{ padding: '8px' }}>Status</th><th style={{ padding: '8px' }}></th></tr></thead>
+            <thead><tr style={{ background: 'var(--bg-primary)' }}><th style={{ padding: '8px' }}>Patient</th><th style={{ padding: '8px' }}>Doctor</th><th style={{ padding: '8px' }}>Status</th><th style={{ padding: '8px' }}>Last vitals</th><th style={{ padding: '8px' }}></th></tr></thead>
             <tbody>
               {data.open_visits.map(v => (
-                <tr key={v.encounter_id} style={{ borderBottom: '1px solid var(--border)' }}>
+                <tr key={v.encounter_id} data-testid="visit-row" data-encounter={v.encounter_id} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '8px' }}><Link to={`/patients/${v.patient_id}`}>{v.patient_name}</Link></td>
                   <td style={{ padding: '8px' }}>{v.doctor_name}</td>
-                  <td style={{ padding: '8px' }}>{v.status.replace('_', ' ')}</td>
+                  <td data-testid="visit-status" style={{ padding: '8px' }}>{VISIT_STATUS[v.status] || v.status.replace('_', ' ')}</td>
+                  <td data-testid="visit-last-vitals" style={{ padding: '8px', color: v.last_vitals_at ? 'inherit' : 'var(--text-secondary)' }}>{v.last_vitals_at ? istTime(v.last_vitals_at) : 'Not taken'}</td>
                   <td style={{ padding: '8px' }}>
-                    <button data-testid="record-vitals" onClick={() => setVitalsFor(v)} style={{ padding: '4px 10px', marginRight: '6px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Record vitals</button>
+                    <button data-testid="record-vitals" onClick={() => setVitalsFor(v)} style={{ padding: '4px 10px', marginRight: '6px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>{v.last_vitals_at ? 'Retake vitals' : 'Record vitals'}</button>
                     {v.status === 'ARRIVED' && <button disabled={busy === v.encounter_id} onClick={() => triage(v)} style={{ padding: '4px 10px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Mark Triaged</button>}
                   </td>
                 </tr>

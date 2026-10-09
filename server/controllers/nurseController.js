@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { withTransaction } = require('../utils/audit');
 const { NURSE_WARDS_SQL } = require('../utils/patientAccess');
+const { fromSqlUtc } = require('../utils/marTime');
 
 const isId = (v) => /^[1-9]\d{0,9}$/.test(String(v));
 const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(String(v || ''));
@@ -100,10 +101,13 @@ exports.station = async (req, res) => {
       WHERE b.ward_id IN (${NURSE_WARDS_SQL})
       ORDER BY w.name, b.bed_number`, [req.user.user_id]);
     const [openVisits] = await pool.execute(`
-      SELECT e.encounter_id, e.status, e.arrived_at, e.appointment_id, p.patient_id, p.name AS patient_name, d.name AS doctor_name
+      SELECT e.encounter_id, e.status, e.arrived_at, e.appointment_id, p.patient_id, p.name AS patient_name, d.name AS doctor_name,
+             (SELECT DATE_FORMAT(MAX(v.recorded_at_utc), '%Y-%m-%d %H:%i:%s') FROM vital_signs v WHERE v.encounter_id = e.encounter_id) AS last_vitals_utc
       FROM encounters e JOIN patients p ON p.patient_id = e.patient_id JOIN doctors d ON d.doctor_id = e.doctor_id
       WHERE e.encounter_type = 'OUTPATIENT' AND e.status IN ('ARRIVED', 'TRIAGED', 'IN_PROGRESS')
       ORDER BY FIELD(e.status, 'ARRIVED', 'TRIAGED', 'IN_PROGRESS'), e.arrived_at`);
-    res.json({ success: true, data: { wards, beds, open_visits: openVisits } });
+    // last_vitals_at: when vitals were last recorded on this visit (ISO, UTC), or null.
+    const visits = openVisits.map(({ last_vitals_utc, ...v }) => ({ ...v, last_vitals_at: last_vitals_utc ? fromSqlUtc(last_vitals_utc).toISOString() : null }));
+    res.json({ success: true, data: { wards, beds, open_visits: visits } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
