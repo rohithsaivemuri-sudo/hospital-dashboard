@@ -8,8 +8,12 @@ exports.create = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Forbidden: Cannot create appointment for another doctor' });
     }
 
+    // appointments.department_id is NOT NULL: take it from the doctor being booked.
+    const [[doctor]] = await pool.execute('SELECT department_id FROM doctors WHERE doctor_id = ?', [doctor_id ?? null]);
+    if (!doctor) return res.status(400).json({ success: false, message: 'Doctor not found' });
+
     try {
-      const [result] = await pool.execute('INSERT INTO appointments (patient_id, doctor_id, appointment_date, appointment_time, reason, status) VALUES (?, ?, ?, ?, ?, "SCHEDULED")', [patient_id, doctor_id, appointment_date, appointment_time, reason]);
+      const [result] = await pool.execute('INSERT INTO appointments (patient_id, doctor_id, department_id, appointment_date, appointment_time, reason, status) VALUES (?, ?, ?, ?, ?, ?, "BOOKED")', [patient_id, doctor_id, doctor.department_id, appointment_date, appointment_time, reason ?? null]);
       res.status(201).json({ success: true, data: { id: result.insertId } });
     } catch(err) {
       if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ success: false, message: 'Double booking detected' });
