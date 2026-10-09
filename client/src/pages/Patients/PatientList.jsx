@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { AuthContext } from '../../context/AuthContext';
 import { getPatients } from '../../services/api';
 import toast from 'react-hot-toast';
-import { FaSearch, FaEye, FaUserInjured } from 'react-icons/fa';
+import { FaSearch, FaEye, FaUserInjured, FaUserPlus } from 'react-icons/fa';
 
 export default function PatientList() {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const { user } = useContext(AuthContext);
+  const canRegister = ['ADMIN', 'RECEPTIONIST'].includes(user?.role);
 
   useEffect(() => {
     fetchPatients();
@@ -45,6 +48,12 @@ export default function PatientList() {
           <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FaUserInjured color="var(--primary)" /> Patients
           </h2>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {canRegister && (
+            <Link to="/patients/new" style={{ textDecoration: 'none' }}>
+              <button style={{ padding: '8px 14px', borderRadius: '6px', border: 'none', backgroundColor: 'var(--success)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}><FaUserPlus /> Register Patient</button>
+            </Link>
+          )}
           <div style={{ position: 'relative', width: '300px' }}>
             <FaSearch style={{ position: 'absolute', left: '12px', top: '10px', color: 'var(--text-secondary)' }} />
             <input 
@@ -54,6 +63,7 @@ export default function PatientList() {
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{ width: '100%', padding: '8px 12px 8px 36px', border: '1px solid var(--border)', borderRadius: '6px', boxSizing: 'border-box' }}
             />
+          </div>
           </div>
         </div>
 

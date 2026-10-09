@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import DoctorDashboard from './pages/Doctors/DoctorDashboard';
 import PatientList from './pages/Patients/PatientList';
 import PatientDetail from './pages/Patients/PatientDetail';
+import PatientForm from './pages/Patients/PatientForm';
 import DoctorList from './pages/Doctors/DoctorList';
 import DoctorForm from './pages/Doctors/DoctorForm';
 import BedDashboard from './pages/Beds/BedDashboard';
@@ -79,6 +80,8 @@ function App() {
               
               {/* Pages and the roles that may open them (server-side checks mirror these; see docs/gap-analysis.md §4) */}
               <Route path="patients" element={<RoleRoute roles={['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']}><PatientList /></RoleRoute>} />
+              <Route path="patients/new" element={<RoleRoute roles={['ADMIN', 'RECEPTIONIST']}><PatientForm /></RoleRoute>} />
+              <Route path="patients/:id/edit" element={<RoleRoute roles={['ADMIN', 'RECEPTIONIST']}><PatientForm /></RoleRoute>} />
               <Route path="patients/:id" element={<RoleRoute roles={['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']}><PatientDetail /></RoleRoute>} />
               <Route path="appointments" element={<RoleRoute roles={['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']}><AppointmentList /></RoleRoute>} />
               <Route path="appointments/new" element={<RoleRoute roles={['ADMIN', 'RECEPTIONIST']}><AppointmentForm /></RoleRoute>} />

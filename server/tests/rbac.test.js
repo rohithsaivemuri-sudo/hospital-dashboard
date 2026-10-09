@@ -47,6 +47,7 @@ const matrix = () => [
 
   ['GET', '/patients', STAFF],
   ['POST', '/patients', [AD, RC], {}],
+  ['POST', '/patients/duplicates', [AD, RC], {}],
   ['GET', `/patients/${P}`, STAFF],
   ['PUT', '/patients/999999', [AD, RC], {}],
   ['GET', `/patients/${P}/history`, [DR, NU]],

@@ -5,6 +5,7 @@ import { FaPills, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
 import { getPatientMar, administerDose, refuseDose, missDose, giveAsNeeded, isForbidden } from '../../services/api';
 import AccessDenied from '../../components/AccessDenied';
+import { hasAllergies, allergyLabel } from '../../utils/patientIds';
 
 const ROUTES = ['ORAL', 'IV', 'IM', 'SC', 'SUBLINGUAL', 'INHALED', 'TOPICAL', 'RECTAL', 'OTHER'];
 const STATE_STYLE = {
@@ -62,7 +63,7 @@ export default function MedicationRecord() {
           <h1 style={{ margin: 0, fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><FaPills color="var(--primary)" /> {mar.patient.name}</h1>
           <span><strong>{mar.patient.age}</strong> yrs · {mar.patient.gender}</span>
           <span><strong>{mrnOf(mar.patient.patient_id)}</strong></span>
-          <span style={{ color: mar.patient.allergies ? 'var(--danger)' : 'var(--text-secondary)', fontWeight: mar.patient.allergies ? 'bold' : 'normal' }}>Allergies: {mar.patient.allergies || 'Not recorded'}</span>
+          <span style={{ color: hasAllergies(mar.patient.allergies) ? 'var(--danger)' : 'var(--text-secondary)', fontWeight: hasAllergies(mar.patient.allergies) ? 'bold' : 'normal' }}>Allergies: {allergyLabel(mar.patient.allergies)}</span>
           {mar.admission && <span>{mar.admission.ward_name} · Bed {mar.admission.bed_number}</span>}
           <Link to={`/patients/${mar.patient.patient_id}`} style={{ marginLeft: 'auto' }}>Patient chart</Link>
         </div>

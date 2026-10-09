@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { getPatient, getPatientHistory, createLabOrder, getLabTests, createPrescription, getMedicines, createAdmission, getAvailableBeds, getLabResult, downloadLabResultReport, createConsultation, createSurgeryRequest, dischargePatient, encounterAction, getPatientAdmissions, getPatientAppointments, isForbidden, cancelPrescription } from '../../services/api';
 import AccessDenied from '../../components/AccessDenied';
 import { AuthContext } from '../../context/AuthContext';
+import { formatAbha, hasAllergies, allergyLabel } from '../../utils/patientIds';
 import toast from 'react-hot-toast';
 
 const ageOf = (dob) => {
@@ -335,14 +336,16 @@ export default function PatientDetail() {
           <span><strong>{ageOf(patient.date_of_birth)}</strong> yrs · {patient.gender}</span>
           <span><strong>{mrnOf(patient.patient_id)}</strong></span>
           <span><strong>Blood</strong> {patient.blood_group || '—'}</span>
-          <span style={{ color: patient.allergies ? 'var(--danger)' : 'var(--text-secondary)', fontWeight: patient.allergies ? 'bold' : 'normal' }}>
-            <strong>Allergies</strong> {patient.allergies || 'Not recorded'}
+          <span data-testid="header-allergies" style={{ color: hasAllergies(patient.allergies) ? 'var(--danger)' : 'var(--text-secondary)', fontWeight: hasAllergies(patient.allergies) ? 'bold' : 'normal' }}>
+            <strong>Allergies</strong> {allergyLabel(patient.allergies)}
           </span>
           {currentAdmission && <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>ADMITTED · Bed #{currentAdmission.bed_id}</span>}
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 16px', marginTop: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
           <span>DOB {patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString() : 'N/A'}</span>
           <span>Contact {patient.phone || '—'}</span>
+          <span data-testid="header-abha">ABHA {patient.abha_number ? formatAbha(patient.abha_number) : '—'}</span>
+          {['ADMIN', 'RECEPTIONIST'].includes(user?.role) && <Link to={`/patients/${id}/edit`} data-testid="edit-patient">Edit details</Link>}
           {!CLINICAL_ROLES.includes(user?.role) ? null : openEncounter ? (
             <span data-testid="current-visit" style={{ color: 'var(--text-primary)' }}>
               <strong>Current visit:</strong> {openEncounter.status.replace('_', ' ')} with {openEncounter.doctor_name}

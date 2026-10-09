@@ -39,6 +39,7 @@ export const getPatients = (params) => api.get('/patients', { params });
 export const getPatient = (id) => api.get(`/patients/${id}`);
 export const createPatient = (data) => api.post('/patients', data);
 export const updatePatient = (id, data) => api.put(`/patients/${id}`, data);
+export const checkDuplicatePatients = (data) => api.post('/patients/duplicates', data);
 export const getPatientHistory = (id) => api.get(`/patients/${id}/history`);
 export const getPatientAdmissions = (id) => api.get(`/patients/${id}/admissions`);
 export const getPatientAppointments = (id) => api.get(`/patients/${id}/appointments`);
@@ -143,7 +144,7 @@ export const generateBill = (admissionId) => api.post(`/bills/generate/${admissi
 
 export default {
   login, getMe, getDashboardStats,
-  getPatients, getPatient, createPatient, updatePatient, getPatientHistory,
+  getPatients, getPatient, createPatient, updatePatient, checkDuplicatePatients, getPatientHistory,
   getDoctors, getDoctor, createDoctor, getAvailableDoctors, updateDoctorStatus, getDoctorAnalytics,
   getDepartments,
   getBeds, getAvailableBeds, getBedSummary, updateBedStatus,

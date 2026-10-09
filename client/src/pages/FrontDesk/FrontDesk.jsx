@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { FaConciergeBell, FaPlus, FaSearch } from 'react-icons/fa';
+import { FaConciergeBell, FaPlus, FaSearch, FaUserPlus } from 'react-icons/fa';
 import { getAppointments, getEncounterQueue, getPatients, checkInAppointment, updateAppointmentStatus, isForbidden } from '../../services/api';
 import AccessDenied from '../../components/AccessDenied';
 
@@ -64,9 +64,14 @@ export default function FrontDesk() {
     <div style={{ padding: '24px', display: 'grid', gap: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}><FaConciergeBell color="var(--primary)" /> Front Desk</h1>
-        <Link to="/appointments/new" style={{ textDecoration: 'none' }}>
-          <button style={{ ...btn('var(--primary)'), padding: '8px 16px', fontSize: '14px' }}><FaPlus /> Book Appointment</button>
-        </Link>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Link to="/patients/new" style={{ textDecoration: 'none' }}>
+            <button style={{ ...btn('var(--success)'), padding: '8px 16px', fontSize: '14px' }}><FaUserPlus /> Register Patient</button>
+          </Link>
+          <Link to="/appointments/new" style={{ textDecoration: 'none' }}>
+            <button style={{ ...btn('var(--primary)'), padding: '8px 16px', fontSize: '14px' }}><FaPlus /> Book Appointment</button>
+          </Link>
+        </div>
       </div>
 
       <div style={card}>
