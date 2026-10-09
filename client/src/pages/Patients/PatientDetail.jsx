@@ -601,9 +601,9 @@ export default function PatientDetail() {
             <h2 style={{ marginTop: 0 }}>{labView.test_name} — Result</h2>
             {labView.result ? (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                <div><strong>Value:</strong> {labView.result.result_value} {labView.result.unit}</div>
+                <div><strong>Value:</strong> <span data-testid="lab-value" style={{ fontWeight: 'bold', color: labView.result.interpretation && labView.result.interpretation !== 'NORMAL' ? 'var(--danger)' : 'inherit' }}>{labView.result.result_value} {labView.result.unit}</span></div>
                 <div><strong>Interpretation:</strong> <span style={{ fontWeight: 'bold', color: labView.result.interpretation && labView.result.interpretation !== 'NORMAL' ? 'var(--danger)' : 'inherit' }}>{labView.result.interpretation || '—'}</span></div>
-                <div><strong>Reference Range:</strong> {labView.result.reference_range || '—'}</div>
+                <div><strong>Reference Range:</strong> {labView.result.reference_range || '—'}{labView.result.interpretation_source ? <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}> · flag {labView.result.interpretation_source === 'AUTO' ? 'automatic' : 'manual'}</span> : null}</div>
                 <div><strong>Reported:</strong> {new Date(labView.result.result_date).toLocaleString()}</div>
                 <div style={{ gridColumn: '1 / -1' }}><strong>Technician Notes:</strong> {labView.result.technician_notes || 'None'}</div>
               </div>

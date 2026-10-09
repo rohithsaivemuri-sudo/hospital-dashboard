@@ -9,7 +9,9 @@ export default function LabDashboard() {
   const [today, setToday] = useState(false);
   
   const [selected, setSelected] = useState(null);
-  const [result, setResult] = useState({ result_value: '', unit: '', reference_range: '', interpretation: 'NORMAL', technician_notes: '' });
+  const EMPTY_RESULT = { result_value: '', unit: '', reference_low: '', reference_high: '', interpretation: '', escalate: false, technician_notes: '' };
+  const [result, setResult] = useState(EMPTY_RESULT);
+  const [layout, setLayout] = useState('board');
   const [file, setFile] = useState(null);
   
   const [view, setView] = useState(null);
@@ -34,6 +36,32 @@ export default function LabDashboard() {
 
   const counts = s => orders.filter(o => o.status === s).length;
 
+  // Same rule as the server (utils/labRanges.js): a whole-number/decimal value against the bounds.
+  const numericValue = /^\s*-?\d+(\.\d+)?\s*$/.test(result.result_value) ? Number(result.result_value) : null;
+  const low = result.reference_low === '' ? null : Number(result.reference_low);
+  const high = result.reference_high === '' ? null : Number(result.reference_high);
+  const autoFlag = numericValue == null || (low == null && high == null) ? null
+    : low != null && numericValue < low ? 'LOW' : high != null && numericValue > high ? 'HIGH' : 'NORMAL';
+  const flagColor = (f) => (f === 'CRITICAL' || f === 'HIGH' || f === 'LOW' ? 'var(--danger)' : f === 'NORMAL' ? 'var(--success)' : 'inherit');
+  const sameUnit = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
+
+  const bound = v => (v == null ? '' : String(Number(v))); // DECIMAL comes back as "70.0000"
+  const openEntry = (o) => {
+    setSelected(o);
+    setResult({ ...EMPTY_RESULT, unit: o.unit || '', reference_low: bound(o.reference_low), reference_high: bound(o.reference_high) });
+  };
+  // Changing the unit away from the test's unit drops its default bounds (never compare across units).
+  const changeUnit = (unit) => setResult(r => {
+    const defaults = String(r.reference_low) === bound(selected.reference_low) && String(r.reference_high) === bound(selected.reference_high);
+    return { ...r, unit, ...(defaults && !sameUnit(unit, selected.unit) ? { reference_low: '', reference_high: '' } : defaults && sameUnit(unit, selected.unit) ? { reference_low: bound(selected.reference_low), reference_high: bound(selected.reference_high) } : {}) };
+  });
+
+  const actionFor = (o) => (o.status === 'ORDERED'
+    ? <button onClick={() => startProcessing(o.order_id)} style={{ padding: '6px 12px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Start Processing</button>
+    : o.status === 'PROCESSING'
+      ? <button onClick={() => openEntry(o)} style={{ padding: '6px 12px', background: 'var(--warning)', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Enter Result</button>
+      : <button onClick={() => showResult(o.order_id)} style={{ padding: '6px 12px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>View Result</button>);
+
   const startProcessing = async id => {
     try {
       await updateLabOrderStatus(id, 'PROCESSING');
@@ -47,7 +75,18 @@ export default function LabDashboard() {
   const saveResult = async e => {
     e.preventDefault();
     try {
-      await addLabResult({ order_id: selected.order_id, ...result });
+      const res = await addLabResult({
+        order_id: selected.order_id,
+        result_value: result.result_value,
+        unit: result.unit,
+        technician_notes: result.technician_notes,
+        ...(result.reference_low !== '' ? { reference_low: Number(result.reference_low) } : {}),
+        ...(result.reference_high !== '' ? { reference_high: Number(result.reference_high) } : {}),
+        // The server computes the flag when it can; a manual one is only sent when it cannot (or to escalate).
+        ...(result.escalate ? { interpretation: 'CRITICAL' } : !autoFlag && result.interpretation ? { interpretation: result.interpretation } : {}),
+      });
+      const flag = res.data?.data?.interpretation;
+      if (flag && flag !== 'NORMAL') toast(`Result flagged ${flag}`, { icon: '⚠️' });
       if (file) {
         const f = new FormData();
         f.append('report', file);
@@ -55,6 +94,7 @@ export default function LabDashboard() {
       }
       toast.success('Result completed');
       setSelected(null);
+      setResult(EMPTY_RESULT);
       setFile(null);
       load();
     } catch (e) {
@@ -128,6 +168,31 @@ export default function LabDashboard() {
           </label>
         </div>
         
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          {['board', 'table'].map(l => (
+            <button key={l} onClick={() => setLayout(l)} style={{ padding: '6px 14px', borderRadius: 4, border: '1px solid var(--border)', background: layout === l ? 'var(--primary)' : 'transparent', color: layout === l ? 'white' : 'inherit', cursor: 'pointer' }}>
+              {l === 'board' ? 'Board' : 'Table'}
+            </button>
+          ))}
+        </div>
+        {layout === 'board' && (
+          <div data-testid="lab-board" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+            {[['ORDERED', 'Awaiting processing'], ['PROCESSING', 'Processing'], ['COMPLETED', 'Completed']].map(([st, label]) => (
+              <div key={st} data-column={st} style={{ background: 'var(--bg-primary)', borderRadius: 8, padding: 12 }}>
+                <h3 style={{ margin: '0 0 12px', fontSize: 15 }}>{label} <span style={{ color: 'var(--text-secondary)' }}>({rows.filter(o => o.status === st).length})</span></h3>
+                {rows.filter(o => o.status === st).map(o => (
+                  <div key={o.order_id} data-order={o.order_id} style={{ background: 'var(--bg-card)', borderRadius: 6, padding: 10, marginBottom: 10, boxShadow: 'var(--shadow)', borderLeft: `4px solid ${o.interpretation && o.interpretation !== 'NORMAL' ? 'var(--danger)' : 'var(--border)'}` }}>
+                    <div style={{ fontWeight: 'bold' }}>#{o.order_id} {o.test_name}</div>
+                    <div style={{ fontSize: 13 }}>{o.patient_name} · Dr. {o.doctor_name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '4px 0 8px' }}>{new Date(o.order_date).toLocaleString()}{o.interpretation ? <strong style={{ color: flagColor(o.interpretation), marginLeft: 8 }}>{o.interpretation}</strong> : null}</div>
+                    {actionFor(o)}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+        {layout === 'table' && (
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ background: 'var(--bg-primary)' }}>
@@ -158,17 +223,14 @@ export default function LabDashboard() {
                   </span>
                 </td>
                 <td style={{ padding: 12, borderBottom: '1px solid var(--border)' }}>
-                  {o.status === 'ORDERED' ? 
-                    <button onClick={() => startProcessing(o.order_id)} style={{ padding: '6px 12px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Start Processing</button> 
-                  : o.status === 'PROCESSING' ? 
-                    <button onClick={() => { setSelected(o); setResult(r => ({ ...r, unit: o.unit || '', reference_range: o.normal_range || '' })); }} style={{ padding: '6px 12px', background: 'var(--warning)', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Enter Result</button> 
-                  : <button onClick={() => showResult(o.order_id)} style={{ padding: '6px 12px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>View Result</button>}
+                  {actionFor(o)}
                 </td>
               </tr>
             ))}
             {rows.length === 0 && <tr><td colSpan="7" style={{ padding: 24, textAlign: 'center' }}>No orders found</td></tr>}
           </tbody>
         </table>
+        )}
       </div>
       
       {/* ENTER RESULT MODAL */}
@@ -181,24 +243,40 @@ export default function LabDashboard() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: 8 }}>Result Value</label>
-                  <input required value={result.result_value} onChange={e => setResult({...result, result_value: e.target.value})} style={{ width: '100%', padding: 8, boxSizing: 'border-box' }} />
+                  <input required name="result_value" value={result.result_value} onChange={e => setResult({...result, result_value: e.target.value})} style={{ width: '100%', padding: 8, boxSizing: 'border-box', borderColor: autoFlag && autoFlag !== 'NORMAL' ? 'var(--danger)' : undefined, color: autoFlag && autoFlag !== 'NORMAL' ? 'var(--danger)' : 'inherit', fontWeight: autoFlag && autoFlag !== 'NORMAL' ? 'bold' : 'normal', borderWidth: 2 }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: 8 }}>Unit</label>
-                  <input value={result.unit} onChange={e => setResult({...result, unit: e.target.value})} style={{ width: '100%', padding: 8, boxSizing: 'border-box' }} />
+                  <input name="unit" value={result.unit} onChange={e => changeUnit(e.target.value)} style={{ width: '100%', padding: 8, boxSizing: 'border-box' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: 8 }}>Reference Range</label>
-                  <input value={result.reference_range} onChange={e => setResult({...result, reference_range: e.target.value})} style={{ width: '100%', padding: 8, boxSizing: 'border-box' }} />
+                  <label style={{ display: 'block', marginBottom: 8 }}>Reference Range <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>(test: {selected.normal_range || '—'})</span></label>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input name="reference_low" type="number" step="any" placeholder="Low" value={result.reference_low} onChange={e => setResult({...result, reference_low: e.target.value})} style={{ width: '100%', padding: 8, boxSizing: 'border-box' }} />
+                    <span>–</span>
+                    <input name="reference_high" type="number" step="any" placeholder="High" value={result.reference_high} onChange={e => setResult({...result, reference_high: e.target.value})} style={{ width: '100%', padding: 8, boxSizing: 'border-box' }} />
+                  </div>
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: 8 }}>Interpretation</label>
-                  <select value={result.interpretation} onChange={e => setResult({...result, interpretation: e.target.value})} style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}>
-                    <option value="NORMAL">Normal</option>
-                    <option value="LOW">Low</option>
-                    <option value="HIGH">High</option>
-                    <option value="CRITICAL">Critical</option>
-                  </select>
+                  {autoFlag ? (
+                    <div data-testid="auto-flag" style={{ padding: 8, fontWeight: 'bold', color: flagColor(result.escalate ? 'CRITICAL' : autoFlag) }}>
+                      {result.escalate ? 'CRITICAL (escalated)' : `${autoFlag} (automatic)`}
+                    </div>
+                  ) : (
+                    <select name="interpretation" value={result.interpretation} onChange={e => setResult({...result, interpretation: e.target.value})} style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}>
+                      <option value="">Not flagged</option>
+                      <option value="NORMAL">Normal</option>
+                      <option value="LOW">Low</option>
+                      <option value="HIGH">High</option>
+                      <option value="CRITICAL">Critical</option>
+                    </select>
+                  )}
+                  {autoFlag && (
+                    <label style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4, fontSize: 13 }}>
+                      <input type="checkbox" name="escalate" checked={result.escalate} onChange={e => setResult({...result, escalate: e.target.checked})} /> Escalate as CRITICAL
+                    </label>
+                  )}
                 </div>
               </div>
               <div style={{ marginBottom: 16 }}>
@@ -224,9 +302,9 @@ export default function LabDashboard() {
           <div style={modalContentStyle}>
             <h2>Lab Result Details</h2>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16, borderBottom: '1px solid var(--border)', paddingBottom: 16 }}>
-              <div><strong>Value:</strong> {view.result?.result_value} {view.result?.unit}</div>
+              <div><strong>Value:</strong> <span style={{ color: flagColor(view.result?.interpretation), fontWeight: 'bold' }}>{view.result?.result_value} {view.result?.unit}</span></div>
               <div><strong>Interpretation:</strong> <span style={{ color: view.result?.interpretation === 'CRITICAL' ? 'red' : 'inherit', fontWeight: 'bold' }}>{view.result?.interpretation}</span></div>
-              <div><strong>Reference Range:</strong> {view.result?.reference_range}</div>
+              <div><strong>Reference Range:</strong> {view.result?.reference_range || '—'}{view.result?.interpretation_source ? ` · flag ${view.result.interpretation_source === 'AUTO' ? 'automatic' : 'manual'}` : ''}</div>
               <div><strong>Performed By:</strong> {view.result?.performed_by_name}</div>
               <div style={{ gridColumn: '1 / -1' }}><strong>Notes:</strong> {view.result?.technician_notes || 'None'}</div>
             </div>

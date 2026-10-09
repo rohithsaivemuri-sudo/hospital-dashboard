@@ -3,6 +3,7 @@ const pool=require('../config/db');
 const { canAccessLabReports, isInDoctorCareSet, patientFilter } = require('../utils/patientAccess');
 const { writeAudit, withTransaction } = require('../utils/audit');
 const { resolveEncounterForRecord } = require('../utils/encounters');
+const { parseRange, parseNumeric, interpret, sameUnit } = require('../utils/labRanges');
 // Report files live outside any web root; they are only ever served by the authorised handlers below.
 // LAB_REPORT_DIR lets the test suite use a throwaway directory.
 const dir=path.resolve(process.env.LAB_REPORT_DIR||path.join(__dirname,'..','uploads','lab-reports'));fs.mkdirSync(dir,{recursive:true});
@@ -13,9 +14,43 @@ const docAuth=async(q,p)=>q.user.role!=='DOCTOR'||isInDoctorCareSet(q.user.docto
 exports.getTests=async(q,s)=>{try{const[r]=await pool.execute('SELECT * FROM lab_tests');s.json({success:true,data:r})}catch(e){s.status(500).json({success:false,message:e.message})}};
 exports.createOrder=async(q,s)=>{const c=await pool.getConnection();try{if(['LABORATORY','PHARMACY'].includes(q.user.role))return s.status(403).json({success:false,message:'Forbidden'});let{patient_id,doctor_id,test_id,tests,notes,encounter_id}=q.body,list=tests||(test_id?[{test_id}]:[]);if(!list.length)return s.status(400).json({success:false,message:'No tests provided'});if(q.user.role==='DOCTOR'&&(Number(doctor_id)!==Number(q.user.doctor_id)||!(await docAuth(q,patient_id))))return s.status(403).json({success:false,message:'Forbidden'});await c.beginTransaction();const enc=await resolveEncounterForRecord(c,{encounterId:encounter_id,patientId:patient_id,doctorId:doctor_id});let ids=[];for(const t of list){const[x]=await c.execute('INSERT INTO lab_orders (patient_id,doctor_id,test_id,order_date,status,notes,encounter_id) VALUES (?,?,?,NOW(),"ORDERED",?,?)',[patient_id,doctor_id,t.test_id,notes??null,enc]);ids.push(x.insertId)}await writeAudit(c,q,{action:'CREATE_LAB_ORDER',entityType:'lab_order',entityId:ids[0],patientId:patient_id,details:{order_ids:ids,test_ids:list.map(t=>Number(t.test_id)),encounter_id:enc}});await c.commit();s.status(201).json({success:true,data:{ids,id:ids[0]}})}catch(e){await c.rollback();s.status(e.status||500).json({success:false,message:e.message})}finally{c.release()}};
 // Lab staff see every order; doctors and nurses only orders for their own patients.
-exports.listOrders=async(q,s)=>{try{const f=patientFilter(q.user,'lab','o.patient_id');const[r]=await pool.query(`SELECT o.*,p.name patient_name,t.name test_name,t.unit,t.normal_range,d.name doctor_name,lr.result_id FROM lab_orders o JOIN patients p ON p.patient_id=o.patient_id JOIN lab_tests t ON t.test_id=o.test_id JOIN doctors d ON d.doctor_id=o.doctor_id LEFT JOIN lab_results lr ON lr.order_id=o.order_id${f?` WHERE ${f.sql}`:''} ORDER BY o.order_date DESC`,f?f.params:[]);s.json({success:true,data:r})}catch(e){s.status(e.status||500).json({success:false,message:e.message})}};
+exports.listOrders=async(q,s)=>{try{const f=patientFilter(q.user,'lab','o.patient_id');const[r]=await pool.query(`SELECT o.*,p.name patient_name,t.name test_name,t.unit,t.normal_range,t.reference_low,t.reference_high,t.critical_low,t.critical_high,d.name doctor_name,lr.result_id,lr.interpretation FROM lab_orders o JOIN patients p ON p.patient_id=o.patient_id JOIN lab_tests t ON t.test_id=o.test_id JOIN doctors d ON d.doctor_id=o.doctor_id LEFT JOIN lab_results lr ON lr.order_id=o.order_id${f?` WHERE ${f.sql}`:''} ORDER BY o.order_date DESC`,f?f.params:[]);s.json({success:true,data:r})}catch(e){s.status(e.status||500).json({success:false,message:e.message})}};
 exports.updateOrderStatus=async(q,s)=>{try{if(!lab(q,s))return;if(q.body.status!=='PROCESSING')return s.status(400).json({success:false,message:'Only PROCESSING is allowed'});const r=await withTransaction(q,async(c,audit)=>{const[u]=await c.execute('UPDATE lab_orders SET status="PROCESSING" WHERE order_id=? AND status="ORDERED"',[q.params.id]);if(u.affectedRows){const[[o]]=await c.execute('SELECT patient_id FROM lab_orders WHERE order_id=?',[q.params.id]);await audit({action:'UPDATE_LAB_ORDER_STATUS',entityType:'lab_order',entityId:q.params.id,patientId:o.patient_id,details:{from:'ORDERED',to:'PROCESSING'}})}return u});if(!r.affectedRows)return s.status(409).json({success:false,message:'Order is not available for processing'});s.json({success:true})}catch(e){s.status(500).json({success:false,message:e.message})}};
-exports.addResult=async(q,s)=>{const c=await pool.getConnection();try{if(!lab(q,s))return;const{order_id,result_value,unit,reference_range,interpretation,technician_notes}=q.body;await c.beginTransaction();const[[o]]=await c.execute('SELECT order_id,patient_id FROM lab_orders WHERE order_id=? AND status="PROCESSING" FOR UPDATE',[order_id]);if(!o){await c.rollback();return s.status(409).json({success:false,message:'Order must be PROCESSING'})}const[r]=await c.execute('INSERT INTO lab_results (order_id,result_value,unit,reference_range,interpretation,technician_notes,performed_by,result_date) VALUES (?,?,?,?,?,?,?,NOW())',[order_id,result_value,unit||null,reference_range||null,interpretation||null,technician_notes||null,q.user.user_id]);await c.execute('UPDATE lab_orders SET status="COMPLETED" WHERE order_id=?',[order_id]);await writeAudit(c,q,{action:'RECORD_LAB_RESULT',entityType:'lab_result',entityId:r.insertId,patientId:o.patient_id,details:{order_id:Number(order_id),order_status:{from:'PROCESSING',to:'COMPLETED'},interpretation:interpretation||null}});await c.commit();s.status(201).json({success:true,data:{id:r.insertId}})}catch(e){await c.rollback();s.status(500).json({success:false,message:e.message})}finally{c.release()}};
+// POST /api/lab/results. Accepts the original payload { order_id, result_value, unit, reference_range,
+// interpretation, technician_notes } plus optional numeric reference_low / reference_high.
+// Bounds come from (1) reference_low/high, else (2) the reference_range text if it is unambiguous
+// numeric ("a-b", "<x", ">x"), else (3) the test's default range when the units match. A numeric value
+// with bounds is flagged automatically (AUTO); a technician may still escalate to CRITICAL. Text
+// results, unparsed ranges and unit mismatches are never auto-flagged: the technician's interpretation
+// (if any) is kept as MANUAL.
+const INTERPRETATIONS=['NORMAL','LOW','HIGH','CRITICAL'];
+const optNumber=(v,name)=>{if(v===undefined||v===null||v==='')return null;const n=Number(v);if(!Number.isFinite(n))throw Object.assign(new Error(`${name} must be a number`),{status:400});return n};
+exports.addResult=async(q,s)=>{const c=await pool.getConnection();try{if(!lab(q,s))return;
+  const{order_id,result_value,unit,reference_range,interpretation,technician_notes}=q.body;
+  if(interpretation!=null&&interpretation!==''&&!INTERPRETATIONS.includes(interpretation))return s.status(400).json({success:false,message:`interpretation must be one of ${INTERPRETATIONS.join(', ')}`});
+  let low=optNumber(q.body.reference_low,'reference_low'),high=optNumber(q.body.reference_high,'reference_high');
+  if(low!=null&&high!=null&&low>high)return s.status(400).json({success:false,message:'reference_low cannot be above reference_high'});
+  await c.beginTransaction();
+  const[[o]]=await c.execute('SELECT order_id,patient_id,test_id FROM lab_orders WHERE order_id=? AND status="PROCESSING" FOR UPDATE',[order_id]);
+  if(!o){await c.rollback();return s.status(409).json({success:false,message:'Order must be PROCESSING'})}
+  const[[t]]=await c.execute('SELECT unit,reference_low,reference_high,critical_low,critical_high FROM lab_tests WHERE test_id=?',[o.test_id]);
+  const num=v=>(v==null?null:Number(v));
+  let resultUnit=unit||null,critical={};
+  if(low==null&&high==null){const parsed=parseRange(reference_range);if(parsed){low=parsed.low;high=parsed.high}}
+  if(low==null&&high==null&&(!resultUnit||sameUnit(resultUnit,t.unit))&&(t.reference_low!=null||t.reference_high!=null||t.critical_low!=null||t.critical_high!=null)){
+    low=num(t.reference_low);high=num(t.reference_high);critical={criticalLow:num(t.critical_low),criticalHigh:num(t.critical_high)};resultUnit=resultUnit||t.unit}
+  else if(sameUnit(resultUnit||t.unit,t.unit)){critical={criticalLow:num(t.critical_low),criticalHigh:num(t.critical_high)}}
+  const value=parseNumeric(result_value);
+  const auto=interpret(value,{low,high,...critical});
+  let finalInterp=null,source=null;
+  if(auto&&interpretation==='CRITICAL'&&auto!=='CRITICAL'){finalInterp='CRITICAL';source='MANUAL'}
+  else if(auto){finalInterp=auto;source='AUTO'}
+  else if(interpretation){finalInterp=interpretation;source='MANUAL'}
+  const rangeText=reference_range||(low!=null&&high!=null?`${low}-${high}`:high!=null?`<${high}`:low!=null?`>${low}`:null);
+  const[r]=await c.execute('INSERT INTO lab_results (order_id,result_value,unit,reference_range,interpretation,technician_notes,performed_by,result_date,numeric_value,reference_low,reference_high,interpretation_source) VALUES (?,?,?,?,?,?,?,NOW(),?,?,?,?)',[order_id,result_value,resultUnit,rangeText,finalInterp,technician_notes||null,q.user.user_id,value,low,high,source]);
+  await c.execute('UPDATE lab_orders SET status="COMPLETED" WHERE order_id=?',[order_id]);
+  await writeAudit(c,q,{action:'RECORD_LAB_RESULT',entityType:'lab_result',entityId:r.insertId,patientId:o.patient_id,details:{order_id:Number(order_id),order_status:{from:'PROCESSING',to:'COMPLETED'},interpretation:finalInterp,interpretation_source:source}});
+  await c.commit();s.status(201).json({success:true,data:{id:r.insertId,interpretation:finalInterp,interpretation_source:source,reference_low:low,reference_high:high}})}catch(e){await c.rollback();s.status(e.status||500).json({success:false,message:e.message})}finally{c.release()}};
 const isId=v=>/^[1-9]\d{0,9}$/.test(String(v));
 const REPORT_FORBIDDEN={success:false,message:'Forbidden: lab results are available only to laboratory staff and the patient\'s own doctors and nurses'};
 // Streams one attachment row's file. The stored filename comes from the database, but the resolved

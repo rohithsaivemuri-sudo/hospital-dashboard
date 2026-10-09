@@ -144,10 +144,12 @@ test('lab order, processing, result and report upload are each audited', async (
   assert.equal(repeat.res.status, 409);
   assert.equal(repeat.rows.length, 0);
 
+  // CBC's default range is 4500-11000 cells/mcL: a value of 42 is flagged LOW automatically (step 7),
+  // overriding the manual "HIGH" sent in the old payload shape.
   const result = await changeRows(() => api('POST', '/lab/results', { token: lab.token, body: { order_id: orderId, result_value: '42', interpretation: 'HIGH', technician_notes: NOTE_MARKER } }));
   assert.equal(result.rows[0].action, 'RECORD_LAB_RESULT');
   assert.equal(result.rows[0].patient_id, patientId);
-  assert.equal(parse(result.rows[0]).interpretation, 'HIGH');
+  assert.deepEqual([parse(result.rows[0]).interpretation, parse(result.rows[0]).interpretation_source], ['LOW', 'AUTO']);
 
   const form = new FormData();
   form.append('report', new Blob([Buffer.from('%PDF-1.4\n%%EOF\n')], { type: 'application/pdf' }), 'Patient Name Report.pdf');
