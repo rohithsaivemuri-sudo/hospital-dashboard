@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import { SocketContext } from '../../context/SocketContext';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FaConciergeBell, FaPlus, FaSearch, FaUserPlus } from 'react-icons/fa';
@@ -33,6 +34,14 @@ export default function FrontDesk() {
     }
   };
   useEffect(() => { load(); }, []);
+  // Live updates (ids and status only): refetch through the API.
+  const socket = useContext(SocketContext);
+  useEffect(() => {
+    if (!socket) return;
+    const EVENTS = ['encounter:updated'];
+    EVENTS.forEach(e => socket.on(e, load));
+    return () => EVENTS.forEach(e => socket.off(e, load));
+  }, [socket]);
 
   const run = async (apt, label, fn) => {
     setBusyId(apt.appointment_id);

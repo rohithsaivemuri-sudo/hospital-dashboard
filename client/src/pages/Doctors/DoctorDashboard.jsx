@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
+import { SocketContext } from '../../context/SocketContext';
 import { getDoctor, getAppointments, getPatients, getDoctorAnalytics, getCurrentAdmissions, encounterAction } from '../../services/api';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -7,6 +8,7 @@ import { FaUserMd, FaHospitalUser, FaExclamationTriangle, FaCalendarCheck, FaNot
 
 export default function DoctorDashboard() {
   const { user } = useContext(AuthContext);
+  const socket = useContext(SocketContext);
   const [doctor, setDoctor] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
@@ -20,6 +22,33 @@ export default function DoctorDashboard() {
       fetchDashboardData();
     }
   }, [user]);
+
+  // Live queue: the server sends encounter:updated { encounterId, status } for this doctor's visits
+  // (check-in, triage, start, finish, cancel); refetch today's appointments without a full reload.
+  useEffect(() => {
+    if (!socket) return;
+    const refreshQueue = async ({ status } = {}) => {
+      if (status === 'ARRIVED') toast('A patient has checked in', { icon: '🔔' });
+      if (status === 'TRIAGED') toast('A patient has been triaged', { icon: '🩺' });
+      try {
+        const d = new Date();
+        const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const apptRes = await getAppointments({ date: today });
+        setAppointments(apptRes.data?.data || apptRes.data || []);
+      } catch (err) { console.error(err); }
+    };
+    const refreshAdmissions = async () => {
+      try { setAdmissions((await getCurrentAdmissions()).data?.data || []); } catch (err) { console.error(err); }
+    };
+    socket.on('encounter:updated', refreshQueue);
+    socket.on('admission:new', refreshAdmissions);
+    socket.on('admission:discharged', refreshAdmissions);
+    return () => {
+      socket.off('encounter:updated', refreshQueue);
+      socket.off('admission:new', refreshAdmissions);
+      socket.off('admission:discharged', refreshAdmissions);
+    };
+  }, [socket]);
 
   const fetchDashboardData = async () => {
     try {

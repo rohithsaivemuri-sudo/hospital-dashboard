@@ -35,15 +35,18 @@ export default function EmergencyQueue() {
       fetchQueue();
     };
 
-    socket.on('emergency:queue_updated', handleQueueUpdate);
-    socket.on('emergency:new', () => {
+    const handleNew = () => {
       toast.error('New Emergency Patient Arrived!', { icon: '🚨' });
       fetchQueue();
-    });
+    };
+    const QUEUE_EVENTS = ['emergency:allocated', 'emergency:no-bed', 'emergency:no-doctor'];
+
+    socket.on('emergency:new', handleNew);
+    QUEUE_EVENTS.forEach(e => socket.on(e, handleQueueUpdate));
 
     return () => {
-      socket.off('emergency:queue_updated', handleQueueUpdate);
-      socket.off('emergency:new');
+      socket.off('emergency:new', handleNew);
+      QUEUE_EVENTS.forEach(e => socket.off(e, handleQueueUpdate));
     };
   }, [socket]);
 

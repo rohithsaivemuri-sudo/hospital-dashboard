@@ -66,8 +66,8 @@ export default function Dashboard() {
       fetchStats();
     };
 
-    const handleEmergency = (data) => {
-      toast('Emergency Update: ' + (data?.message || 'New patient allocated'), { icon: '🚑' });
+    const handleEmergency = () => {
+      toast('Emergency update: a patient was allocated a bed', { icon: '🚑' });
       fetchStats();
     };
 

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import { SocketContext } from '../../context/SocketContext';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FaUserNurse } from 'react-icons/fa';
@@ -46,6 +47,14 @@ export default function NurseStation() {
     }
   };
   useEffect(() => { load(); }, []);
+  // Live updates (ids and status only): refetch through the API.
+  const socket = useContext(SocketContext);
+  useEffect(() => {
+    if (!socket) return;
+    const EVENTS = ['encounter:updated', 'admission:new', 'admission:discharged', 'bed:updated'];
+    EVENTS.forEach(e => socket.on(e, load));
+    return () => EVENTS.forEach(e => socket.off(e, load));
+  }, [socket]);
 
   const triage = async (visit) => {
     setBusy(visit.encounter_id);

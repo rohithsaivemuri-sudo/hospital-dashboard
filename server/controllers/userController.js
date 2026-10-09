@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { withTransaction } = require('../utils/audit');
+const { disconnectUser } = require('../utils/realtime');
 
 const isId = (v) => /^[1-9]\d{0,9}$/.test(String(v));
 
@@ -31,6 +32,7 @@ const setActive = (active) => async (req, res) => {
       return { status: 200 };
     });
     if (result.status !== 200) return res.status(result.status).json({ success: false, message: result.message });
+    if (!active) disconnectUser(req.params.id); // live connections end with the account
     res.json({ success: true, message: active ? 'Account reactivated' : 'Account deactivated' });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };

@@ -11,6 +11,7 @@
 // details must carry ids, enum/status values and changed field names only. sanitizeDetails()
 // enforces that: secret-looking keys are dropped and long strings (free text) are removed.
 const pool = require('../config/db');
+const { flushAfterCommit, discardAfterCommit } = require('./realtime');
 
 const SENSITIVE_KEY = /pass(word)?|token|secret|authori[sz]ation|jwt|cookie|session/i;
 const MAX_STRING = 64; // enum values, statuses, short codes; anything longer is treated as free text
@@ -90,8 +91,10 @@ async function withTransaction(req, fn) {
     await connection.beginTransaction();
     const result = await fn(connection, (entry) => writeAudit(connection, req, entry));
     await connection.commit();
+    flushAfterCommit(req); // real-time events for what was just committed
     return result;
   } catch (error) {
+    discardAfterCommit(req);
     await connection.rollback();
     throw error;
   } finally {

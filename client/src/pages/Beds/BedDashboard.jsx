@@ -50,19 +50,17 @@ export default function BedDashboard() {
   useEffect(() => {
     if (!socket) return;
     
-    const handleBedUpdate = (data) => {
-      toast.success(`Bed ${data?.bedNumber || ''} status updated`);
+    // The server sends bed:updated { bedId, status } for status changes, admissions, discharges and
+    // emergency allocations; the board refetches through the API.
+    const handleBedUpdate = () => {
+      toast.success('Bed status updated');
       fetchData();
     };
 
-    socket.on('bed:status_changed', handleBedUpdate);
-    socket.on('bed:allocated', handleBedUpdate);
-    socket.on('bed:discharged', handleBedUpdate);
+    socket.on('bed:updated', handleBedUpdate);
 
     return () => {
-      socket.off('bed:status_changed', handleBedUpdate);
-      socket.off('bed:allocated', handleBedUpdate);
-      socket.off('bed:discharged', handleBedUpdate);
+      socket.off('bed:updated', handleBedUpdate);
     };
   }, [socket]);
 

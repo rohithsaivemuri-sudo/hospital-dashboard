@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const { writeAudit } = require('../utils/audit');
 const { NURSE_WARDS_SQL } = require('../utils/patientAccess');
 const { cancelPendingDoses } = require('../services/marService');
+const realtime = require('../utils/realtime');
 
 const atMaxMessage = (d) => `${d.name} is at maximum workload (${d.current_workload} of ${d.max_workload} patients). Choose another doctor or discharge a patient first.`;
 exports.list = async (req, res) => {
@@ -106,7 +107,7 @@ exports.create = async (req, res) => {
     // Lock the selected available bed. For doctors, derive the admission department
     // from that bed's ward instead of trusting a client-supplied department id.
     const [[bed]] = await connection.execute(`
-      SELECT b.bed_id, w.department_id
+      SELECT b.bed_id, b.ward_id, w.department_id
       FROM beds b
       JOIN wards w ON w.ward_id = b.ward_id
       WHERE b.bed_id = ? AND b.status = "AVAILABLE"
@@ -138,6 +139,10 @@ exports.create = async (req, res) => {
       details: { bed_id: Number(bed_id), doctor_id: Number(assignedDoctorId), department_id: Number(assignedDepartmentId) } });
 
     await connection.commit();
+    realtime.bedUpdated({ bedId: bed.bed_id, status: 'OCCUPIED' });
+    realtime.doctorUpdated({ doctorId: assignedDoctorId });
+    realtime.admissionEvent('admission:new', { admissionId: result.insertId, status: 'ACTIVE', doctorId: assignedDoctorId, wardId: bed.ward_id });
+    realtime.dashboardRefresh();
     res.status(201).json({ success: true, data: { id: result.insertId } });
   } catch (error) { 
     await connection.rollback();
@@ -176,6 +181,12 @@ exports.discharge = async (req, res) => {
       details: { from: 'ACTIVE', to: 'DISCHARGED', bed_id: admission.bed_id, doses_cancelled: dosesCancelled } });
 
     await connection.commit();
+    // The discharge trigger sets the bed's new status; report what it is now.
+    const [[bedNow]] = await pool.execute('SELECT bed_id, ward_id, status FROM beds WHERE bed_id = ?', [admission.bed_id]);
+    if (bedNow) realtime.bedUpdated({ bedId: bedNow.bed_id, status: bedNow.status });
+    realtime.doctorUpdated({ doctorId: admission.doctor_id });
+    realtime.admissionEvent('admission:discharged', { admissionId: admission.admission_id, status: 'DISCHARGED', doctorId: admission.doctor_id, wardId: bedNow?.ward_id });
+    realtime.dashboardRefresh();
     res.json({ success: true, message: 'Discharged successfully' });
   } catch (error) { 
     await connection.rollback();

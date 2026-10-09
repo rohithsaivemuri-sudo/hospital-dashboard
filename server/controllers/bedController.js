@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { withTransaction } = require('../utils/audit');
+const { bedUpdated } = require('../utils/realtime');
 exports.list = async (req, res) => {
   try {
     const [rows] = await pool.execute('SELECT b.*, w.name as ward_name FROM beds b LEFT JOIN wards w ON b.ward_id = w.ward_id');
@@ -38,8 +39,7 @@ exports.updateStatus = async (req, res) => {
       await connection.execute('UPDATE beds SET status = ? WHERE bed_id = ?', [status, req.params.id]);
       if (before && before.status !== status) await audit({ action: 'UPDATE_BED_STATUS', entityType: 'bed', entityId: before.bed_id, details: { from: before.status, to: status } });
     });
-    const io = req.app.get('io');
-    if (io) io.emit('bed:updated', { bedId: req.params.id, status });
+    bedUpdated({ bedId: req.params.id, status });
     res.json({ success: true, message: 'Updated successfully' });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };

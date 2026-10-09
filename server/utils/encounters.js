@@ -10,6 +10,7 @@
 // appointment row locked first, so the two can never disagree. Lock order: appointment ->
 // encounter. Any other transition is rejected with 409.
 const { writeAudit } = require('./audit');
+const { afterCommit, encounterUpdated } = require('./realtime');
 
 const TRANSITIONS = {
   triage: { from: ['ARRIVED'], to: 'TRIAGED', stamp: 'triaged_at' },
@@ -49,6 +50,8 @@ async function lockEncounter(connection, encounterId) {
 }
 
 async function auditTransition(connection, req, encounter, from, to, appointment) {
+  const doctorId = encounter.doctor_id ?? appointment?.doctor_id;
+  afterCommit(req, () => encounterUpdated({ encounterId: encounter.encounter_id, status: to, doctorId }));
   await writeAudit(connection, req, {
     action: AUDIT_ACTION[to], entityType: 'encounter', entityId: encounter.encounter_id, patientId: encounter.patient_id,
     details: {
@@ -77,7 +80,7 @@ async function arriveAppointment(connection, req, appointmentId) {
       'INSERT INTO encounters (patient_id, doctor_id, appointment_id, encounter_type, status, arrived_at, created_by) VALUES (?, ?, ?, "OUTPATIENT", "ARRIVED", NOW(), ?)',
       [appointment.patient_id, appointment.doctor_id, appointment.appointment_id, req.user.user_id]
     );
-    encounter = { encounter_id: result.insertId, patient_id: appointment.patient_id, status: null };
+    encounter = { encounter_id: result.insertId, patient_id: appointment.patient_id, doctor_id: appointment.doctor_id, status: null };
   }
   await connection.execute('UPDATE appointments SET status = "CHECKED_IN" WHERE appointment_id = ?', [appointmentId]);
   await auditTransition(connection, req, encounter, encounter.status, 'ARRIVED', appointment);
@@ -94,7 +97,7 @@ async function arriveWalkIn(connection, req, { patientId, doctorId }) {
     'INSERT INTO encounters (patient_id, doctor_id, encounter_type, status, arrived_at, created_by) VALUES (?, ?, "OUTPATIENT", "ARRIVED", NOW(), ?)',
     [patient.patient_id, doctor.doctor_id, req.user.user_id]
   );
-  await auditTransition(connection, req, { encounter_id: result.insertId, patient_id: patient.patient_id }, null, 'ARRIVED', null);
+  await auditTransition(connection, req, { encounter_id: result.insertId, patient_id: patient.patient_id, doctor_id: doctor.doctor_id }, null, 'ARRIVED', null);
   return result.insertId;
 }
 

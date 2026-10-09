@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { withTransaction, changedFields, writeAudit } = require('../utils/audit');
 const { allocateEmergencyResources } = require('../services/emergencyAllocationService');
+const { emergencyEvent, dashboardRefresh } = require('../utils/realtime');
 
 exports.create = async (req, res) => {
   try {
@@ -13,8 +14,8 @@ exports.create = async (req, res) => {
       await audit({ action: 'CREATE_EMERGENCY', entityType: 'emergency_case', entityId: inserted.insertId, patientId: patient_id, details: { severity } });
       return inserted;
     });
-    const io = req.app.get('io');
-    if (io) io.emit('emergency:new', { id: result.insertId, severity, patient_id });
+    emergencyEvent('emergency:new', { emergencyId: result.insertId, status: 'WAITING' });
+    dashboardRefresh();
     res.status(201).json({ success: true, data: { id: result.insertId } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };

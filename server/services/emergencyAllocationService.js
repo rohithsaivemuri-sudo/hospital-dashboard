@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const realtime = require('../utils/realtime');
 
 // audit(connection, entry), when given, is called before each COMMIT so the allocation and its
 // audit row are written in the same transaction.
@@ -46,7 +47,7 @@ async function allocateEmergencyResources(emergencyId, io, audit) {
       await connection.commit();
       
       if (io) {
-        io.emit('emergency:no-bed', { emergencyId, message: 'No available bed. Patient in queue.' });
+        realtime.emergencyEvent('emergency:no-bed', { emergencyId, status: 'WAITING' });
       }
       
       return { success: false, message: 'No available bed matching requirements. Patient remains in queue.', queued: true };
@@ -87,7 +88,7 @@ async function allocateEmergencyResources(emergencyId, io, audit) {
         await connection.commit();
         
         if (io) {
-          io.emit('emergency:no-doctor', { emergencyId, message: 'No available doctor.' });
+          realtime.emergencyEvent('emergency:no-doctor', { emergencyId, status: 'WAITING' });
         }
         
         return { success: false, message: 'No available doctor. Patient remains in queue.', queued: true };
@@ -136,11 +137,12 @@ async function allocateEmergencyResources(emergencyId, io, audit) {
 
     // 9. Emit Socket.IO events
     if (io) {
-      io.emit('emergency:allocated', result.allocation);
-      io.emit('bed:updated', { bedId: bed.bed_id, status: 'OCCUPIED' });
-      io.emit('doctor:updated', { doctorId: doctor.doctor_id });
-      io.emit('admission:new', { admissionId: admissionResult.insertId });
-      io.emit('dashboard:refresh');
+      // Ids and status only; the full allocation is in the API response.
+      realtime.emergencyEvent('emergency:allocated', { emergencyId, status: 'ALLOCATED', admissionId: admissionResult.insertId, bedId: bed.bed_id, doctorId: doctor.doctor_id });
+      realtime.bedUpdated({ bedId: bed.bed_id, status: 'OCCUPIED' });
+      realtime.doctorUpdated({ doctorId: doctor.doctor_id });
+      realtime.admissionEvent('admission:new', { admissionId: admissionResult.insertId, status: 'ACTIVE', doctorId: doctor.doctor_id, wardId: bed.ward_id });
+      realtime.dashboardRefresh();
     }
 
     return result;

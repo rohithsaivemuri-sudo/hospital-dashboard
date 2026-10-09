@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { withTransaction, changedFields } = require('../utils/audit');
+const { emergencyEvent, dashboardRefresh } = require('../utils/realtime');
 exports.list = async (req, res) => {
   try {
     const [rows] = await pool.execute('SELECT * FROM ambulances');
@@ -54,8 +55,8 @@ exports.reportEmergency = async (req, res) => {
       await audit({ action: 'CREATE_EMERGENCY', entityType: 'emergency_case', entityId: inserted.insertId, patientId: patient_id, details: { ambulance_id: Number(req.params.id), severity } });
       return inserted;
     });
-    const io = req.app.get('io');
-    if (io) io.emit('emergency:new', { id: result.insertId, severity, patient_id });
+    emergencyEvent('emergency:new', { emergencyId: result.insertId, status: 'WAITING' });
+    dashboardRefresh();
     res.status(201).json({ success: true, data: { id: result.insertId } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
