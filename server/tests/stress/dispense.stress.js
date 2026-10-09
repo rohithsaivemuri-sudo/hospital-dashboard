@@ -2,7 +2,7 @@
 // Not part of `npm test`: it takes ~1 minute. Rebuilds hospital_db_test and runs its own server.
 //   STRESS_ROUNDS (default 300) rounds of each scenario; exits 1 on any deadlock, error or stock drift.
 const { globalSetup, globalTeardown } = require('../global-setup');
-const { USERS, api, login, db, closeDb } = require('../helpers');
+const { USERS, api, login, db, closeDb, setStock, stockMismatches } = require('../helpers');
 
 const ROUNDS = Number(process.env.STRESS_ROUNDS || 300);
 const WIDTH = 4; // concurrent create/dispense pairs per round in scenario 1
@@ -24,7 +24,8 @@ async function main() {
   const [[{ patient_id }]] = await db().query('SELECT patient_id FROM appointments WHERE doctor_id = ? LIMIT 1', [doctor.user.doctor_id]);
   const prescribe = (items) => api('POST', '/prescriptions', { token: doctor.token, body: { patient_id, doctor_id: doctor.user.doctor_id, items } });
   const dispense = (id) => api('POST', `/prescriptions/${id}/dispense`, { token: pharmacy.token });
-  await db().query('UPDATE medicines SET stock_quantity = 1000000 WHERE medicine_id IN (?, ?)', [MED_A, MED_B]);
+  await setStock(MED_A, 1000000);
+  await setStock(MED_B, 1000000);
 
   let failed = false;
   const report = (name, { deadlocks, errors, consistent }) => {
@@ -78,6 +79,10 @@ async function main() {
       deadlocks, errors, consistent: a1 === a0 - dispensed - adjustments && b1 === b0 - dispensed + 2 * receipts,
     });
   }
+
+  const mismatches = await stockMismatches();
+  if (mismatches.length) failed = true;
+  console.log(`${mismatches.length ? 'FAIL' : 'OK  '} every medicine's total equals the sum of its batches (${mismatches.length} mismatches)`);
 
   await closeDb();
   await globalTeardown();

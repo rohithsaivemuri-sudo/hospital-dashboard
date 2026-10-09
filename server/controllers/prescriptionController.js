@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { lockMedicines } = require('../utils/medicineLocks');
+const { lockBatches, allocate, decrementBatches } = require('../utils/batches');
 const { writeAudit } = require('../utils/audit');
 const { resolveEncounterForRecord } = require('../utils/encounters');
 
@@ -149,34 +150,49 @@ exports.dispense = async (req, res) => {
     const required = new Map();
     for (const item of items) required.set(item.medicine_id, (required.get(item.medicine_id) || 0) + item.quantity);
     const locked = await lockMedicines(connection, [...required.keys()]);
+
+    // FEFO: for each medicine (same ascending order) lock its unexpired batches, earliest expiry
+    // first, and allocate each item's quantity across them. Expired stock is never dispensed.
+    const allocations = new Map(); // item_id -> [{ batch_id, batch_number, quantity }]
     for (const medicineId of [...required.keys()].sort((a, b) => a - b)) {
       const medicine = locked.get(medicineId);
-      if (!medicine || medicine.stock_quantity < required.get(medicineId)) {
+      const batches = medicine ? await lockBatches(connection, medicineId, { usableOnly: true }) : [];
+      const usable = batches.reduce((sum, b) => sum + b.quantity, 0);
+      if (!medicine || medicine.stock_quantity < required.get(medicineId) || usable < required.get(medicineId)) {
         await connection.rollback();
-        return res.status(400).json({ success: false, message: `Insufficient Stock for Medicine ID ${medicineId}` });
+        return res.status(400).json({ success: false, message: `Insufficient Stock for Medicine ID ${medicineId}`, available_unexpired: usable });
+      }
+      for (const item of items.filter(i => i.medicine_id === medicineId).sort((a, b) => a.item_id - b.item_id)) {
+        allocations.set(item.item_id, allocate(batches, item.quantity));
       }
     }
-    
-    
-    // Update items first to trigger stock reduction (actually wait, let's insert into pharmacy_stock_movements manually because the trigger only updates stock_quantity but doesn't log movement)
+
     // Update by primary key so only these item records are locked (no index gap locks).
+    // The after_prescription_dispense trigger decrements medicines.stock_quantity per item; the
+    // same quantities come off the batches below, keeping the total equal to the sum of batches.
     const itemIds = items.map(item => item.item_id);
     const [updated] = await connection.query('UPDATE prescription_items SET dispensed = TRUE, dispensed_at = NOW() WHERE item_id IN (?) AND dispensed = FALSE', [itemIds]);
     if (updated.affectedRows !== itemIds.length) {
       await connection.rollback();
       return res.status(409).json({ success: false, message: 'Prescription is not available for dispensing' });
     }
-    
-    // Log movements
+
+    // Take stock off the batches, record which batches each item came from, and log one movement
+    // per item and batch.
     for (const item of items) {
-      await connection.execute('INSERT INTO pharmacy_stock_movements (medicine_id, movement_type, quantity, reason, reference_id, performed_by) VALUES (?, "DISPENSE", ?, "Dispense Prescription", ?, ?)', [item.medicine_id, -item.quantity, req.params.id, req.user.user_id]);
+      const taken = allocations.get(item.item_id);
+      await decrementBatches(connection, taken);
+      for (const t of taken) {
+        await connection.execute('INSERT INTO prescription_item_batches (item_id, batch_id, quantity) VALUES (?, ?, ?)', [item.item_id, t.batch_id, t.quantity]);
+        await connection.execute('INSERT INTO pharmacy_stock_movements (medicine_id, movement_type, quantity, reason, reference_id, performed_by, batch_id) VALUES (?, "DISPENSE", ?, "Dispense Prescription", ?, ?, ?)', [item.medicine_id, -t.quantity, req.params.id, req.user.user_id, t.batch_id]);
+      }
     }
     
     // Then update prescription status
 
     await connection.execute('UPDATE prescriptions SET status = "DISPENSED" WHERE prescription_id = ?', [req.params.id]);
     await writeAudit(connection, req, { action: 'DISPENSE_PRESCRIPTION', entityType: 'prescription', entityId: Number(req.params.id), patientId: prescription.patient_id,
-      details: { from: prescription.status, to: 'DISPENSED', items: items.map(item => ({ item_id: item.item_id, medicine_id: item.medicine_id, quantity: item.quantity })) } });
+      details: { from: prescription.status, to: 'DISPENSED', items: items.map(item => ({ item_id: item.item_id, medicine_id: item.medicine_id, quantity: item.quantity, batches: allocations.get(item.item_id).map(t => ({ batch_id: t.batch_id, quantity: t.quantity })) })) } });
     
     await connection.commit();
     res.json({ success: true, message: 'Dispensed successfully' });

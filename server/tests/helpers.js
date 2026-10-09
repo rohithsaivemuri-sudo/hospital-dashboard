@@ -62,8 +62,34 @@ function db() {
   return pool;
 }
 
+// Sets a medicine's stock the way production keeps it: total and batches together. All existing
+// batches are emptied and the quantity goes into one TEST-STOCK batch (far-future expiry by default).
+async function setStock(medicineId, quantity, { expiry = '2099-12-31' } = {}) {
+  const conn = await db().getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query('SELECT medicine_id FROM medicines WHERE medicine_id = ? FOR UPDATE', [medicineId]);
+    await conn.query('UPDATE medicine_batches SET quantity = 0 WHERE medicine_id = ?', [medicineId]);
+    await conn.query(
+      `INSERT INTO medicine_batches (medicine_id, batch_number, quantity, expiry_date) VALUES (?, 'TEST-STOCK', ?, ?)
+       ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), expiry_date = VALUES(expiry_date)`,
+      [medicineId, quantity, expiry]
+    );
+    await conn.query('UPDATE medicines SET stock_quantity = ? WHERE medicine_id = ?', [quantity, medicineId]);
+    await conn.commit();
+  } catch (e) { await conn.rollback(); throw e; } finally { conn.release(); }
+}
+
+// Medicines whose total differs from the sum of their batches (should always be empty).
+async function stockMismatches() {
+  const [rows] = await db().query(`SELECT m.medicine_id, m.stock_quantity, COALESCE(SUM(b.quantity), 0) AS batch_total
+    FROM medicines m LEFT JOIN medicine_batches b ON b.medicine_id = m.medicine_id
+    GROUP BY m.medicine_id, m.stock_quantity HAVING m.stock_quantity <> COALESCE(SUM(b.quantity), 0)`);
+  return rows;
+}
+
 async function closeDb() {
   if (pool) { await pool.end(); pool = undefined; }
 }
 
-module.exports = { TEST_PORT, BASE, TEST_DB, LAB_REPORT_DIR, SERVER_STDERR, PASSWORD, USERS, api, rawRequest, login, db, closeDb };
+module.exports = { TEST_PORT, BASE, TEST_DB, LAB_REPORT_DIR, SERVER_STDERR, PASSWORD, USERS, api, rawRequest, login, db, closeDb, setStock, stockMismatches };

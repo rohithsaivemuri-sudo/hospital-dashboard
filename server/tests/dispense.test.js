@@ -1,7 +1,7 @@
 // Phase 1 step 1 (report Section L, Spec 1): transaction-safe, deadlock-free dispensing.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { USERS, api, login, db, closeDb } = require('./helpers');
+const { USERS, api, login, db, closeDb, setStock } = require('./helpers');
 
 after(closeDb);
 
@@ -23,7 +23,6 @@ before(async () => {
   );
 });
 
-const setStock = (medicineId, qty) => db().query('UPDATE medicines SET stock_quantity = ? WHERE medicine_id = ?', [qty, medicineId]);
 const stockOf = async (medicineId) => (await db().query('SELECT stock_quantity FROM medicines WHERE medicine_id = ?', [medicineId]))[0][0].stock_quantity;
 const item = (medicine_id, quantity) => ({ medicine_id, dosage: '1 tab', frequency: 'Once daily', duration: '1 day', quantity });
 

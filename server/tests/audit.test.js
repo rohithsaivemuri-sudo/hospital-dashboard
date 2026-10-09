@@ -3,7 +3,7 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
-const { USERS, PASSWORD, SERVER_STDERR, api, rawRequest, login, db, closeDb } = require('./helpers');
+const { USERS, PASSWORD, SERVER_STDERR, api, rawRequest, login, db, closeDb, setStock } = require('./helpers');
 const { sanitizeDetails } = require('../utils/audit');
 
 after(closeDb);
@@ -103,7 +103,8 @@ test('consultation audit rows never contain note text', async () => {
 });
 
 test('prescription create, dispense and stock movements are audited with item ids and quantities', async () => {
-  await db().query('UPDATE medicines SET stock_quantity = 500 WHERE medicine_id IN (16, 17)');
+  await setStock(16, 500);
+  await setStock(17, 500);
   const created = await changeRows(() => api('POST', '/prescriptions', { token: doctor.token, body: {
     patient_id: patientId, doctor_id: doctor.user.doctor_id, notes: NOTE_MARKER,
     items: [16, 17].map(m => ({ medicine_id: m, dosage: '1', frequency: 'Once daily', duration: '2 days', quantity: 2 })),
@@ -211,7 +212,7 @@ test('atomicity: if the audit row cannot be written, the data change is rolled b
   const [rows] = await db().query('SELECT patient_id FROM patients WHERE name = ?', [name]);
   assert.equal(rows.length, 0, 'the patient must not exist without its audit row');
 
-  await db().query('UPDATE medicines SET stock_quantity = 100 WHERE medicine_id = 15');
+  await setStock(15, 100);
   const rx = await api('POST', '/prescriptions', { token: doctor.token, body: {
     patient_id: patientId, doctor_id: doctor.user.doctor_id, items: [{ medicine_id: 15, dosage: '1', frequency: 'x', duration: '1', quantity: 3 }],
   } });

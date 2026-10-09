@@ -10,7 +10,7 @@ This analysis checks the codebase (`main` @ `70b0729`) against *Professional HIS
 | 3 | Audit logs + middleware (G, I-3, K-4) | **Done** (Phase 1 step 3; migration 001 applied to hospital_db 2026-10-09) | No `audit_logs` table. `pharmacy_stock_movements` covers stock only | New `audit_logs`, made immutable by BEFORE UPDATE/DELETE triggers that SIGNAL. Non-blocking `res.on('finish')` middleware on PHI routers, with sanitized details JSON. LOGIN_SUCCESS/FAILED and 401/403 logged. In-transaction domain events for dispense/MAR |
 | 4 | Encounter lifecycle (G, I-4, K-3) | **Done** (Phase 1 step 4; migration 002 applied to hospital_db 2026-10-09) | Consultations are tied to `appointment_id` (`schema.sql:191`). Appointment status updates accept any value from any role (`appointmentController.js:61-73`). DoctorDashboard drives CHECKED_IN→IN_PROGRESS→COMPLETED (`DoctorDashboard.jsx:130-131`) | New `encounters` table + state machine (see §3). Nullable `encounter_id` on consultations, lab_orders, prescriptions, surgery_requests, with backfill |
 | 4b | Section E enforcement on existing routes | **Done** (Phase 1 step 4b; migration 003 applied to hospital_db 2026-10-09) | `authorize` is unused outside register; non-doctor roles can read all clinical history | Apply the §4 matrix. Ship nurse and receptionist landing pages, nurse ward assignments, 403 UI handling |
-| 5 | Batch & FEFO (G, I-5, K-6) | **Missing** | Single `medicines.stock_quantity` + `expiry_date` (`schema.sql:213-215`) | `medicine_batches`, backfill, FEFO dispense (see §3). **medicines.stock_quantity is kept, not dropped** |
+| 5 | Batch & FEFO (G, I-5, K-6) | **Done** (Phase 2 step 5; migration 006 applied to hospital_db 2026-10-09) | Single `medicines.stock_quantity` + `expiry_date` (`schema.sql:213-215`) | `medicine_batches`, backfill, FEFO dispense (see §3). **medicines.stock_quantity is kept, not dropped** |
 | 6 | MAR (G, I-6, K-5) | **Missing** | NURSE role exists only in the enum (`schema.sql:34`); nurse sees the generic dashboard (`App.jsx:39-40`) | `medication_administrations` + bedside verification modal (see §3) |
 | 7 | Structured lab ref ranges (G, I-7, K-7) | **Partial** | Live `lab_results` has `unit`, `reference_range` (string), `interpretation ENUM(NORMAL,LOW,HIGH,CRITICAL)`, but it is chosen manually (`LabDashboard.jsx:191-196`). `lab_tests.normal_range` is a string | Add numeric reference_low/high (+critical bounds) to lab_tests (backfilled by parsing `a-b`) and lab_results, plus `numeric_value`. Server auto-computes the existing `interpretation` column when it can; manual entry still accepted. Red highlighting |
 | 8 | ABHA capture (G, I-8, K-8) | **Missing** | `patients` has no ABHA (`schema.sql:70-81`); no registration UI | `patients.abha_number CHAR(14) NULL UNIQUE` (digits; displayed XX-XXXX-XXXX-XXXX), regex validation front and back, 409 on duplicate. Receptionist registration form with duplicate search (name/phone/ABHA) |
@@ -73,6 +73,16 @@ The rule lives in `server/utils/medicineLocks.js`. Dispense also takes no `presc
 - **Rejected lab uploads** no longer write files.
 - **Pharmacy screens:** prescription responses now include patient age and allergies. `patients.allergies` was added by migration 003 and stays NULL until registration captures it (step 8).
 - **Known data issue, pending a decision:** beds GEN-B02 (12) and GEN-B05 (15) are seeded OCCUPIED without an admission and show as occupied-but-empty on the Nurse Station.
+
+**Batches and FEFO (step 5).**
+- Migration numbering shifted: 005 became the General Ward B bed fix, so batches are 006, and later steps move up by one (MAR 007, lab ranges 008, ABHA 009, vitals 010).
+- **Backfill on hospital_db:** 22 `LEGACY-<id>` batches, 9,676 units, equal to the medicine totals; 0 medicines differ.
+- **Expiry check:** no medicine had a NULL or past expiry at apply time. The migration refuses to run if one ever does.
+- **Invariant:** `medicines.stock_quantity` = SUM(batches), kept in the same transaction by receipt, adjustment and dispense (`utils/batches.js`).
+- **Dispense:** FEFO over unexpired batches only. Expired stock is never dispensed, and the 400 response reports `available_unexpired`.
+- **Adjustment:** FEFO over all batches (expired first) or from a named batch.
+- **Locking:** order is medicines row → batches; the FEFO query uses `idx_medicine_batches_fefo` (medicine_id, expiry_date, batch_id).
+- **Traceability:** `prescription_item_batches` records which lots each item came from; stock movements carry `batch_id`.
 
 **Already correct, left untouched:** JWT on all API routers; emergency allocation locking (`emergencyAllocationService.js`); doctor care-set isolation (definition kept, encounters added to it); multi-test ordering in one transaction (`labController.js:9`); multi-item prescriptions; negative-stock CHECK + trigger; stock movement ledger; upload type/size filter (`labController.js:4`); lab ORDERED→PROCESSING→COMPLETED with FOR UPDATE.
 

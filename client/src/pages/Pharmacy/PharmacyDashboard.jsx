@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
-import { getPrescriptions, dispensePrescription, getPrescription, getMedicines, updateMedicineStock } from '../../services/api';
+import { getPrescriptions, dispensePrescription, getPrescription, getMedicines, updateMedicineStock, getMedicineBatches } from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -20,6 +20,26 @@ export default function PharmacyDashboard() {
   const [adjustStockMedicine, setAdjustStockMedicine] = useState(null);
   
   const [stockForm, setStockForm] = useState({ quantity: '', type: 'RECEIPT', reason: '', notes: '' });
+  // Batches (lots): expanded inventory rows and the batch list for the adjust form.
+  const [expanded, setExpanded] = useState({});
+  const [adjustBatches, setAdjustBatches] = useState([]);
+
+  const toggleBatches = async (medicineId) => {
+    if (expanded[medicineId]) return setExpanded(({ [medicineId]: _, ...rest }) => rest);
+    try {
+      const res = await getMedicineBatches(medicineId);
+      setExpanded(prev => ({ ...prev, [medicineId]: res.data.data || [] }));
+    } catch (e) { toast.error(e.response?.data?.message || 'Unable to load batches'); }
+  };
+
+  const openAdjust = async (m) => {
+    setAdjustStockMedicine(m);
+    setStockForm({ quantity: '', type: 'ADJUSTMENT', reason: 'DAMAGED', notes: '', batch_id: '' });
+    try {
+      const res = await getMedicineBatches(m.medicine_id);
+      setAdjustBatches((res.data.data || []).filter(b => b.quantity > 0));
+    } catch { setAdjustBatches([]); }
+  };
 
   const load = async () => {
     try {
@@ -88,12 +108,16 @@ export default function PharmacyDashboard() {
         quantity: Number(stockForm.quantity),
         type: stockForm.type,
         reason: stockForm.reason,
-        notes: stockForm.notes
+        notes: stockForm.notes,
+        ...(stockForm.batch_number ? { batch_number: stockForm.batch_number } : {}),
+        ...(stockForm.expiry_date ? { expiry_date: stockForm.expiry_date } : {}),
+        ...(stockForm.batch_id ? { batch_id: Number(stockForm.batch_id) } : {})
       });
       toast.success('Stock updated successfully');
       setReceiveStockMedicine(null);
       setAdjustStockMedicine(null);
       setStockForm({ quantity: '', type: 'RECEIPT', reason: '', notes: '' });
+      setExpanded({});
       load();
     } catch (e) {
       toast.error(e.response?.data?.message || 'Unable to update stock');
@@ -194,11 +218,23 @@ export default function PharmacyDashboard() {
         {/* INVENTORY */}
         <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '8px', boxShadow: 'var(--shadow)' }}>
           <h2 style={{ marginTop: 0 }}>Inventory Management</h2>
+          {(() => {
+            const expired = medicines.filter(m => m.expired_quantity > 0);
+            const soon = medicines.filter(m => m.expiring_soon_quantity > 0);
+            if (!expired.length && !soon.length) return null;
+            return (
+              <div data-testid="expiry-alert" style={{ padding: '12px 16px', marginBottom: '16px', borderRadius: '6px', background: expired.length ? '#fee2e2' : '#fef3c7', color: expired.length ? '#b91c1c' : '#92400e' }}>
+                {expired.length > 0 && <div><strong>Expired stock:</strong> {expired.map(m => `${m.name} (${m.expired_quantity})`).join(', ')} — not dispensable; write it off with Adjust.</div>}
+                {soon.length > 0 && <div><strong>Expiring within 90 days:</strong> {soon.map(m => `${m.name} (${m.expiring_soon_quantity})`).join(', ')}</div>}
+              </div>
+            );
+          })()}
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ background: 'var(--bg-primary)' }}>
                 <th style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>Medicine</th>
                 <th style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>Stock</th>
+                <th style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>Next Expiry</th>
                 <th style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>Reorder Lvl</th>
                 <th style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>Status</th>
                 <th style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>Actions</th>
@@ -207,10 +243,18 @@ export default function PharmacyDashboard() {
             <tbody>
               {medicines.map(m => {
                 const status = m.stock_quantity === 0 ? 'OUT OF STOCK' : (m.stock_quantity <= m.reorder_level ? 'LOW STOCK' : 'IN STOCK');
+                const soon = m.next_expiry && (new Date(m.next_expiry) - new Date()) / 86400000 <= 90;
                 return (
-                  <tr key={m.medicine_id}>
+                  <React.Fragment key={m.medicine_id}>
+                  <tr>
                     <td style={{ padding: '12px', borderBottom: '1px solid var(--border)', fontWeight: 'bold' }}>{m.name}</td>
-                    <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>{m.stock_quantity}</td>
+                    <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
+                      {m.stock_quantity}
+                      {m.expired_quantity > 0 && <div style={{ fontSize: '12px', color: 'var(--danger)' }}>{m.usable_quantity} usable · {m.expired_quantity} expired</div>}
+                    </td>
+                    <td style={{ padding: '12px', borderBottom: '1px solid var(--border)', color: soon ? '#d97706' : 'inherit', fontWeight: soon ? 'bold' : 'normal' }}>
+                      {m.next_expiry ? new Date(m.next_expiry).toLocaleDateString() : '—'}
+                    </td>
                     <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>{m.reorder_level}</td>
                     <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
                       <span style={{ 
@@ -222,18 +266,42 @@ export default function PharmacyDashboard() {
                       </span>
                     </td>
                     <td style={{ padding: '12px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '8px' }}>
+                      <button onClick={() => toggleBatches(m.medicine_id)} style={{ padding: '6px 12px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                        {expanded[m.medicine_id] ? 'Hide Batches' : 'Batches'}
+                      </button>
                       {canDispense && <>
                       <button 
                         onClick={() => { setReceiveStockMedicine(m); setStockForm({ quantity: '', type: 'RECEIPT', reason: 'Restock', notes: '' }); }}
                         style={{ padding: '6px 12px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                       >Receive</button>
                       <button 
-                        onClick={() => { setAdjustStockMedicine(m); setStockForm({ quantity: '', type: 'ADJUSTMENT', reason: 'DAMAGED', notes: '' }); }}
+                        onClick={() => openAdjust(m)}
                         style={{ padding: '6px 12px', background: 'var(--warning)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                       >Adjust</button>
                       </>}
                     </td>
                   </tr>
+                  {expanded[m.medicine_id] && (
+                    <tr data-testid={`batches-${m.medicine_id}`}>
+                      <td colSpan="6" style={{ padding: '0 12px 12px 32px', borderBottom: '1px solid var(--border)', background: 'var(--bg-primary)' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                          <thead><tr><th style={{ textAlign: 'left', padding: '6px' }}>Batch</th><th style={{ textAlign: 'left', padding: '6px' }}>Quantity</th><th style={{ textAlign: 'left', padding: '6px' }}>Expiry</th><th style={{ textAlign: 'left', padding: '6px' }}>Received</th></tr></thead>
+                          <tbody>
+                            {expanded[m.medicine_id].filter(b => b.quantity > 0).map(b => (
+                              <tr key={b.batch_id} style={{ color: b.is_expired ? 'var(--danger)' : 'inherit' }}>
+                                <td style={{ padding: '6px' }}>{b.batch_number}</td>
+                                <td style={{ padding: '6px' }}>{b.quantity}</td>
+                                <td style={{ padding: '6px' }}>{new Date(b.expiry_date).toLocaleDateString()}{b.is_expired ? ' (expired)' : ''}</td>
+                                <td style={{ padding: '6px' }}>{new Date(b.received_date).toLocaleDateString()}</td>
+                              </tr>
+                            ))}
+                            {expanded[m.medicine_id].every(b => b.quantity === 0) && <tr><td colSpan="4" style={{ padding: '6px' }}>No stock in any batch.</td></tr>}
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 );
               })}
             </tbody>
@@ -328,6 +396,14 @@ export default function PharmacyDashboard() {
                 />
               </div>
               <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px' }}>Batch / Lot Number <span style={{ color: 'var(--text-secondary)' }}>(optional)</span></label>
+                <input type="text" name="batch_number" placeholder="Generated if left blank" value={stockForm.batch_number || ''} onChange={e => setStockForm({...stockForm, batch_number: e.target.value})} style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px' }}>Expiry Date <span style={{ color: 'var(--text-secondary)' }}>(defaults to {receiveStockMedicine.expiry_date ? new Date(receiveStockMedicine.expiry_date).toLocaleDateString() : 'the medicine expiry'})</span></label>
+                <input type="date" name="expiry_date" value={stockForm.expiry_date || ''} onChange={e => setStockForm({...stockForm, expiry_date: e.target.value})} style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px' }}>Notes / Supplier</label>
                 <input 
                   type="text" 
@@ -352,6 +428,13 @@ export default function PharmacyDashboard() {
             <h2>Adjust Stock: {adjustStockMedicine.name}</h2>
             <p>Current Stock: {adjustStockMedicine.stock_quantity}</p>
             <form onSubmit={(e) => submitStockChange(e, adjustStockMedicine.medicine_id)}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px' }}>From Batch</label>
+                <select name="batch_id" value={stockForm.batch_id || ''} onChange={e => setStockForm({...stockForm, batch_id: e.target.value})} style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}>
+                  <option value="">Earliest expiry first (expired lots first)</option>
+                  {adjustBatches.map(b => <option key={b.batch_id} value={b.batch_id}>{b.batch_number} · {b.quantity} left · exp {new Date(b.expiry_date).toLocaleDateString()}{b.is_expired ? ' (expired)' : ''}</option>)}
+                </select>
+              </div>
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px' }}>Quantity to Deduct</label>
                 <input 

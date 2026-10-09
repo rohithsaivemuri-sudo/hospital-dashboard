@@ -94,6 +94,7 @@ const matrix = () => [
   ['GET', '/prescriptions/1', [DR, NU, PH]], ['GET', `/prescriptions/patient/${P}`, [DR, NU, PH]],
   ['POST', '/prescriptions/999999/dispense', [PH]],
   ['GET', '/medicines', [AD, DR, NU, PH]],
+  ['GET', '/medicines/1/batches', [AD, PH]],
   ['POST', '/medicines/999999/stock', [PH], { quantity: 1, type: 'RECEIPT' }],
 
   ['GET', '/lab/tests', [AD, DR, NU, LB]],

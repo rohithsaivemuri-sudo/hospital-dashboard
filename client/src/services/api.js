@@ -91,6 +91,7 @@ export const createPrescription = (data) => api.post('/prescriptions', data);
 export const dispensePrescription = (id) => api.post(`/prescriptions/${id}/dispense`);
 export const getPrescription = (id) => api.get(`/prescriptions/${id}`);
 export const updateMedicineStock = (id, data) => api.post(`/medicines/${id}/stock`, data);
+export const getMedicineBatches = (id) => api.get(`/medicines/${id}/batches`);
 
 // Lab
 export const getLabTests = () => api.get('/lab/tests');
@@ -143,7 +144,7 @@ export default {
   getAppointments, createAppointment, updateAppointmentStatus,
   getAdmissions, getCurrentAdmissions, createAdmission, dischargePatient,
   createConsultation,
-  getPrescriptions, createPrescription, dispensePrescription, getPrescription, updateMedicineStock,
+  getPrescriptions, createPrescription, dispensePrescription, getPrescription, updateMedicineStock, getMedicineBatches,
   getLabTests, createLabOrder, getLabOrders, updateLabOrderStatus, addLabResult, getLabResult, uploadLabReport, downloadLabReport, downloadLabResultReport,
   getEncounterQueue, checkInAppointment, encounterAction,
   getUsers, registerUser, deactivateUser, reactivateUser,
