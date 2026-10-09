@@ -90,6 +90,7 @@ export default function PatientDetail() {
   const [admissionDiagnosis, setAdmissionDiagnosis] = useState('');
   const [admissionNotes, setAdmissionNotes] = useState('');
   const [admitting, setAdmitting] = useState(false);
+  const [admitError, setAdmitError] = useState(null);
 
   useEffect(() => {
     fetchPatientData();
@@ -211,6 +212,7 @@ export default function PatientDetail() {
   };
 
   const openAdmissionModal = async () => {
+    setAdmitError(null);
     try {
       const response = await getAvailableBeds();
       const beds = response.data?.success ? response.data.data : response.data;
@@ -228,6 +230,7 @@ export default function PatientDetail() {
 
     try {
       setAdmitting(true);
+      setAdmitError(null);
       const response = await createAdmission({
         patient_id: Number(id),
         doctor_id: user.doctor_id,
@@ -244,7 +247,10 @@ export default function PatientDetail() {
       await fetchPatientData();
       setActiveTab('Admissions');
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || 'Failed to admit patient');
+      const message = err.response?.data?.message || err.message || 'Failed to admit patient';
+      // Keep the form open and say why (e.g. the doctor is at maximum workload).
+      setAdmitError(message);
+      toast.error(message);
     } finally {
       setAdmitting(false);
     }
@@ -521,6 +527,7 @@ export default function PatientDetail() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', padding: '24px', borderRadius: '8px', width: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
             <h2>Admit Patient</h2>
+            {admitError && <div role="alert" data-testid="admit-error" style={{ padding: '10px 12px', marginBottom: '12px', background: '#fee2e2', color: '#b91c1c', borderRadius: '6px' }}>{admitError}</div>}
             <p><strong>Patient:</strong> {patient.name}</p>
             <p><strong>Doctor:</strong> {user?.username}</p>
             <form onSubmit={handleCreateAdmission}>

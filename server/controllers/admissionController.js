@@ -2,6 +2,8 @@ const pool = require('../config/db');
 const { writeAudit } = require('../utils/audit');
 const { NURSE_WARDS_SQL } = require('../utils/patientAccess');
 const { cancelPendingDoses } = require('../services/marService');
+
+const atMaxMessage = (d) => `${d.name} is at maximum workload (${d.current_workload} of ${d.max_workload} patients). Choose another doctor or discharge a patient first.`;
 exports.list = async (req, res) => {
   try {
     let query = `
@@ -116,6 +118,20 @@ exports.create = async (req, res) => {
     }
     if (req.user.role === 'DOCTOR') assignedDepartmentId = bed.department_id;
 
+    // Each admission counts against the doctor's workload (doctors CHECK current_workload <= max_workload).
+    // Lock order bed -> doctor, as in emergency allocation.
+    const [[doctor]] = await connection.execute(
+      'SELECT doctor_id, name, current_workload, max_workload FROM doctors WHERE doctor_id = ? FOR UPDATE', [assignedDoctorId ?? null]
+    );
+    if (!doctor) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: 'Doctor not found' });
+    }
+    if (doctor.current_workload >= doctor.max_workload) {
+      await connection.rollback();
+      return res.status(409).json({ success: false, code: 'DOCTOR_AT_MAX_WORKLOAD', message: atMaxMessage(doctor) });
+    }
+
     // The after_admission_insert trigger handles bed status, doctor workload, and log insertion
     const [result] = await connection.execute('INSERT INTO admissions (patient_id, doctor_id, bed_id, department_id, admission_date, status, diagnosis, notes) VALUES (?, ?, ?, ?, NOW(), "ACTIVE", ?, ?)', [patient_id, assignedDoctorId, bed_id, assignedDepartmentId, diagnosis, notes ?? null]); // notes are optional
     await writeAudit(connection, req, { action: 'ADMIT_PATIENT', entityType: 'admission', entityId: result.insertId, patientId: patient_id,
@@ -125,6 +141,10 @@ exports.create = async (req, res) => {
     res.status(201).json({ success: true, data: { id: result.insertId } });
   } catch (error) { 
     await connection.rollback();
+    // Backstop: the workload CHECK fired anyway (e.g. a concurrent change outside this path).
+    if (error.errno === 3819 && /doctors_chk/.test(error.message)) {
+      return res.status(409).json({ success: false, code: 'DOCTOR_AT_MAX_WORKLOAD', message: 'The doctor is at maximum workload. Choose another doctor or discharge a patient first.' });
+    }
     res.status(500).json({ success: false, message: error.message }); 
   } finally {
     connection.release();
