@@ -97,3 +97,5 @@ To prove the MySQL concurrency logic, we have a specialized test script that sim
 node tests/concurrency_test.js
 ```
 **Expected Output**: The system will allocate the ICU bed to Patient A, and explicitly queue Patient B because the MySQL row lock blocks the parallel transaction and forces it to fetch updated resource states. No JavaScript-level race condition logic is used — the database itself strictly enforces consistency.
+# hospital-dashboard
+>>>>>>> origin/main
