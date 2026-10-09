@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const { writeAudit } = require('../utils/audit');
 
 router.get('/', async (req, res) => {
   try {
@@ -23,7 +24,9 @@ router.post('/:id/stock', async (req, res) => {
     const delta = type === 'RECEIPT' ? quantity : -quantity;
     if (medicine.stock_quantity + delta < 0) { await connection.rollback(); return res.status(400).json({ success: false, message: 'Stock cannot become negative' }); }
     await connection.execute('UPDATE medicines SET stock_quantity = stock_quantity + ? WHERE medicine_id = ?', [delta, req.params.id]);
-    await connection.execute('INSERT INTO pharmacy_stock_movements (medicine_id, movement_type, quantity, reason, notes, performed_by) VALUES (?,?,?,?,?,?)', [req.params.id, type, delta, reason || null, notes || null, req.user.user_id]);
+    const [movement] = await connection.execute('INSERT INTO pharmacy_stock_movements (medicine_id, movement_type, quantity, reason, notes, performed_by) VALUES (?,?,?,?,?,?)', [req.params.id, type, delta, reason || null, notes || null, req.user.user_id]);
+    await writeAudit(connection, req, { action: type === 'RECEIPT' ? 'STOCK_RECEIPT' : 'STOCK_ADJUSTMENT', entityType: 'medicine', entityId: Number(req.params.id),
+      details: { movement_id: movement.insertId, quantity: delta, from: medicine.stock_quantity, to: medicine.stock_quantity + delta, reason: reason || null } });
     await connection.commit(); res.json({ success: true });
   } catch (e) { await connection.rollback(); res.status(500).json({ success: false, message: e.message }); } finally { connection.release(); }
 });

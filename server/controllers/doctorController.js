@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { withTransaction, changedFields } = require('../utils/audit');
 exports.list = async (req, res) => {
   try {
     const { specialization, status, department_id } = req.query;
@@ -21,17 +22,26 @@ exports.getById = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     const { user_id, name, specialization, department_id, phone, shift, max_workload } = req.body;
-    const [result] = await pool.execute(
-      'INSERT INTO doctors (user_id, name, specialization, department_id, phone, shift, max_workload, current_workload, status) VALUES (?, ?, ?, ?, ?, ?, ?, 0, "AVAILABLE")', 
-      [user_id, name, specialization, department_id, phone, shift, max_workload]
-    );
-    res.status(201).json({ success: true, data: { id: result.insertId } });
+    const id = await withTransaction(req, async (connection, audit) => {
+      const [result] = await connection.execute(
+        'INSERT INTO doctors (user_id, name, specialization, department_id, phone, shift, max_workload, current_workload, status) VALUES (?, ?, ?, ?, ?, ?, ?, 0, "AVAILABLE")', 
+        [user_id, name, specialization, department_id, phone, shift, max_workload]
+      );
+      await audit({ action: 'CREATE_DOCTOR', entityType: 'doctor', entityId: result.insertId, details: { user_id: Number(user_id), department_id: Number(department_id) } });
+      return result.insertId;
+    });
+    res.status(201).json({ success: true, data: { id } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.update = async (req, res) => {
   try {
     const { name, specialization, max_workload } = req.body;
-    await pool.execute('UPDATE doctors SET name = ?, specialization = ?, max_workload = ? WHERE doctor_id = ?', [name, specialization, max_workload, req.params.id]);
+    await withTransaction(req, async (connection, audit) => {
+      const [[before]] = await connection.execute('SELECT * FROM doctors WHERE doctor_id = ? FOR UPDATE', [req.params.id]);
+      await connection.execute('UPDATE doctors SET name = ?, specialization = ?, max_workload = ? WHERE doctor_id = ?', [name, specialization, max_workload, req.params.id]);
+      const changed = before ? changedFields(before, req.body, ['name', 'specialization', 'max_workload']) : [];
+      if (changed.length) await audit({ action: 'UPDATE_DOCTOR', entityType: 'doctor', entityId: before.doctor_id, details: { changed_fields: changed } });
+    });
     res.json({ success: true, message: 'Updated successfully' });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
@@ -51,7 +61,11 @@ exports.getSchedule = async (req, res) => {
 exports.updateStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    await pool.execute('UPDATE doctors SET status = ? WHERE doctor_id = ?', [status, req.params.id]);
+    await withTransaction(req, async (connection, audit) => {
+      const [[before]] = await connection.execute('SELECT doctor_id, status FROM doctors WHERE doctor_id = ? FOR UPDATE', [req.params.id]);
+      await connection.execute('UPDATE doctors SET status = ? WHERE doctor_id = ?', [status, req.params.id]);
+      if (before && before.status !== status) await audit({ action: 'UPDATE_DOCTOR_STATUS', entityType: 'doctor', entityId: before.doctor_id, details: { from: before.status, to: status } });
+    });
     res.json({ success: true, message: 'Updated successfully' });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
@@ -126,7 +140,9 @@ exports.getTodayAnalytics = async (req, res) => {
       AS cases_pending
     `, [doctor_id, doctor_id]);
 
-    // Upsert into doctor_daily_analytics
+    // Upsert into doctor_daily_analytics.
+    // Not audited: this is a derived statistics cache recomputed from audited tables on every
+    // dashboard load, not a change to patient or operational data.
     await pool.execute(`
       INSERT INTO doctor_daily_analytics 
       (doctor_id, analytics_date, patients_seen, emergency_cases, appointment_patients, patients_treated, cases_solved, cases_postponed, cases_cancelled, cases_pending)

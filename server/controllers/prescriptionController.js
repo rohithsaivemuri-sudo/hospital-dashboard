@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { lockMedicines } = require('../utils/medicineLocks');
+const { writeAudit } = require('../utils/audit');
 
 const checkDoctorAuth = async (req, patient_id) => {
   if (req.user.role !== 'DOCTOR') return true;
@@ -69,6 +70,8 @@ exports.create = async (req, res) => {
     for (const item of items) {
       await connection.execute('INSERT INTO prescription_items (prescription_id, medicine_id, dosage, frequency, duration, quantity) VALUES (?, ?, ?, ?, ?, ?)', [prescription_id, item.medicine_id, item.dosage, item.frequency, item.duration, item.quantity]);
     }
+    await writeAudit(connection, req, { action: 'CREATE_PRESCRIPTION', entityType: 'prescription', entityId: prescription_id, patientId: patient_id,
+      details: { consultation_id: consultation_id ? Number(consultation_id) : null, medicine_ids: items.map(item => Number(item.medicine_id)), item_count: items.length } });
     await connection.commit();
     res.status(201).json({ success: true, data: { id: prescription_id } });
   } catch (error) { 
@@ -129,7 +132,7 @@ exports.dispense = async (req, res) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-    const [[prescription]] = await connection.execute('SELECT status FROM prescriptions WHERE prescription_id = ? FOR UPDATE', [req.params.id]);
+    const [[prescription]] = await connection.execute('SELECT status, patient_id FROM prescriptions WHERE prescription_id = ? FOR UPDATE', [req.params.id]);
     if (!prescription || prescription.status === 'DISPENSED' || prescription.status === 'CANCELLED') {
       await connection.rollback();
       return res.status(409).json({ success: false, message: 'Prescription is not available for dispensing' });
@@ -178,6 +181,8 @@ exports.dispense = async (req, res) => {
     // Then update prescription status
 
     await connection.execute('UPDATE prescriptions SET status = "DISPENSED" WHERE prescription_id = ?', [req.params.id]);
+    await writeAudit(connection, req, { action: 'DISPENSE_PRESCRIPTION', entityType: 'prescription', entityId: Number(req.params.id), patientId: prescription.patient_id,
+      details: { from: prescription.status, to: 'DISPENSED', items: items.map(item => ({ item_id: item.item_id, medicine_id: item.medicine_id, quantity: item.quantity })) } });
     
     await connection.commit();
     res.json({ success: true, message: 'Dispensed successfully' });

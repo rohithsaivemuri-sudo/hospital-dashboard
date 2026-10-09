@@ -1,6 +1,8 @@
 const pool = require('../config/db');
 
-async function allocateEmergencyResources(emergencyId, io) {
+// audit(connection, entry), when given, is called before each COMMIT so the allocation and its
+// audit row are written in the same transaction.
+async function allocateEmergencyResources(emergencyId, io, audit) {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -40,6 +42,7 @@ async function allocateEmergencyResources(emergencyId, io) {
         'UPDATE emergency_cases SET status = "WAITING", notes = CONCAT(COALESCE(notes, ""), "\nNo available bed found at ", NOW()) WHERE emergency_id = ?',
         [emergencyId]
       );
+      if (audit) await audit(connection, { action: 'EMERGENCY_QUEUED', entityType: 'emergency_case', entityId: emergency.emergency_id, patientId: emergency.patient_id, details: { reason: 'NO_BED' } });
       await connection.commit();
       
       if (io) {
@@ -80,6 +83,7 @@ async function allocateEmergencyResources(emergencyId, io) {
           'UPDATE emergency_cases SET status = "WAITING", notes = CONCAT(COALESCE(notes, ""), "\nNo available doctor found at ", NOW()) WHERE emergency_id = ?',
           [emergencyId]
         );
+        if (audit) await audit(connection, { action: 'EMERGENCY_QUEUED', entityType: 'emergency_case', entityId: emergency.emergency_id, patientId: emergency.patient_id, details: { reason: 'NO_DOCTOR' } });
         await connection.commit();
         
         if (io) {
@@ -112,6 +116,10 @@ async function allocateEmergencyResources(emergencyId, io) {
       [doctor.doctor_id, bed.bed_id, emergencyId]
     );
 
+    if (audit) {
+      await audit(connection, { action: 'ALLOCATE_EMERGENCY', entityType: 'emergency_case', entityId: emergency.emergency_id, patientId: emergency.patient_id,
+        details: { admission_id: admissionResult.insertId, bed_id: bed.bed_id, doctor_id: doctor.doctor_id } });
+    }
     await connection.commit();
 
     const result = {

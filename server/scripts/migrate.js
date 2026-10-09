@@ -4,6 +4,7 @@
 const path = require('path');
 const mysql = require('mysql2/promise');
 const { MIGRATIONS_DIR, runSqlFile, listMigrations } = require('./lib/sql');
+const { backupDatabase } = require('./backup-db');
 
 const arg = (name) => {
   const i = process.argv.indexOf(name);
@@ -36,6 +37,10 @@ async function migrate(database, { dryRun = false, log = console.log } = {}) {
       log(`[migrate] ${database}: pending = ${pending.length ? pending.join(', ') : 'none'}`);
       return pending;
     }
+
+    // Back up any real (non-test) database before changing it; abort if the backup fails.
+    const willApply = pending.filter(f => !(f.startsWith('000_') && Number(tableCount) > 0));
+    if (willApply.length && !database.endsWith('_test')) backupDatabase(database, { log });
 
     await conn.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
       version VARCHAR(255) PRIMARY KEY,

@@ -1,4 +1,7 @@
 const pool = require('../config/db');
+const { withTransaction, changedFields } = require('../utils/audit');
+
+const PATIENT_FIELDS = ['name', 'date_of_birth', 'gender', 'blood_group', 'phone', 'address', 'emergency_contact'];
 
 const checkDoctorAuth = async (req, patient_id) => {
   if (req.user.role !== 'DOCTOR') return true;
@@ -55,14 +58,23 @@ exports.getById = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     const { name, date_of_birth, gender, blood_group, phone, address, emergency_contact } = req.body;
-    const [result] = await pool.execute('INSERT INTO patients (name, date_of_birth, gender, blood_group, phone, address, emergency_contact) VALUES (?, ?, ?, ?, ?, ?, ?)', [name, date_of_birth, gender, blood_group, phone, address, emergency_contact]);
-    res.status(201).json({ success: true, data: { id: result.insertId } });
+    const id = await withTransaction(req, async (connection, audit) => {
+      const [result] = await connection.execute('INSERT INTO patients (name, date_of_birth, gender, blood_group, phone, address, emergency_contact) VALUES (?, ?, ?, ?, ?, ?, ?)', [name, date_of_birth, gender, blood_group, phone, address, emergency_contact]);
+      await audit({ action: 'CREATE_PATIENT', entityType: 'patient', entityId: result.insertId, patientId: result.insertId });
+      return result.insertId;
+    });
+    res.status(201).json({ success: true, data: { id } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.update = async (req, res) => {
   try {
     const { name, date_of_birth, gender, blood_group, phone, address, emergency_contact } = req.body;
-    await pool.execute('UPDATE patients SET name = ?, date_of_birth = ?, gender = ?, blood_group = ?, phone = ?, address = ?, emergency_contact = ? WHERE patient_id = ?', [name, date_of_birth, gender, blood_group, phone, address, emergency_contact, req.params.id]);
+    await withTransaction(req, async (connection, audit) => {
+      const [[before]] = await connection.execute('SELECT * FROM patients WHERE patient_id = ? FOR UPDATE', [req.params.id]);
+      await connection.execute('UPDATE patients SET name = ?, date_of_birth = ?, gender = ?, blood_group = ?, phone = ?, address = ?, emergency_contact = ? WHERE patient_id = ?', [name, date_of_birth, gender, blood_group, phone, address, emergency_contact, req.params.id]);
+      const changed = before ? changedFields(before, req.body, PATIENT_FIELDS) : [];
+      if (changed.length) await audit({ action: 'UPDATE_PATIENT', entityType: 'patient', entityId: before.patient_id, patientId: before.patient_id, details: { changed_fields: changed } });
+    });
     res.json({ success: true, message: 'Updated successfully' });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };

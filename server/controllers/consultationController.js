@@ -1,4 +1,7 @@
 const pool = require('../config/db');
+const { withTransaction, changedFields } = require('../utils/audit');
+
+const NOTE_FIELDS = ['symptoms', 'diagnosis', 'assessment', 'plan', 'notes'];
 
 const checkDoctorAuth = async (req, patient_id) => {
   if (req.user.role !== 'DOCTOR') return true;
@@ -25,8 +28,14 @@ exports.create = async (req, res) => {
       if (!auth) return res.status(403).json({ success: false, message: 'Forbidden: Patient not associated' });
     }
 
-    const [result] = await pool.execute('INSERT INTO consultations (appointment_id, patient_id, doctor_id, symptoms, diagnosis, assessment, plan, notes, consultation_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())', [appointment_id || null, patient_id, doctor_id, symptoms || '', diagnosis || '', assessment || '', plan || '', notes || '']);
-    res.status(201).json({ success: true, data: { id: result.insertId } });
+    const id = await withTransaction(req, async (connection, audit) => {
+      const [result] = await connection.execute('INSERT INTO consultations (appointment_id, patient_id, doctor_id, symptoms, diagnosis, assessment, plan, notes, consultation_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())', [appointment_id || null, patient_id, doctor_id, symptoms || '', diagnosis || '', assessment || '', plan || '', notes || '']);
+      // Field names only: note text never goes into the audit trail.
+      await audit({ action: 'CREATE_CONSULTATION', entityType: 'consultation', entityId: result.insertId, patientId: patient_id,
+        details: { appointment_id: appointment_id ? Number(appointment_id) : null, fields_recorded: NOTE_FIELDS.filter(f => req.body[f]) } });
+      return result.insertId;
+    });
+    res.status(201).json({ success: true, data: { id } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.getById = async (req, res) => {
@@ -62,7 +71,12 @@ exports.update = async (req, res) => {
       if (parseInt(existing[0].doctor_id) !== parseInt(req.user.doctor_id)) return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
-    await pool.execute('UPDATE consultations SET symptoms = ?, diagnosis = ?, assessment = ?, plan = ?, notes = ? WHERE consultation_id = ?', [symptoms || '', diagnosis || '', assessment || '', plan || '', notes || '', req.params.id]);
+    await withTransaction(req, async (connection, audit) => {
+      const [[before]] = await connection.execute('SELECT * FROM consultations WHERE consultation_id = ? FOR UPDATE', [req.params.id]);
+      await connection.execute('UPDATE consultations SET symptoms = ?, diagnosis = ?, assessment = ?, plan = ?, notes = ? WHERE consultation_id = ?', [symptoms || '', diagnosis || '', assessment || '', plan || '', notes || '', req.params.id]);
+      const changed = before ? changedFields(before, { symptoms, diagnosis, assessment, plan, notes }, NOTE_FIELDS) : [];
+      if (changed.length) await audit({ action: 'UPDATE_CONSULTATION', entityType: 'consultation', entityId: before.consultation_id, patientId: before.patient_id, details: { changed_fields: changed } });
+    });
     res.json({ success: true, message: 'Updated successfully' });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };

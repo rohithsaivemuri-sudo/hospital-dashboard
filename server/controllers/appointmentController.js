@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { withTransaction } = require('../utils/audit');
 exports.create = async (req, res) => {
   try {
     const { patient_id, doctor_id, appointment_date, appointment_time, reason } = req.body;
@@ -13,8 +14,12 @@ exports.create = async (req, res) => {
     if (!doctor) return res.status(400).json({ success: false, message: 'Doctor not found' });
 
     try {
-      const [result] = await pool.execute('INSERT INTO appointments (patient_id, doctor_id, department_id, appointment_date, appointment_time, reason, status) VALUES (?, ?, ?, ?, ?, ?, "BOOKED")', [patient_id, doctor_id, doctor.department_id, appointment_date, appointment_time, reason ?? null]);
-      res.status(201).json({ success: true, data: { id: result.insertId } });
+      const id = await withTransaction(req, async (connection, audit) => {
+        const [result] = await connection.execute('INSERT INTO appointments (patient_id, doctor_id, department_id, appointment_date, appointment_time, reason, status) VALUES (?, ?, ?, ?, ?, ?, "BOOKED")', [patient_id, doctor_id, doctor.department_id, appointment_date, appointment_time, reason ?? null]);
+        await audit({ action: 'CREATE_APPOINTMENT', entityType: 'appointment', entityId: result.insertId, patientId: patient_id, details: { doctor_id: Number(doctor_id) } });
+        return result.insertId;
+      });
+      res.status(201).json({ success: true, data: { id } });
     } catch(err) {
       if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ success: false, message: 'Double booking detected' });
       throw err;
@@ -71,7 +76,11 @@ exports.updateStatus = async (req, res) => {
       if (rows.length === 0) return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
-    await pool.execute('UPDATE appointments SET status = ? WHERE appointment_id = ?', [status, req.params.id]);
+    await withTransaction(req, async (connection, audit) => {
+      const [[before]] = await connection.execute('SELECT appointment_id, patient_id, status FROM appointments WHERE appointment_id = ? FOR UPDATE', [req.params.id]);
+      await connection.execute('UPDATE appointments SET status = ? WHERE appointment_id = ?', [status, req.params.id]);
+      if (before && before.status !== status) await audit({ action: 'UPDATE_APPOINTMENT_STATUS', entityType: 'appointment', entityId: before.appointment_id, patientId: before.patient_id, details: { from: before.status, to: status } });
+    });
     res.json({ success: true, message: 'Updated successfully' });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };

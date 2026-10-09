@@ -41,6 +41,9 @@ const medicineRoutes = require('./routes/medicineRoutes');
 const surgeryRoutes = require('./routes/surgeryRoutes');
 
 const { verifyToken } = require('./middleware/auth');
+const { auditAccess } = require('./middleware/audit');
+
+app.use('/api', auditAccess); // PHI reads and denied requests; data changes are audited in-transaction
 
 app.use('/api/auth', authRoutes); // Auth routes manage their own protection internally
 app.use('/api/patients', verifyToken, patientRoutes);

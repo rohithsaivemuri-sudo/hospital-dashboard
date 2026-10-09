@@ -9,6 +9,8 @@ const TEST_DB = process.env.TEST_DB_NAME || 'hospital_db_test';
 // Lab report uploads made by the test server land here, never in server/uploads.
 const LAB_REPORT_DIR = path.join(require('os').tmpdir(), 'hms-test-lab-reports');
 const PASSWORD = 'password123';
+// The test server's stderr is copied here so tests can assert on logged failures.
+const SERVER_STDERR = path.join(require('os').tmpdir(), 'hms-test-server-stderr.log');
 
 // Seeded users, one per role.
 const USERS = {
@@ -64,4 +66,4 @@ async function closeDb() {
   if (pool) { await pool.end(); pool = undefined; }
 }
 
-module.exports = { TEST_PORT, BASE, TEST_DB, LAB_REPORT_DIR, USERS, api, rawRequest, login, db, closeDb };
+module.exports = { TEST_PORT, BASE, TEST_DB, LAB_REPORT_DIR, SERVER_STDERR, PASSWORD, USERS, api, rawRequest, login, db, closeDb };

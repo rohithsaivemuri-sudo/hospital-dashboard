@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { writeAudit } = require('../utils/audit');
 exports.list = async (req, res) => {
   try {
     let query = `
@@ -105,6 +106,8 @@ exports.create = async (req, res) => {
 
     // The after_admission_insert trigger handles bed status, doctor workload, and log insertion
     const [result] = await connection.execute('INSERT INTO admissions (patient_id, doctor_id, bed_id, department_id, admission_date, status, diagnosis, notes) VALUES (?, ?, ?, ?, NOW(), "ACTIVE", ?, ?)', [patient_id, assignedDoctorId, bed_id, assignedDepartmentId, diagnosis, notes]);
+    await writeAudit(connection, req, { action: 'ADMIT_PATIENT', entityType: 'admission', entityId: result.insertId, patientId: patient_id,
+      details: { bed_id: Number(bed_id), doctor_id: Number(assignedDoctorId), department_id: Number(assignedDepartmentId) } });
 
     await connection.commit();
     res.status(201).json({ success: true, data: { id: result.insertId } });
@@ -135,6 +138,8 @@ exports.discharge = async (req, res) => {
 
     // The after_admission_discharge trigger handles bed status, doctor workload, and log updating.
     await connection.execute('UPDATE admissions SET status = "DISCHARGED", discharge_date = NOW() WHERE admission_id = ?', [req.params.id]);
+    await writeAudit(connection, req, { action: 'DISCHARGE_PATIENT', entityType: 'admission', entityId: admission.admission_id, patientId: admission.patient_id,
+      details: { from: 'ACTIVE', to: 'DISCHARGED', bed_id: admission.bed_id } });
 
     await connection.commit();
     res.json({ success: true, message: 'Discharged successfully' });
