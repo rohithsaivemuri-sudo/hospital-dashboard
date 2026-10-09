@@ -24,7 +24,10 @@ test('lab order with notes still stores them', async () => {
 
 test('admission without notes is created with notes NULL (and with notes still works)', async () => {
   const reception = await login(USERS.RECEPTIONIST);
-  const doctor = await login(USERS.DOCTOR);
+  // Admissions count against the doctor's workload (CHECK current_workload <= max_workload),
+  // so use a doctor with room for two more patients.
+  const [[doctorRow]] = await db().query('SELECT doctor_id FROM doctors WHERE current_workload + 2 <= max_workload ORDER BY current_workload, doctor_id LIMIT 1');
+  const doctor = { user: { doctor_id: doctorRow.doctor_id } };
   const [beds] = await db().query("SELECT bed_id FROM beds WHERE status = 'AVAILABLE' AND bed_type = 'GENERAL' ORDER BY bed_id DESC LIMIT 2");
   const [patients] = await db().query("SELECT patient_id FROM patients WHERE patient_id NOT IN (SELECT patient_id FROM admissions WHERE status = 'ACTIVE') ORDER BY patient_id DESC LIMIT 2");
   assert.equal(beds.length, 2);

@@ -24,6 +24,7 @@ import BillingDashboard from './pages/Billing/BillingDashboard';
 import ReportsDashboard from './pages/Reports/ReportsDashboard';
 import FrontDesk from './pages/FrontDesk/FrontDesk';
 import NurseStation from './pages/Nurse/NurseStation';
+import MedicationRecord from './pages/Nurse/MedicationRecord';
 import StaffAccounts from './pages/Admin/StaffAccounts';
 import NurseAssignments from './pages/Admin/NurseAssignments';
 import AccessDenied from './components/AccessDenied';
@@ -92,6 +93,7 @@ function App() {
               <Route path="pharmacy" element={<RoleRoute roles={['ADMIN', 'PHARMACY']}><PharmacyDashboard /></RoleRoute>} />
               <Route path="billing" element={<RoleRoute roles={['ADMIN', 'RECEPTIONIST']}><BillingDashboard /></RoleRoute>} />
               <Route path="reports" element={<RoleRoute roles={['ADMIN']}><ReportsDashboard /></RoleRoute>} />
+              <Route path="mar/:patientId" element={<RoleRoute roles={['NURSE', 'DOCTOR']}><MedicationRecord /></RoleRoute>} />
               <Route path="staff" element={<RoleRoute roles={['ADMIN']}><StaffAccounts /></RoleRoute>} />
               <Route path="nurse-assignments" element={<RoleRoute roles={['ADMIN']}><NurseAssignments /></RoleRoute>} />
             </Route>

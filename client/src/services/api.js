@@ -117,6 +117,14 @@ export const createNurseAssignment = (data) => api.post('/nurse-assignments', da
 export const endNurseAssignment = (id, data = {}) => api.put(`/nurse-assignments/${id}`, data);
 export const getWards = () => api.get('/wards');
 
+// Medication administration record
+export const getPatientMar = (patientId) => api.get(`/mar/patients/${patientId}`);
+export const administerDose = (id, data) => api.post(`/mar/doses/${id}/administer`, data);
+export const refuseDose = (id, data) => api.post(`/mar/doses/${id}/refuse`, data);
+export const missDose = (id, data) => api.post(`/mar/doses/${id}/missed`, data);
+export const giveAsNeeded = (itemId, data) => api.post(`/mar/items/${itemId}/given`, data);
+export const cancelPrescription = (id) => api.post(`/prescriptions/${id}/cancel`);
+
 // Encounters
 export const getEncounterQueue = () => api.get('/encounters/queue');
 export const checkInAppointment = (appointmentId) => api.post('/encounters', { appointment_id: appointmentId });
@@ -147,6 +155,7 @@ export default {
   getPrescriptions, createPrescription, dispensePrescription, getPrescription, updateMedicineStock, getMedicineBatches,
   getLabTests, createLabOrder, getLabOrders, updateLabOrderStatus, addLabResult, getLabResult, uploadLabReport, downloadLabReport, downloadLabResultReport,
   getEncounterQueue, checkInAppointment, encounterAction,
+  getPatientMar, administerDose, refuseDose, missDose, giveAsNeeded, cancelPrescription,
   getUsers, registerUser, deactivateUser, reactivateUser,
   getNurseStation, getNurseAssignments, createNurseAssignment, endNurseAssignment, getWards,
   getPatientAdmissions, getPatientAppointments,

@@ -11,7 +11,7 @@ This analysis checks the codebase (`main` @ `70b0729`) against *Professional HIS
 | 4 | Encounter lifecycle (G, I-4, K-3) | **Done** (Phase 1 step 4; migration 002 applied to hospital_db 2026-10-09) | Consultations are tied to `appointment_id` (`schema.sql:191`). Appointment status updates accept any value from any role (`appointmentController.js:61-73`). DoctorDashboard drives CHECKED_IN→IN_PROGRESS→COMPLETED (`DoctorDashboard.jsx:130-131`) | New `encounters` table + state machine (see §3). Nullable `encounter_id` on consultations, lab_orders, prescriptions, surgery_requests, with backfill |
 | 4b | Section E enforcement on existing routes | **Done** (Phase 1 step 4b; migration 003 applied to hospital_db 2026-10-09) | `authorize` is unused outside register; non-doctor roles can read all clinical history | Apply the §4 matrix. Ship nurse and receptionist landing pages, nurse ward assignments, 403 UI handling |
 | 5 | Batch & FEFO (G, I-5, K-6) | **Done** (Phase 2 step 5; migration 006 applied to hospital_db 2026-10-09) | Single `medicines.stock_quantity` + `expiry_date` (`schema.sql:213-215`) | `medicine_batches`, backfill, FEFO dispense (see §3). **medicines.stock_quantity is kept, not dropped** |
-| 6 | MAR (G, I-6, K-5) | **Missing** | NURSE role exists only in the enum (`schema.sql:34`); nurse sees the generic dashboard (`App.jsx:39-40`) | `medication_administrations` + bedside verification modal (see §3) |
+| 6 | MAR (G, I-6, K-5) | **Done** (Phase 2 step 6; migrations 007 + 008 applied to hospital_db 2026-10-09) | NURSE role exists only in the enum (`schema.sql:34`); nurse sees the generic dashboard (`App.jsx:39-40`) | `medication_administrations` + bedside verification modal (see §3) |
 | 7 | Structured lab ref ranges (G, I-7, K-7) | **Partial** | Live `lab_results` has `unit`, `reference_range` (string), `interpretation ENUM(NORMAL,LOW,HIGH,CRITICAL)`, but it is chosen manually (`LabDashboard.jsx:191-196`). `lab_tests.normal_range` is a string | Add numeric reference_low/high (+critical bounds) to lab_tests (backfilled by parsing `a-b`) and lab_results, plus `numeric_value`. Server auto-computes the existing `interpretation` column when it can; manual entry still accepted. Red highlighting |
 | 8 | ABHA capture (G, I-8, K-8) | **Missing** | `patients` has no ABHA (`schema.sql:70-81`); no registration UI | `patients.abha_number CHAR(14) NULL UNIQUE` (digits; displayed XX-XXXX-XXXX-XXXX), regex validation front and back, 409 on duplicate. Receptionist registration form with duplicate search (name/phone/ABHA) |
 | 9 | Admin audit viewer (G, I-9, K-9) | **Missing** | ReportsDashboard reuses dashboard stats | `GET /api/audit-logs` (ADMIN, date/user/action/patient/status filters, paginated) + read-only `/audit` page + "denied access (24h)" stat |
@@ -83,6 +83,23 @@ The rule lives in `server/utils/medicineLocks.js`. Dispense also takes no `presc
 - **Adjustment:** FEFO over all batches (expired first) or from a named batch.
 - **Locking:** order is medicines row → batches; the FEFO query uses `idx_medicine_batches_fefo` (medicine_id, expiry_date, batch_id).
 - **Traceability:** `prescription_item_batches` records which lots each item came from; stock movements carry `batch_id`.
+
+**Medication administration record (step 6).**
+- **Orders:** structured `frequency_code` (OD/BD/TDS/QID/Q6H/Q8H/STAT/PRN), `duration_days`, `route` and `units_per_dose` sit alongside the free text.
+- **Ward times (IST):** OD 08; BD 08/20; TDS 08/14/20; QID 06/12/18/22; Q6H 00/06/12/18; Q8H 06/14/22.
+- **Scheduling:**
+  - Doses are scheduled at dispense, only for patients with an ACTIVE admission, from the next slot.
+  - They are capped at min(slots × days, quantity ÷ units per dose).
+  - STAT is one dose due now; PRN and free-text orders get no schedule and are recorded as given, with a reason.
+- **Overdue** (more than 60 minutes late) is computed at read time. A dose can't be given more than 60 minutes early.
+- **Five Rights** are checked server-side on every administration.
+- **Recording:** refused, missed, late and PRN doses require a reason, audited in the same transaction; reason text is never stored in the audit trail.
+- **Cancellation:** discharge and the new `POST /prescriptions/:id/cancel` (the patient's doctors only) cancel pending doses in the same transaction.
+- **Times:** stored and compared as UTC in `*_at_utc` columns (never MySQL NOW()) and shown in IST.
+- **Code:** dispensing now lives in `services/dispenseService.js`, shared by the API and migration 008. Migrations can be `.js` files that receive a connection.
+- **Demo seed (008):** Isha Singh (ICU-01): TDS × 9, OD × 5, STAT × 1 and a PRN order.
+- **Matrix additions:** GET /mar/patients/:id (NU\*, DR\*); POST /mar/doses/:id/administer|refuse|missed and /mar/items/:id/given (NU\*); POST /prescriptions/:id/cancel (DR\*).
+- **Pre-existing, not fixed:** admitting a patient to a doctor already at `max_workload` returns 500 (a CHECK constraint on doctors) rather than a clear 409.
 
 **Already correct, left untouched:** JWT on all API routers; emergency allocation locking (`emergencyAllocationService.js`); doctor care-set isolation (definition kept, encounters added to it); multi-test ordering in one transaction (`labController.js:9`); multi-item prescriptions; negative-stock CHECK + trigger; stock movement ledger; upload type/size filter (`labController.js:4`); lab ORDERED→PROCESSING→COMPLETED with FOR UPDATE.
 

@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { writeAudit } = require('../utils/audit');
 const { NURSE_WARDS_SQL } = require('../utils/patientAccess');
+const { cancelPendingDoses } = require('../services/marService');
 exports.list = async (req, res) => {
   try {
     let query = `
@@ -149,8 +150,10 @@ exports.discharge = async (req, res) => {
 
     // The after_admission_discharge trigger handles bed status, doctor workload, and log updating.
     await connection.execute('UPDATE admissions SET status = "DISCHARGED", discharge_date = NOW() WHERE admission_id = ?', [req.params.id]);
+    // Doses still pending on the ward are cancelled with the discharge, not left pending.
+    const dosesCancelled = await cancelPendingDoses(connection, { admissionId: admission.admission_id, reason: 'Patient discharged', userId: req.user.user_id });
     await writeAudit(connection, req, { action: 'DISCHARGE_PATIENT', entityType: 'admission', entityId: admission.admission_id, patientId: admission.patient_id,
-      details: { from: 'ACTIVE', to: 'DISCHARGED', bed_id: admission.bed_id } });
+      details: { from: 'ACTIVE', to: 'DISCHARGED', bed_id: admission.bed_id, doses_cancelled: dosesCancelled } });
 
     await connection.commit();
     res.json({ success: true, message: 'Discharged successfully' });

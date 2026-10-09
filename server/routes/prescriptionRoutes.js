@@ -9,4 +9,5 @@ router.post('/', authorize('DOCTOR'), controller.create);
 router.get('/:id', readers, controller.getById);
 router.get('/patient/:patientId', readers, controller.getByPatient);
 router.post('/:id/dispense', authorize('PHARMACY'), controller.dispense);
+router.post('/:id/cancel', authorize('DOCTOR'), controller.cancel); // patient's own doctors (care set)
 module.exports = router;

@@ -38,7 +38,7 @@ function runSqlFile(database, file, { stripUse = false } = {}) {
 
 function listMigrations() {
   return fs.readdirSync(MIGRATIONS_DIR)
-    .filter(f => /^\d{3}_.+\.sql$/.test(f))
+    .filter(f => /^\d{3}_.+\.(sql|js)$/.test(f))  // .js migrations export up(connection)
     .sort();
 }
 

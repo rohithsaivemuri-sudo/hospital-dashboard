@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams } from 'react-router-dom';
-import { getPatient, getPatientHistory, createLabOrder, getLabTests, createPrescription, getMedicines, createAdmission, getAvailableBeds, getLabResult, downloadLabResultReport, createConsultation, createSurgeryRequest, dischargePatient, encounterAction, getPatientAdmissions, getPatientAppointments, isForbidden } from '../../services/api';
+import { useParams, Link } from 'react-router-dom';
+import { getPatient, getPatientHistory, createLabOrder, getLabTests, createPrescription, getMedicines, createAdmission, getAvailableBeds, getLabResult, downloadLabResultReport, createConsultation, createSurgeryRequest, dischargePatient, encounterAction, getPatientAdmissions, getPatientAppointments, isForbidden, cancelPrescription } from '../../services/api';
 import AccessDenied from '../../components/AccessDenied';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -16,6 +16,8 @@ const ageOf = (dob) => {
 const mrnOf = (id) => `MRN-${String(id).padStart(6, '0')}`;
 
 const CLINICAL_ROLES = ['DOCTOR', 'NURSE'];
+const FREQUENCY_TEXT = { OD: 'Once daily', BD: 'Twice daily', TDS: 'Three times daily', QID: 'Four times daily', Q6H: 'Every 6 hours', Q8H: 'Every 8 hours', STAT: 'Immediately, once', PRN: 'As needed' };
+const ROUTES = ['ORAL', 'IV', 'IM', 'SC', 'SUBLINGUAL', 'INHALED', 'TOPICAL', 'RECTAL', 'OTHER'];
 const TABS_BY_ROLE = {
   DOCTOR: ['Overview', 'Visits', 'Admissions', 'Lab Tests', 'Prescriptions', 'Surgery'],
   NURSE: ['Admissions', 'Lab Tests', 'Prescriptions', 'Appointments'],
@@ -75,6 +77,11 @@ export default function PatientDetail() {
   const [currentFreq, setCurrentFreq] = useState('');
   const [currentDuration, setCurrentDuration] = useState('');
   const [currentQty, setCurrentQty] = useState('');
+  // Structured order (drives the ward medication schedule); the free-text fields stay alongside.
+  const [currentCode, setCurrentCode] = useState('');
+  const [currentDays, setCurrentDays] = useState('');
+  const [currentRoute, setCurrentRoute] = useState('ORAL');
+  const [currentUnits, setCurrentUnits] = useState('');
 
   // Admission form
   const [showAdmissionModal, setShowAdmissionModal] = useState(false);
@@ -264,9 +271,25 @@ export default function PatientDetail() {
   // Presc Handlers
   const handleAddMedItem = () => {
     if (!currentMed || !currentDosage || !currentFreq || !currentDuration || !currentQty) return toast.error("Fill all medicine fields");
+    if (currentCode && !['STAT', 'PRN'].includes(currentCode) && !currentDays) return toast.error('Enter the number of days for a scheduled frequency');
     const medObj = medicines.find(m => m.medicine_id == currentMed);
-    setPrescriptionItems([...prescriptionItems, { medicine_id: currentMed, name: medObj?.name || 'Unknown', dosage: currentDosage, frequency: currentFreq, duration: currentDuration, quantity: parseInt(currentQty) }]);
+    setPrescriptionItems([...prescriptionItems, {
+      medicine_id: currentMed, name: medObj?.name || 'Unknown', dosage: currentDosage, frequency: currentFreq, duration: currentDuration, quantity: parseInt(currentQty),
+      ...(currentCode ? { frequency_code: currentCode } : {}),
+      ...(currentDays ? { duration_days: parseInt(currentDays) } : {}),
+      ...(currentRoute ? { route: currentRoute } : {}),
+      ...(currentUnits ? { units_per_dose: parseInt(currentUnits) } : {}),
+    }]);
     setCurrentMed(''); setCurrentDosage(''); setCurrentFreq(''); setCurrentDuration(''); setCurrentQty('');
+    setCurrentCode(''); setCurrentDays(''); setCurrentRoute('ORAL'); setCurrentUnits('');
+  };
+  const handleCancelPrescription = async (prescriptionId) => {
+    if (!window.confirm('Cancel this prescription? Any doses still due on the ward will be cancelled.')) return;
+    try {
+      const res = await cancelPrescription(prescriptionId);
+      toast.success(`Prescription cancelled${res.data.data.doses_cancelled ? ` — ${res.data.data.doses_cancelled} pending doses cancelled` : ''}`);
+      fetchPatientData();
+    } catch (err) { if (!isForbidden(err)) toast.error(err.response?.data?.message || 'Could not cancel the prescription'); }
   };
   const handleCreatePrescription = async (e) => {
     e.preventDefault();
@@ -443,11 +466,12 @@ export default function PatientDetail() {
         <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <h2>Prescriptions</h2>
+            {canViewResults && <Link to={`/mar/${id}`} style={{ alignSelf: 'center', marginLeft: 'auto', marginRight: '12px' }}>Open medication record</Link>}
             {user?.role === 'DOCTOR' && <button onClick={() => setShowPrescriptionModal(true)} style={{ background: 'var(--primary)', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px' }}>+ Create Prescription</button>}
           </div>
           {history.prescriptions?.length > 0 ? (
              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-             <thead><tr style={{ textAlign: 'left', background: '#f1f5f9' }}><th style={{ padding: '8px' }}>Date</th><th style={{ padding: '8px' }}>Medications</th><th style={{ padding: '8px' }}>Status</th></tr></thead>
+             <thead><tr style={{ textAlign: 'left', background: '#f1f5f9' }}><th style={{ padding: '8px' }}>Date</th><th style={{ padding: '8px' }}>Medications</th><th style={{ padding: '8px' }}>Status</th>{user?.role === 'DOCTOR' && <th style={{ padding: '8px' }}></th>}</tr></thead>
              <tbody>
                {history.prescriptions.map(p => (
                  <tr key={p.prescription_id} style={{ borderBottom: '1px solid var(--border)' }}>
@@ -456,6 +480,11 @@ export default function PatientDetail() {
                      {p.medication_details ? p.medication_details.split('\n').map((line, i) => <div key={i}>{line}</div>) : 'No medications'}
                    </td>
                    <td style={{ padding: '8px', verticalAlign: 'top' }}><strong>{p.status}</strong></td>
+                   {user?.role === 'DOCTOR' && (
+                     <td style={{ padding: '8px', verticalAlign: 'top' }}>
+                       {p.status !== 'CANCELLED' && <button onClick={() => handleCancelPrescription(p.prescription_id)} style={{ padding: '4px 10px', background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>}
+                     </td>
+                   )}
                  </tr>
                ))}
              </tbody>
@@ -633,6 +662,15 @@ export default function PatientDetail() {
                 <input type="text" placeholder="Frequency (e.g. Twice daily)" value={currentFreq} onChange={e => setCurrentFreq(e.target.value)} style={{ padding: '8px' }} />
                 <input type="text" placeholder="Duration (e.g. 5 days)" value={currentDuration} onChange={e => setCurrentDuration(e.target.value)} style={{ padding: '8px' }} />
                 <input type="number" placeholder="Total Qty" value={currentQty} onChange={e => setCurrentQty(e.target.value)} style={{ padding: '8px' }} />
+                <select name="frequency_code" value={currentCode} onChange={e => { const c = e.target.value; setCurrentCode(c); if (c && !currentFreq) setCurrentFreq(FREQUENCY_TEXT[c]); }} style={{ padding: '8px' }}>
+                  <option value="">Frequency code (optional)</option>
+                  {Object.entries(FREQUENCY_TEXT).map(([code, text]) => <option key={code} value={code}>{code} — {text}</option>)}
+                </select>
+                <input type="number" min="1" name="duration_days" placeholder="Days (for the ward schedule)" value={currentDays} onChange={e => { setCurrentDays(e.target.value); if (e.target.value && !currentDuration) setCurrentDuration(`${e.target.value} days`); }} style={{ padding: '8px' }} />
+                <select name="route" value={currentRoute} onChange={e => setCurrentRoute(e.target.value)} style={{ padding: '8px' }}>
+                  {ROUTES.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+                <input type="number" min="1" name="units_per_dose" placeholder="Units per dose (default 1)" value={currentUnits} onChange={e => setCurrentUnits(e.target.value)} style={{ padding: '8px' }} />
                 <button type="button" onClick={handleAddMedItem} style={{ padding: '8px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '4px' }}>+ Add Medicine</button>
               </div>
             </div>

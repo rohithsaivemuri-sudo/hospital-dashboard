@@ -95,6 +95,12 @@ const matrix = () => [
   ['POST', '/prescriptions/999999/dispense', [PH]],
   ['GET', '/medicines', [AD, DR, NU, PH]],
   ['GET', '/medicines/1/batches', [AD, PH]],
+  ['POST', '/prescriptions/999999/cancel', [DR]],
+  ['GET', `/mar/patients/${P}`, [NU, DR]],
+  ['POST', '/mar/doses/999999/administer', [NU], {}],
+  ['POST', '/mar/doses/999999/refuse', [NU], {}],
+  ['POST', '/mar/doses/999999/missed', [NU], {}],
+  ['POST', '/mar/items/999999/given', [NU], {}],
   ['POST', '/medicines/999999/stock', [PH], { quantity: 1, type: 'RECEIPT' }],
 
   ['GET', '/lab/tests', [AD, DR, NU, LB]],

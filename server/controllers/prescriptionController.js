@@ -1,6 +1,27 @@
 const pool = require('../config/db');
 const { lockMedicines } = require('../utils/medicineLocks');
-const { lockBatches, allocate, decrementBatches } = require('../utils/batches');
+const { dispensePrescription } = require('../services/dispenseService');
+const { cancelPendingDoses } = require('../services/marService');
+const { FREQUENCY_CODES, ROUTES } = require('../utils/marTime');
+
+// Optional structured order fields per item (free-text dosage/frequency/duration stay required).
+function structuredFields(item, index) {
+  const bad = (msg) => Object.assign(new Error(`Item ${index + 1}: ${msg}`), { status: 400 });
+  const code = item.frequency_code || null;
+  if (code && !FREQUENCY_CODES.includes(code)) throw bad(`frequency_code must be one of ${FREQUENCY_CODES.join(', ')}`);
+  const route = item.route || null;
+  if (route && !ROUTES.includes(route)) throw bad(`route must be one of ${ROUTES.join(', ')}`);
+  const int = (v, name, max) => {
+    if (v === undefined || v === null || v === '') return null;
+    const n = Number(v);
+    if (!Number.isInteger(n) || n < 1 || n > max) throw bad(`${name} must be a whole number from 1 to ${max}`);
+    return n;
+  };
+  const durationDays = int(item.duration_days, 'duration_days', 365);
+  const unitsPerDose = int(item.units_per_dose, 'units_per_dose', 100);
+  if (code && !['STAT', 'PRN'].includes(code) && !durationDays) throw bad(`duration_days is required with frequency_code ${code}`);
+  return { code, route, durationDays, unitsPerDose };
+}
 const { writeAudit } = require('../utils/audit');
 const { resolveEncounterForRecord } = require('../utils/encounters');
 
@@ -64,8 +85,12 @@ exports.create = async (req, res) => {
     // Each prescription_items insert takes a shared FK lock on its medicines row. Take those
     // locks up front in medicine_id order so prescribing cannot deadlock with dispensing.
     await lockMedicines(connection, items.map(item => item.medicine_id), 'share');
-    for (const item of items) {
-      await connection.execute('INSERT INTO prescription_items (prescription_id, medicine_id, dosage, frequency, duration, quantity) VALUES (?, ?, ?, ?, ?, ?)', [prescription_id, item.medicine_id, item.dosage, item.frequency, item.duration, item.quantity]);
+    for (const [index, item] of items.entries()) {
+      const f = structuredFields(item, index);
+      await connection.execute(
+        'INSERT INTO prescription_items (prescription_id, medicine_id, dosage, frequency, duration, quantity, frequency_code, duration_days, route, units_per_dose) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [prescription_id, item.medicine_id, item.dosage, item.frequency, item.duration, item.quantity, f.code, f.durationDays, f.route, f.unitsPerDose]
+      );
     }
     await writeAudit(connection, req, { action: 'CREATE_PRESCRIPTION', entityType: 'prescription', entityId: prescription_id, patientId: patient_id,
       details: { consultation_id: consultation_id ? Number(consultation_id) : null, encounter_id: encounterId, medicine_ids: items.map(item => Number(item.medicine_id)), item_count: items.length } });
@@ -127,78 +152,37 @@ exports.dispense = async (req, res) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-    const [[prescription]] = await connection.execute('SELECT status, patient_id FROM prescriptions WHERE prescription_id = ? FOR UPDATE', [req.params.id]);
-    if (!prescription || prescription.status === 'DISPENSED' || prescription.status === 'CANCELLED') {
-      await connection.rollback();
-      return res.status(409).json({ success: false, message: 'Prescription is not available for dispensing' });
-    }
-    // Plain (non-locking) read: the prescriptions row lock above already serialises every
-    // dispenser of this prescription, and nothing else modifies its items. A locking read here
-    // would take gap locks on the prescription_items index ahead of the medicines locks, which
-    // can deadlock with a concurrent prescription create (medicines locks, then item inserts).
-    const [items] = await connection.execute(
-      'SELECT item_id, medicine_id, quantity FROM prescription_items WHERE prescription_id = ? AND dispensed = FALSE',
-      [req.params.id]
-    );
-    if (!items.length) {
-      await connection.rollback();
-      return res.status(409).json({ success: false, message: 'No remaining items to dispense' });
-    }
-
-    // Deadlock prevention: total the quantity per medicine, then lock the medicines rows in
-    // ascending medicine_id order (see utils/medicineLocks.js) before checking stock.
-    const required = new Map();
-    for (const item of items) required.set(item.medicine_id, (required.get(item.medicine_id) || 0) + item.quantity);
-    const locked = await lockMedicines(connection, [...required.keys()]);
-
-    // FEFO: for each medicine (same ascending order) lock its unexpired batches, earliest expiry
-    // first, and allocate each item's quantity across them. Expired stock is never dispensed.
-    const allocations = new Map(); // item_id -> [{ batch_id, batch_number, quantity }]
-    for (const medicineId of [...required.keys()].sort((a, b) => a - b)) {
-      const medicine = locked.get(medicineId);
-      const batches = medicine ? await lockBatches(connection, medicineId, { usableOnly: true }) : [];
-      const usable = batches.reduce((sum, b) => sum + b.quantity, 0);
-      if (!medicine || medicine.stock_quantity < required.get(medicineId) || usable < required.get(medicineId)) {
-        await connection.rollback();
-        return res.status(400).json({ success: false, message: `Insufficient Stock for Medicine ID ${medicineId}`, available_unexpired: usable });
-      }
-      for (const item of items.filter(i => i.medicine_id === medicineId).sort((a, b) => a.item_id - b.item_id)) {
-        allocations.set(item.item_id, allocate(batches, item.quantity));
-      }
-    }
-
-    // Update by primary key so only these item records are locked (no index gap locks).
-    // The after_prescription_dispense trigger decrements medicines.stock_quantity per item; the
-    // same quantities come off the batches below, keeping the total equal to the sum of batches.
-    const itemIds = items.map(item => item.item_id);
-    const [updated] = await connection.query('UPDATE prescription_items SET dispensed = TRUE, dispensed_at = NOW() WHERE item_id IN (?) AND dispensed = FALSE', [itemIds]);
-    if (updated.affectedRows !== itemIds.length) {
-      await connection.rollback();
-      return res.status(409).json({ success: false, message: 'Prescription is not available for dispensing' });
-    }
-
-    // Take stock off the batches, record which batches each item came from, and log one movement
-    // per item and batch.
-    for (const item of items) {
-      const taken = allocations.get(item.item_id);
-      await decrementBatches(connection, taken);
-      for (const t of taken) {
-        await connection.execute('INSERT INTO prescription_item_batches (item_id, batch_id, quantity) VALUES (?, ?, ?)', [item.item_id, t.batch_id, t.quantity]);
-        await connection.execute('INSERT INTO pharmacy_stock_movements (medicine_id, movement_type, quantity, reason, reference_id, performed_by, batch_id) VALUES (?, "DISPENSE", ?, "Dispense Prescription", ?, ?, ?)', [item.medicine_id, -t.quantity, req.params.id, req.user.user_id, t.batch_id]);
-      }
-    }
-    
-    // Then update prescription status
-
-    await connection.execute('UPDATE prescriptions SET status = "DISPENSED" WHERE prescription_id = ?', [req.params.id]);
-    await writeAudit(connection, req, { action: 'DISPENSE_PRESCRIPTION', entityType: 'prescription', entityId: Number(req.params.id), patientId: prescription.patient_id,
-      details: { from: prescription.status, to: 'DISPENSED', items: items.map(item => ({ item_id: item.item_id, medicine_id: item.medicine_id, quantity: item.quantity, batches: allocations.get(item.item_id).map(t => ({ batch_id: t.batch_id, quantity: t.quantity })) })) } });
-    
-    await connection.commit();
-    res.json({ success: true, message: 'Dispensed successfully' });
+    const result = await dispensePrescription(connection, req, req.params.id);
+    if (result.status === 200) await connection.commit();
+    else await connection.rollback();
+    res.status(result.status).json(result.body);
   } catch (error) { 
     await connection.rollback();
     res.status(500).json({ success: false, message: error.message }); 
+  } finally {
+    connection.release();
+  }
+};
+
+// POST /api/prescriptions/:id/cancel { reason } — the prescribing team stops a prescription.
+// Any doses still pending on the ward are cancelled in the same transaction (decision: not left pending).
+exports.cancel = async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [[rx]] = await connection.execute('SELECT prescription_id, patient_id, status FROM prescriptions WHERE prescription_id = ? FOR UPDATE', [req.params.id]);
+    if (!rx) { await connection.rollback(); return res.status(404).json({ success: false, message: 'Prescription not found' }); }
+    if (!(await checkDoctorAuth(req, rx.patient_id, 'clinical'))) { await connection.rollback(); return res.status(403).json({ success: false, message: 'Forbidden: this patient is not under your care' }); }
+    if (rx.status === 'CANCELLED') { await connection.rollback(); return res.status(409).json({ success: false, message: 'Prescription is already cancelled' }); }
+    await connection.execute('UPDATE prescriptions SET status = "CANCELLED" WHERE prescription_id = ?', [rx.prescription_id]);
+    const dosesCancelled = await cancelPendingDoses(connection, { prescriptionId: rx.prescription_id, reason: 'Prescription cancelled', userId: req.user.user_id });
+    await writeAudit(connection, req, { action: 'CANCEL_PRESCRIPTION', entityType: 'prescription', entityId: rx.prescription_id, patientId: rx.patient_id,
+      details: { from: rx.status, to: 'CANCELLED', doses_cancelled: dosesCancelled } });
+    await connection.commit();
+    res.json({ success: true, message: 'Prescription cancelled', data: { doses_cancelled: dosesCancelled } });
+  } catch (error) {
+    await connection.rollback();
+    res.status(500).json({ success: false, message: error.message });
   } finally {
     connection.release();
   }

@@ -63,6 +63,7 @@ export default function NurseStation() {
                     {b.patient_id ? (
                       <>
                         <Link to={`/patients/${b.patient_id}`} style={{ display: 'block', marginTop: '4px' }}>{b.patient_name}</Link>
+                        <Link to={`/mar/${b.patient_id}`} data-testid="bed-mar-link" style={{ fontSize: '12px' }}>Medication record</Link>
                         <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{b.age} yrs · {b.gender} · {b.doctor_name}</div>
                         {b.allergies && <div style={{ fontSize: '12px', color: 'var(--danger)', fontWeight: 'bold' }}>Allergies: {b.allergies}</div>}
                       </>

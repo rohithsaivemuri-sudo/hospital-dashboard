@@ -84,8 +84,9 @@ export default function PharmacyDashboard() {
     setDispensing(true);
     setDispenseError(null);
     try {
-      await dispensePrescription(id);
-      toast.success('Prescription dispensed successfully');
+      const res = await dispensePrescription(id);
+      const doses = res.data?.doses_scheduled || 0;
+      toast.success(doses ? `Prescription dispensed — ${doses} ward doses scheduled` : 'Prescription dispensed successfully');
       setDetail(null);
       load();
     } catch (e) {

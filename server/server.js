@@ -43,6 +43,7 @@ const encounterRoutes = require('./routes/encounterRoutes');
 const userRoutes = require('./routes/userRoutes');
 const nurseRoutes = require('./routes/nurseRoutes');
 const nurseAssignmentRoutes = require('./routes/nurseAssignmentRoutes');
+const marRoutes = require('./routes/marRoutes');
 
 const { verifyToken } = require('./middleware/auth');
 const { auditAccess } = require('./middleware/audit');
@@ -70,6 +71,7 @@ app.use('/api/encounters', verifyToken, encounterRoutes);
 app.use('/api/users', verifyToken, userRoutes);
 app.use('/api/nurse', verifyToken, nurseRoutes);
 app.use('/api/nurse-assignments', verifyToken, nurseAssignmentRoutes);
+app.use('/api/mar', verifyToken, marRoutes);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

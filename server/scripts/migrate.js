@@ -59,7 +59,13 @@ async function migrate(database, { dryRun = false, log = console.log, upTo } = {
         continue;
       }
       log(`[migrate] ${database}: applying ${file}`);
-      runSqlFile(database, path.join(MIGRATIONS_DIR, file));
+      if (file.endsWith('.js')) {
+        // Data migrations that reuse application code; they get a connection to `database` only.
+        const result = await require(path.join(MIGRATIONS_DIR, file)).up(conn, { database });
+        if (result) log(`[migrate] ${database}: ${file} -> ${JSON.stringify(result)}`);
+      } else {
+        runSqlFile(database, path.join(MIGRATIONS_DIR, file));
+      }
       await conn.query('INSERT INTO schema_migrations (version) VALUES (?)', [file]);
     }
     return pending;
