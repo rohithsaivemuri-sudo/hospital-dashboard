@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
-import { getPatient, getPatientHistory, createLabOrder, getLabTests, createPrescription, getMedicines, createAdmission, getAvailableBeds, getLabResult, downloadLabResultReport } from '../../services/api';
+import { getPatient, getPatientHistory, createLabOrder, getLabTests, createPrescription, getMedicines, createAdmission, getAvailableBeds, getLabResult, downloadLabResultReport, createConsultation, createSurgeryRequest, dischargePatient } from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import api from '../../services/api';
 
 export default function PatientDetail() {
   const { id } = useParams();
@@ -95,7 +94,7 @@ export default function PatientDetail() {
   const handleCreateEncounter = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/consultations', {
+      await createConsultation({
         appointment_id: activeAppointmentId || null,
         patient_id: id,
         doctor_id: user.doctor_id,
@@ -115,7 +114,7 @@ export default function PatientDetail() {
   const handleRequestSurgery = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/surgery', {
+      await createSurgeryRequest({
         patient_id: id,
         doctor_id: user.doctor_id,
         procedure_name: surgProc,
@@ -133,7 +132,7 @@ export default function PatientDetail() {
 
   const handleDischarge = async (admissionId) => {
     try {
-      await api.post(`/admissions/${admissionId}/discharge`);
+      await dischargePatient(admissionId);
       toast.success('Patient discharged successfully');
       fetchPatientData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed to discharge'); }

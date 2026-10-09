@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { getDoctor, getAppointments, getPatients, getDoctorAnalytics, getCurrentAdmissions } from '../../services/api';
+import { getDoctor, getAppointments, getPatients, getDoctorAnalytics, getCurrentAdmissions, updateAppointmentStatus as putAppointmentStatus } from '../../services/api';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FaUserMd, FaHospitalUser, FaExclamationTriangle, FaCalendarCheck, FaNotesMedical, FaUserInjured, FaBed, FaBell } from 'react-icons/fa';
-import api from '../../services/api';
 
 export default function DoctorDashboard() {
   const { user } = useContext(AuthContext);
@@ -54,11 +53,11 @@ export default function DoctorDashboard() {
 
   const updateAppointmentStatus = async (id, status) => {
     try {
-      await api.put(`/appointments/${id}/status`, { status });
+      await putAppointmentStatus(id, status);
       toast.success(`Appointment marked as ${status}`);
       fetchDashboardData(); // Refetch
     } catch (err) {
-      toast.error('Failed to update status');
+      toast.error(err.response?.data?.message || 'Failed to update status');
     }
   };
 
