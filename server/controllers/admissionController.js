@@ -116,7 +116,7 @@ exports.create = async (req, res) => {
     if (req.user.role === 'DOCTOR') assignedDepartmentId = bed.department_id;
 
     // The after_admission_insert trigger handles bed status, doctor workload, and log insertion
-    const [result] = await connection.execute('INSERT INTO admissions (patient_id, doctor_id, bed_id, department_id, admission_date, status, diagnosis, notes) VALUES (?, ?, ?, ?, NOW(), "ACTIVE", ?, ?)', [patient_id, assignedDoctorId, bed_id, assignedDepartmentId, diagnosis, notes]);
+    const [result] = await connection.execute('INSERT INTO admissions (patient_id, doctor_id, bed_id, department_id, admission_date, status, diagnosis, notes) VALUES (?, ?, ?, ?, NOW(), "ACTIVE", ?, ?)', [patient_id, assignedDoctorId, bed_id, assignedDepartmentId, diagnosis, notes ?? null]); // notes are optional
     await writeAudit(connection, req, { action: 'ADMIT_PATIENT', entityType: 'admission', entityId: result.insertId, patientId: patient_id,
       details: { bed_id: Number(bed_id), doctor_id: Number(assignedDoctorId), department_id: Number(assignedDepartmentId) } });
 
