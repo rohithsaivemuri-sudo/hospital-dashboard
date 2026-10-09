@@ -8,14 +8,17 @@ exports.list = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     const { vehicle_number, driver_name, contact_number } = req.body;
-    const [result] = await pool.execute('INSERT INTO ambulances (vehicle_number, driver_name, contact_number, status) VALUES (?, ?, ?, "AVAILABLE")', [vehicle_number, driver_name, contact_number]);
+    // The column is driver_phone; contact_number is still accepted for existing callers.
+    const driver_phone = req.body.driver_phone ?? contact_number;
+    const [result] = await pool.execute('INSERT INTO ambulances (vehicle_number, driver_name, driver_phone, status) VALUES (?, ?, ?, "AVAILABLE")', [vehicle_number, driver_name, driver_phone]);
     res.status(201).json({ success: true, data: { id: result.insertId } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.update = async (req, res) => {
   try {
     const { driver_name, contact_number } = req.body;
-    await pool.execute('UPDATE ambulances SET driver_name = ?, contact_number = ? WHERE ambulance_id = ?', [driver_name, contact_number, req.params.id]);
+    const driver_phone = req.body.driver_phone ?? contact_number;
+    await pool.execute('UPDATE ambulances SET driver_name = ?, driver_phone = ? WHERE ambulance_id = ?', [driver_name, driver_phone, req.params.id]);
     res.json({ success: true, message: 'Updated successfully' });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
