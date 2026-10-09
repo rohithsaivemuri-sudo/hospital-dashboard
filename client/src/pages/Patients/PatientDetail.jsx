@@ -1,8 +1,18 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
-import { getPatient, getPatientHistory, createLabOrder, getLabTests, createPrescription, getMedicines, createAdmission, getAvailableBeds, getLabResult, downloadLabResultReport, createConsultation, createSurgeryRequest, dischargePatient } from '../../services/api';
+import { getPatient, getPatientHistory, createLabOrder, getLabTests, createPrescription, getMedicines, createAdmission, getAvailableBeds, getLabResult, downloadLabResultReport, createConsultation, createSurgeryRequest, dischargePatient, encounterAction } from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+
+const ageOf = (dob) => {
+  if (!dob) return '—';
+  const d = new Date(dob), now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) age -= 1;
+  return age;
+};
+// Display MRN derived from the patient id (no separate MRN column yet).
+const mrnOf = (id) => `MRN-${String(id).padStart(6, '0')}`;
 
 export default function PatientDetail() {
   const { id } = useParams();
@@ -249,25 +259,47 @@ export default function PatientDetail() {
 
   const activeAdmissions = history.admissions?.filter(a => a.status === 'ACTIVE') || [];
   const currentAdmission = activeAdmissions.length > 0 ? activeAdmissions[0] : null;
+  const openEncounter = (history.encounters || []).find(e => ['ARRIVED', 'TRIAGED', 'IN_PROGRESS'].includes(e.status));
+  const isMyEncounter = user?.role === 'DOCTOR' && openEncounter && Number(openEncounter.doctor_id) === Number(user.doctor_id);
+
+  const runEncounterAction = async (action) => {
+    if (action === 'finish' && !window.confirm('Sign and close this visit? Its notes cannot be edited afterwards.')) return;
+    try {
+      await encounterAction(openEncounter.encounter_id, action);
+      toast.success(action === 'start' ? 'Visit started' : 'Visit signed and closed');
+      fetchPatientData();
+    } catch (err) { toast.error(err.response?.data?.message || 'Unable to update the visit'); }
+  };
 
   return (
     <div style={{ padding: '24px', backgroundColor: 'var(--bg-primary)', minHeight: '100vh' }}>
       
-      {/* HEADER */}
-      <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', marginBottom: '24px' }}>
-        <h1 style={{ margin: '0 0 16px' }}>{patient.name}</h1>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-          <div><strong>Patient ID:</strong> {patient.patient_id}</div>
-          <div><strong>Gender:</strong> {patient.gender}</div>
-          <div><strong>DOB:</strong> {patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString() : 'N/A'}</div>
-          <div><strong>Blood Group:</strong> {patient.blood_group || 'N/A'}</div>
-          <div><strong>Contact:</strong> {patient.phone}</div>
-          {currentAdmission && (
-            <>
-              <div><strong>Status:</strong> <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>ADMITTED</span></div>
-              <div><strong>Bed:</strong> Bed #{currentAdmission.bed_id}</div>
-            </>
-          )}
+      {/* PATIENT CONTEXT HEADER — stays visible across tabs so every action is taken on the right patient */}
+      <div data-testid="patient-context" style={{ position: 'sticky', top: 0, zIndex: 20, background: 'var(--bg-card)', padding: '16px 24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', marginBottom: '24px', borderLeft: '4px solid var(--primary)' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '8px 24px' }}>
+          <h1 style={{ margin: 0, fontSize: '1.5rem' }}>{patient.name}</h1>
+          <span><strong>{ageOf(patient.date_of_birth)}</strong> yrs · {patient.gender}</span>
+          <span><strong>{mrnOf(patient.patient_id)}</strong></span>
+          <span><strong>Blood</strong> {patient.blood_group || '—'}</span>
+          <span style={{ color: patient.allergies ? 'var(--danger)' : 'var(--text-secondary)', fontWeight: patient.allergies ? 'bold' : 'normal' }}>
+            <strong>Allergies</strong> {patient.allergies || 'Not recorded'}
+          </span>
+          {currentAdmission && <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>ADMITTED · Bed #{currentAdmission.bed_id}</span>}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 16px', marginTop: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+          <span>DOB {patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString() : 'N/A'}</span>
+          <span>Contact {patient.phone || '—'}</span>
+          {openEncounter ? (
+            <span data-testid="current-visit" style={{ color: 'var(--text-primary)' }}>
+              <strong>Current visit:</strong> {openEncounter.status.replace('_', ' ')} with {openEncounter.doctor_name}
+              {isMyEncounter && ['ARRIVED', 'TRIAGED'].includes(openEncounter.status) && (
+                <button onClick={() => runEncounterAction('start')} style={{ marginLeft: '12px', padding: '4px 10px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Start Visit</button>
+              )}
+              {isMyEncounter && openEncounter.status === 'IN_PROGRESS' && (
+                <button onClick={() => runEncounterAction('finish')} style={{ marginLeft: '12px', padding: '4px 10px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Sign &amp; Close</button>
+              )}
+            </span>
+          ) : <span>No open visit</span>}
         </div>
       </div>
 

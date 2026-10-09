@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { withTransaction } = require('../utils/audit');
+const { resolveEncounterForRecord } = require('../utils/encounters');
 
 const checkDoctorAuth = async (req, patient_id) => {
   if (req.user.role !== 'DOCTOR') return true;
@@ -18,7 +19,7 @@ const checkDoctorAuth = async (req, patient_id) => {
 
 exports.create = async (req, res) => {
   try {
-    const { patient_id, doctor_id, procedure_name, diagnosis, priority, requested_date, notes } = req.body;
+    const { patient_id, doctor_id, procedure_name, diagnosis, priority, requested_date, notes, encounter_id } = req.body;
     
     if (req.user.role === 'DOCTOR') {
       if (parseInt(doctor_id) !== parseInt(req.user.doctor_id)) return res.status(403).json({ success: false, message: 'Forbidden' });
@@ -27,15 +28,16 @@ exports.create = async (req, res) => {
     }
 
     const result = await withTransaction(req, async (connection, audit) => {
+      const encounterId = await resolveEncounterForRecord(connection, { encounterId: encounter_id, patientId: patient_id, doctorId: doctor_id });
       const [inserted] = await connection.execute(
-        'INSERT INTO surgery_requests (patient_id, doctor_id, procedure_name, diagnosis, priority, requested_date, status, notes) VALUES (?, ?, ?, ?, ?, ?, "REQUESTED", ?)',
-        [patient_id, doctor_id, procedure_name, diagnosis, priority || 'ROUTINE', requested_date, notes || '']
+        'INSERT INTO surgery_requests (patient_id, doctor_id, procedure_name, diagnosis, priority, requested_date, status, notes, encounter_id) VALUES (?, ?, ?, ?, ?, ?, "REQUESTED", ?, ?)',
+        [patient_id, doctor_id, procedure_name, diagnosis, priority || 'ROUTINE', requested_date, notes || '', encounterId]
       );
-      await audit({ action: 'CREATE_SURGERY_REQUEST', entityType: 'surgery_request', entityId: inserted.insertId, patientId: patient_id, details: { priority: priority || 'ROUTINE' } });
+      await audit({ action: 'CREATE_SURGERY_REQUEST', entityType: 'surgery_request', entityId: inserted.insertId, patientId: patient_id, details: { priority: priority || 'ROUTINE', encounter_id: encounterId } });
       return inserted;
     });
     res.status(201).json({ success: true, data: { id: result.insertId } });
-  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+  } catch (error) { res.status(error.status || 500).json({ success: false, message: error.message }); }
 };
 
 exports.getByPatient = async (req, res) => {

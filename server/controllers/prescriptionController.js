@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { lockMedicines } = require('../utils/medicineLocks');
 const { writeAudit } = require('../utils/audit');
+const { resolveEncounterForRecord } = require('../utils/encounters');
 
 const checkDoctorAuth = async (req, patient_id) => {
   if (req.user.role !== 'DOCTOR') return true;
@@ -48,7 +49,7 @@ exports.create = async (req, res) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-    const { consultation_id, patient_id, doctor_id, items, notes } = req.body;
+    const { consultation_id, encounter_id, patient_id, doctor_id, items, notes } = req.body;
     
     if (req.user.role === 'DOCTOR') {
       if (parseInt(doctor_id) !== parseInt(req.user.doctor_id)) {
@@ -62,7 +63,8 @@ exports.create = async (req, res) => {
       }
     }
 
-    const [result] = await connection.execute('INSERT INTO prescriptions (consultation_id, patient_id, doctor_id, prescription_date, status, notes) VALUES (?, ?, ?, NOW(), "CREATED", ?)', [consultation_id || null, patient_id, doctor_id, notes || null]);
+    const encounterId = await resolveEncounterForRecord(connection, { encounterId: encounter_id, patientId: patient_id, doctorId: doctor_id, consultationId: consultation_id });
+    const [result] = await connection.execute('INSERT INTO prescriptions (consultation_id, patient_id, doctor_id, prescription_date, status, notes, encounter_id) VALUES (?, ?, ?, NOW(), "CREATED", ?, ?)', [consultation_id || null, patient_id, doctor_id, notes || null, encounterId]);
     const prescription_id = result.insertId;
     // Each prescription_items insert takes a shared FK lock on its medicines row. Take those
     // locks up front in medicine_id order so prescribing cannot deadlock with dispensing.
@@ -71,12 +73,12 @@ exports.create = async (req, res) => {
       await connection.execute('INSERT INTO prescription_items (prescription_id, medicine_id, dosage, frequency, duration, quantity) VALUES (?, ?, ?, ?, ?, ?)', [prescription_id, item.medicine_id, item.dosage, item.frequency, item.duration, item.quantity]);
     }
     await writeAudit(connection, req, { action: 'CREATE_PRESCRIPTION', entityType: 'prescription', entityId: prescription_id, patientId: patient_id,
-      details: { consultation_id: consultation_id ? Number(consultation_id) : null, medicine_ids: items.map(item => Number(item.medicine_id)), item_count: items.length } });
+      details: { consultation_id: consultation_id ? Number(consultation_id) : null, encounter_id: encounterId, medicine_ids: items.map(item => Number(item.medicine_id)), item_count: items.length } });
     await connection.commit();
     res.status(201).json({ success: true, data: { id: prescription_id } });
   } catch (error) { 
     await connection.rollback();
-    res.status(500).json({ success: false, message: error.message }); 
+    res.status(error.status || 500).json({ success: false, message: error.message }); 
   } finally {
     connection.release();
   }

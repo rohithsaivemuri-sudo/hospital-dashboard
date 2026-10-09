@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { withTransaction } = require('../utils/audit');
+const { applyAppointmentStatus } = require('../utils/encounters');
 exports.create = async (req, res) => {
   try {
     const { patient_id, doctor_id, appointment_date, appointment_time, reason } = req.body;
@@ -30,10 +31,11 @@ exports.list = async (req, res) => {
   try {
     const { date, doctor_id, status } = req.query;
     let query = `
-      SELECT a.*, p.name as patient_name, d.name as doctor_name 
+      SELECT a.*, p.name as patient_name, d.name as doctor_name, e.encounter_id, e.status as encounter_status
       FROM appointments a
       LEFT JOIN patients p ON a.patient_id = p.patient_id
       LEFT JOIN doctors d ON a.doctor_id = d.doctor_id
+      LEFT JOIN encounters e ON e.appointment_id = a.appointment_id
       WHERE 1=1
     `;
     let params = [];
@@ -76,13 +78,11 @@ exports.updateStatus = async (req, res) => {
       if (rows.length === 0) return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
-    await withTransaction(req, async (connection, audit) => {
-      const [[before]] = await connection.execute('SELECT appointment_id, patient_id, status FROM appointments WHERE appointment_id = ? FOR UPDATE', [req.params.id]);
-      await connection.execute('UPDATE appointments SET status = ? WHERE appointment_id = ?', [status, req.params.id]);
-      if (before && before.status !== status) await audit({ action: 'UPDATE_APPOINTMENT_STATUS', entityType: 'appointment', entityId: before.appointment_id, patientId: before.patient_id, details: { from: before.status, to: status } });
-    });
+    // Status changes go through the encounter state machine, which keeps the appointment and its
+    // encounter in step (same transaction) and rejects invalid transitions with 409.
+    await withTransaction(req, (connection) => applyAppointmentStatus(connection, req, req.params.id, status));
     res.json({ success: true, message: 'Updated successfully' });
-  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+  } catch (error) { res.status(error.status || 500).json({ success: false, message: error.message }); }
 };
 exports.getByDoctor = async (req, res) => {
   try {

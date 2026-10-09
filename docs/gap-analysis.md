@@ -8,7 +8,7 @@ This analysis checks the codebase (`main` @ `70b0729`) against *Professional HIS
 | 1 | Deadlock-free dispensing (G, I-1, K-1, L-1) | **Done** (Phase 1 step 1; was Partial) | `prescriptionController.js:133-137` locks medicines via JOIN in item order (unsorted, not deduped). Role check `:123` only blocks DOCTOR/LAB (Nurse/Reception/Admin can dispense). CHECK `stock_quantity>=0` and the trigger fail-safe exist ✔ | Aggregate qty per medicine_id, sort ASC, lock `medicines` rows sequentially FOR UPDATE, then return 400 `Insufficient Stock for Medicine ID X` (same shape). PHARMACY only. Loading state and error modal in PharmacyDashboard |
 | 2 | Secure lab report retrieval (G, I-2, K-2, L-2) | **Done** (Phase 1 step 2; was Partial; nurses denied until 4b) | Files in `server/uploads/lab-reports` are **not** publicly served (no `express.static` in server.js) ✔; DB stores `stored_filename` only ✔. But `downloadAttachment` (`labController.js:15`) and `getResult` (`:13`) have **no role or ownership check**, `listOrders` (`:10`) returns all orders to everyone, and there is no path containment check | Keep storage dir (already non-public). Add `GET /api/lab/reports/:result_id/download` (optional `?attachment_id`) and the same checks on the existing `/lab/attachments/:id`: LAB all, DOCTOR care-set, NURSE assigned, others 403. Add `path.resolve` containment check, then `fs.createReadStream`. Doctor "View Report" button in PatientDetail |
 | 3 | Audit logs + middleware (G, I-3, K-4) | **Done** (Phase 1 step 3; migration 001 applied to hospital_db 2026-10-09) | No `audit_logs` table. `pharmacy_stock_movements` covers stock only | New `audit_logs`, made immutable by BEFORE UPDATE/DELETE triggers that SIGNAL. Non-blocking `res.on('finish')` middleware on PHI routers, with sanitized details JSON. LOGIN_SUCCESS/FAILED and 401/403 logged. In-transaction domain events for dispense/MAR |
-| 4 | Encounter lifecycle (G, I-4, K-3) | **Missing** | Consultations are tied to `appointment_id` (`schema.sql:191`). Appointment status updates accept any value from any role (`appointmentController.js:61-73`). DoctorDashboard drives CHECKED_IN→IN_PROGRESS→COMPLETED (`DoctorDashboard.jsx:130-131`) | New `encounters` table + state machine (see §3). Nullable `encounter_id` on consultations, lab_orders, prescriptions, surgery_requests, with backfill |
+| 4 | Encounter lifecycle (G, I-4, K-3) | **Done** (Phase 1 step 4; migration 002 applied to hospital_db 2026-10-09) | Consultations are tied to `appointment_id` (`schema.sql:191`). Appointment status updates accept any value from any role (`appointmentController.js:61-73`). DoctorDashboard drives CHECKED_IN→IN_PROGRESS→COMPLETED (`DoctorDashboard.jsx:130-131`) | New `encounters` table + state machine (see §3). Nullable `encounter_id` on consultations, lab_orders, prescriptions, surgery_requests, with backfill |
 | 4b | Section E enforcement on existing routes | **Missing** | `authorize` is unused outside register; non-doctor roles can read all clinical history | Apply the §4 matrix. Ship nurse and receptionist landing pages, nurse ward assignments, 403 UI handling |
 | 5 | Batch & FEFO (G, I-5, K-6) | **Missing** | Single `medicines.stock_quantity` + `expiry_date` (`schema.sql:213-215`) | `medicine_batches`, backfill, FEFO dispense (see §3). **medicines.stock_quantity is kept, not dropped** |
 | 6 | MAR (G, I-6, K-5) | **Missing** | NURSE role exists only in the enum (`schema.sql:34`); nurse sees the generic dashboard (`App.jsx:39-40`) | `medication_administrations` + bedside verification modal (see §3) |
@@ -46,6 +46,22 @@ The rule lives in `server/utils/medicineLocks.js`. Dispense also takes no `presc
   - The FK to users is RESTRICT, so users with audit history cannot be deleted; deactivate them instead.
 - Backups: `scripts/migrate.js` runs `scripts/backup-db.js` (full mysqldump to `~/hospital_backups/<db>_<timestamp>.sql`, mode 600) before applying anything to a non-test database, and aborts if the backup fails.
 - Pre-existing API-only bug, not fixed: `POST /api/admissions` without `notes` returns 500 (the UI always sends notes).
+
+**Encounters (step 4).**
+- Migration 002 backfill on `hospital_db` (identical to two rehearsals on copies of live data):
+  - **Encounters created: 4.**
+    - Appointment 3: CHECKED_IN → ARRIVED (kept in flight).
+    - Appointment 5: COMPLETED → FINISHED.
+    - Consultations 2 and 3: inpatient, FINISHED.
+  - **Links:** consultations 3/3, lab orders 6/9, prescriptions 2/3; there are no surgery requests.
+  - **Left NULL:** lab orders 7–9 and prescription 3. They have no `consultation_id`, so any link would be a guess.
+- The backfill is re-runnable from any partial state: DDL is guarded by information_schema, encounters carry a unique `backfilled_from` key, links only fill NULLs, and it only touches rows created before the `encounters` table.
+- The rules live in `utils/encounters.js`:
+  - Appointment and encounter statuses are written in one transaction, appointment row locked first; invalid transitions return 409.
+  - A doctor can have only one IN_PROGRESS encounter with a given patient.
+  - Notes on FINISHED/CANCELLED/ENTERED_IN_ERROR encounters are immutable.
+- The test DB is now built in production order: baseline schema, seed data, then later migrations.
+- Pre-existing UI bug fixed separately: DoctorDashboard/PatientDetail called `api.put/post` on a plain object, so Start/Complete Visit, saving notes, requesting surgery and discharging never sent a request.
 
 **Already correct, left untouched:** JWT on all API routers; emergency allocation locking (`emergencyAllocationService.js`); doctor care-set isolation (definition kept, encounters added to it); multi-test ordering in one transaction (`labController.js:9`); multi-item prescriptions; negative-stock CHECK + trigger; stock movement ledger; upload type/size filter (`labController.js:4`); lab ORDERED→PROCESSING→COMPLETED with FOR UPDATE.
 

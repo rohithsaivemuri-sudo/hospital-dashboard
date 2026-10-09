@@ -159,8 +159,12 @@ test('lab order, processing, result and report upload are each audited', async (
 test('admissions, billing, appointments, emergencies, surgery, beds and doctors are audited', async () => {
   const appt = await changeRows(() => api('POST', '/appointments', { token: reception.token, body: { patient_id: patientId, doctor_id: doctor.user.doctor_id, appointment_date: '2031-03-03', appointment_time: '09:15:00' } }));
   assert.equal(appt.rows[0].action, 'CREATE_APPOINTMENT');
+  // Check-in goes through the encounter state machine: one row covering both records.
   const apptStatus = await changeRows(() => api('PUT', `/appointments/${appt.res.body.data.id}/status`, { token: reception.token, body: { status: 'CHECKED_IN' } }));
-  assert.deepEqual(parse(apptStatus.rows[0]), { from: 'BOOKED', to: 'CHECKED_IN' });
+  assert.equal(apptStatus.rows.length, 1);
+  assert.equal(apptStatus.rows[0].action, 'ENCOUNTER_ARRIVED');
+  assert.equal(apptStatus.rows[0].entity_type, 'encounter');
+  assert.deepEqual(parse(apptStatus.rows[0]), { from: null, to: 'ARRIVED', appointment_id: appt.res.body.data.id, appointment: { from: 'BOOKED', to: 'CHECKED_IN' } });
 
   const [[bed]] = await db().query("SELECT bed_id FROM beds WHERE status = 'AVAILABLE' ORDER BY bed_id DESC LIMIT 1");
   const admit = await changeRows(() => api('POST', '/admissions', { token: reception.token, body: { patient_id: 2, doctor_id: doctor.user.doctor_id, bed_id: bed.bed_id, department_id: 1, diagnosis: NOTE_MARKER, notes: '' } }));

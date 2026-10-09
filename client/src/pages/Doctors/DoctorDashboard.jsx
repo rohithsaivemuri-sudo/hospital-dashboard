@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { getDoctor, getAppointments, getPatients, getDoctorAnalytics, getCurrentAdmissions, updateAppointmentStatus as putAppointmentStatus } from '../../services/api';
+import { getDoctor, getAppointments, getPatients, getDoctorAnalytics, getCurrentAdmissions, updateAppointmentStatus as putAppointmentStatus, encounterAction } from '../../services/api';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FaUserMd, FaHospitalUser, FaExclamationTriangle, FaCalendarCheck, FaNotesMedical, FaUserInjured, FaBed, FaBell } from 'react-icons/fa';
@@ -51,10 +51,13 @@ export default function DoctorDashboard() {
     }
   };
 
+  // Visits run on the appointment's encounter (start / sign & close); the appointment status follows it.
   const updateAppointmentStatus = async (id, status) => {
+    const app = appointments.find(a => a.appointment_id === id);
     try {
-      await putAppointmentStatus(id, status);
-      toast.success(`Appointment marked as ${status}`);
+      if (app?.encounter_id) await encounterAction(app.encounter_id, status === 'IN_PROGRESS' ? 'start' : 'finish');
+      else await putAppointmentStatus(id, status);
+      toast.success(status === 'IN_PROGRESS' ? 'Visit started' : 'Visit signed and closed');
       fetchDashboardData(); // Refetch
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update status');
@@ -122,12 +125,12 @@ export default function DoctorDashboard() {
                   <tr key={app.appointment_id}>
                     <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{app.appointment_time}</td>
                     <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{app.patient_name}</td>
-                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{app.status}</td>
+                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{app.encounter_status === 'TRIAGED' ? 'TRIAGED' : app.status}</td>
                     <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <Link to={`/patients/${app.patient_id}`} style={{ padding: '4px 8px', background: 'var(--secondary)', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>Open</Link>
                         {app.status === 'CHECKED_IN' && <button onClick={() => updateAppointmentStatus(app.appointment_id, 'IN_PROGRESS')} style={{ padding: '4px 8px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Start Visit</button>}
-                        {app.status === 'IN_PROGRESS' && <button onClick={() => updateAppointmentStatus(app.appointment_id, 'COMPLETED')} style={{ padding: '4px 8px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Complete Visit</button>}
+                        {app.status === 'IN_PROGRESS' && <button onClick={() => updateAppointmentStatus(app.appointment_id, 'COMPLETED')} style={{ padding: '4px 8px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Sign &amp; Close</button>}
                       </div>
                     </td>
                   </tr>

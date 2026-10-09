@@ -11,7 +11,8 @@ const arg = (name) => {
   return i > -1 ? process.argv[i + 1] : undefined;
 };
 
-async function migrate(database, { dryRun = false, log = console.log } = {}) {
+// upTo: stop after this migration file (inclusive), e.g. '000_baseline.sql'.
+async function migrate(database, { dryRun = false, log = console.log, upTo } = {}) {
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST, port: process.env.DB_PORT || 3306,
     user: process.env.DB_USER, password: process.env.DB_PASSWORD, database,
@@ -31,7 +32,10 @@ async function migrate(database, { dryRun = false, log = console.log } = {}) {
       const [rows] = await conn.query('SELECT version FROM schema_migrations');
       rows.forEach(r => applied.add(r.version));
     }
-    for (const file of listMigrations()) if (!applied.has(file)) pending.push(file);
+    for (const file of listMigrations()) {
+      if (upTo && file > upTo) break;
+      if (!applied.has(file)) pending.push(file);
+    }
 
     if (dryRun) {
       log(`[migrate] ${database}: pending = ${pending.length ? pending.join(', ') : 'none'}`);

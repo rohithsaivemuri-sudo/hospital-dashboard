@@ -21,10 +21,13 @@ async function buildTestDb({ log = console.log } = {}) {
   } finally {
     await conn.end();
   }
-  await migrate(TEST_DB, { log: () => {} });
+  // Same order as production: the baseline schema with its data, then every later migration runs
+  // over existing rows (so backfills are exercised against real-looking data).
+  await migrate(TEST_DB, { log: () => {}, upTo: '000_baseline.sql' });
   // seed.sql hard-codes `USE hospital_db;` — stripped so it can only load into the test DB.
   runSqlFile(TEST_DB, path.join(ROOT, 'database', 'seed.sql'), { stripUse: true });
   runSqlFile(TEST_DB, path.join(__dirname, '..', 'tests', 'fixtures', 'seed-fixups.sql'));
+  await migrate(TEST_DB, { log: () => {} });
   log(`[test-db] ${TEST_DB} rebuilt`);
 }
 

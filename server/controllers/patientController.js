@@ -100,8 +100,13 @@ exports.getHistory = async (req, res) => {
     const [labs] = await pool.execute('SELECT lo.*, lt.name as test_name FROM lab_orders lo JOIN lab_tests lt ON lo.test_id = lt.test_id WHERE lo.patient_id = ? ORDER BY lo.order_date DESC', [patient_id]);
     const [consultations] = await pool.execute('SELECT * FROM consultations WHERE patient_id = ? ORDER BY consultation_time DESC', [patient_id]);
     const [surgeries] = await pool.execute('SELECT * FROM surgery_requests WHERE patient_id = ? ORDER BY requested_date DESC', [patient_id]);
+    const [encounters] = await pool.execute(`
+      SELECT e.encounter_id, e.doctor_id, d.name AS doctor_name, e.appointment_id, e.admission_id, e.encounter_type, e.status,
+             e.arrived_at, e.triaged_at, e.start_timestamp, e.end_timestamp
+      FROM encounters e JOIN doctors d ON d.doctor_id = e.doctor_id
+      WHERE e.patient_id = ? ORDER BY COALESCE(e.arrived_at, e.created_at) DESC`, [patient_id]);
 
-    res.json({ success: true, data: { admissions, appointments, prescriptions, labs, consultations, surgeries } });
+    res.json({ success: true, data: { admissions, appointments, prescriptions, labs, consultations, surgeries, encounters } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.getAdmissions = async (req, res) => {
