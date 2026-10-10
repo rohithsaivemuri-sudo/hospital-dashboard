@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const http = require('http');
 const cors = require('cors');
 const { Server } = require('socket.io');
@@ -84,6 +86,26 @@ app.use('/api/nurse-assignments', verifyToken, nurseAssignmentRoutes);
 app.use('/api/mar', verifyToken, marRoutes);
 app.use('/api/audit-logs', verifyToken, auditLogRoutes);
 app.use('/api/vitals', verifyToken, vitalsRoutes);
+
+// Production: the built client is served from this same port, so pages, /api and /socket.io run
+// together (npm run start:prod). In development Vite serves the client and proxies to here.
+if (process.env.NODE_ENV === 'production') {
+  const dist = path.resolve(process.env.CLIENT_DIST || path.join(__dirname, '..', 'client', 'dist'));
+  if (!fs.existsSync(path.join(dist, 'index.html'))) {
+    console.error(`Refusing to start in production: no client build at ${dist}. Run npm run build (or set CLIENT_DIST).`);
+    process.exit(1);
+  }
+  // Hashed asset files never change; the page itself must always be revalidated.
+  app.use('/assets', express.static(path.join(dist, 'assets'), { immutable: true, maxAge: '365d', fallthrough: false }));
+  app.use(express.static(dist, { index: false, maxAge: 0 }));
+  // Client-side routes (/patients/16, /laboratory, ...) all load the app shell.
+  app.get(/^\/(?!api(\/|$)|socket\.io(\/|$)).*/, (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(path.join(dist, 'index.html'));
+  });
+}
+// Unknown API paths answer in JSON, not with an HTML page.
+app.use('/api', (req, res) => res.status(404).json({ success: false, message: 'Not found' }));
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

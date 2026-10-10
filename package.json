@@ -5,7 +5,9 @@
     "install:all": "cd server && npm install && cd ../client && npm install",
     "db:init": "export MYSQL_PWD=\"${DB_ADMIN_PASSWORD:?Set DB_ADMIN_USER and DB_ADMIN_PASSWORD (admin account)}\" && : \"${DB_ADMIN_USER:?Set DB_ADMIN_USER}\" && mysql -u \"$DB_ADMIN_USER\" -e 'DROP DATABASE IF EXISTS hospital_db; CREATE DATABASE hospital_db;' && mysql -u \"$DB_ADMIN_USER\" hospital_db < database/schema.sql && mysql -u \"$DB_ADMIN_USER\" hospital_db < database/triggers.sql && mysql -u \"$DB_ADMIN_USER\" hospital_db < database/seed.sql && mysql -u \"$DB_ADMIN_USER\" hospital_db < database/views.sql && mysql -u \"$DB_ADMIN_USER\" hospital_db < database/procedures.sql && mysql -u \"$DB_ADMIN_USER\" hospital_db < database/indexes.sql",
     "start": "cd server && npm start & cd client && npm run dev",
-    "test:ui": "node --test --test-concurrency=1 --test-global-setup=tests/ui/global-setup.js \"tests/ui/**/*.ui.test.js\""
+    "test:ui": "node --test --test-concurrency=1 --test-global-setup=tests/ui/global-setup.js \"tests/ui/**/*.ui.test.js\"",
+    "build": "npm --prefix client run build",
+    "start:prod": "npm run build && cd server && NODE_ENV=production node server.js"
   },
   "dependencies": {
     "puppeteer": "^25.13.0"
