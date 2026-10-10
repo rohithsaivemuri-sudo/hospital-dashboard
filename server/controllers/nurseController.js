@@ -71,6 +71,13 @@ exports.endAssignment = async (req, res) => {
       const [[{ newEnd }]] = await connection.execute('SELECT COALESCE(?, CURDATE()) AS newEnd', [end_date || null]);
       const [[{ beforeStart }]] = await connection.execute('SELECT ? < ? AS beforeStart', [newEnd, a.start_date]);
       if (beforeStart) return { status: 400, message: 'end_date cannot be before the assignment start_date' };
+      // Ending never reopens or extends: an already-ended assignment can only be shortened (to give
+      // the nurse the ward again, create a new assignment). The same end date again is a no-op.
+      if (a.end_date) {
+        const [[{ cmp }]] = await connection.execute('SELECT (? > ?) - (? < ?) AS cmp', [newEnd, a.end_date, newEnd, a.end_date]);
+        if (Number(cmp) > 0) return { status: 409, message: 'This assignment has already ended; create a new assignment to give the nurse this ward again' };
+        if (Number(cmp) === 0) return { status: 200 };
+      }
       await connection.execute('UPDATE nurse_ward_assignments SET end_date = ? WHERE assignment_id = ?', [newEnd, a.assignment_id]);
       await audit({ action: 'END_NURSE_ASSIGNMENT', entityType: 'nurse_ward_assignment', entityId: a.assignment_id, details: { changed_fields: ['end_date'] } });
       return { status: 200 };

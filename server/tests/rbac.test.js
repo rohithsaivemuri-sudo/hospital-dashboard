@@ -149,6 +149,38 @@ test('every denial is a 403 with a readable reason', async () => {
   assert.equal(res.body.message, 'Forbidden: this is available to pharmacy staff only');
 });
 
+test('ending an assignment never reopens or extends it', async () => {
+  const admin = await login(USERS.ADMIN);
+  const [[ward]] = await db().query("SELECT ward_id FROM wards WHERE name = 'Pediatric Ward'");
+  const day = async (expr) => (await db().query(`SELECT DATE_FORMAT(${expr}, '%Y-%m-%d') d`))[0][0].d;
+  const [yesterday, lastWeek, longAgo, today] = [await day('CURDATE() - INTERVAL 1 DAY'), await day('CURDATE() - INTERVAL 7 DAY'), await day('CURDATE() - INTERVAL 30 DAY'), await day('CURDATE()')];
+  const created = [];
+  const insert = async (end) => { const id = (await db().query('INSERT INTO nurse_ward_assignments (nurse_user_id, ward_id, start_date, end_date) VALUES (?, ?, ?, ?)', [nurse.user.user_id, ward.ward_id, longAgo, end]))[0].insertId; created.push(id); return id; };
+  const endOf = async (id) => (await db().query("SELECT DATE_FORMAT(end_date, '%Y-%m-%d') e FROM nurse_ward_assignments WHERE assignment_id = ?", [id]))[0][0].e;
+  const end = (id, body = {}) => api('PUT', `/nurse-assignments/${id}`, { token: admin.token, body });
+
+  try {
+  const ended = await insert(lastWeek);
+  const replay = await end(ended);                                 // empty body would have meant "today"
+  assert.equal(replay.status, 409, JSON.stringify(replay.body));
+  assert.equal(await endOf(ended), lastWeek, 'an ended assignment is not reopened');
+  assert.equal((await end(ended, { end_date: today })).status, 409, 'nor extended');
+  assert.equal(await endOf(ended), lastWeek);
+  assert.equal((await end(ended, { end_date: yesterday })).status, 409, 'nor moved later by a day');
+  assert.equal((await end(ended, { end_date: await day('CURDATE() - INTERVAL 10 DAY') })).status, 200, 'shortening is allowed');
+
+  const open = await insert(null);
+  assert.equal((await end(open)).status, 200, 'an open assignment ends today');
+  assert.equal(await endOf(open), today);
+  const futureEnd = await insert(await day('CURDATE() + INTERVAL 5 DAY'));
+  assert.equal((await end(futureEnd)).status, 200, 'a future end date can be brought forward to today');
+  assert.equal(await endOf(futureEnd), today);
+  } finally {
+    // Leave nothing current, so other tests see the seeded assignments only.
+    if (created.length) await db().query('UPDATE nurse_ward_assignments SET end_date = ? WHERE assignment_id IN (?)', [yesterday, created]);
+  }
+});
+
 // ---------------------------------------------------------------- patient scope
 async function nurseScope() {
   const [rows] = await db().query(`
