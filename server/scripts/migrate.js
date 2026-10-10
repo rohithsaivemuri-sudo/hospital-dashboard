@@ -5,6 +5,7 @@ const path = require('path');
 const mysql = require('mysql2/promise');
 const { MIGRATIONS_DIR, runSqlFile, listMigrations } = require('./lib/sql');
 const { backupDatabase } = require('./backup-db');
+const { adminCredentials } = require('./lib/admin-credentials');
 
 const arg = (name) => {
   const i = process.argv.indexOf(name);
@@ -15,7 +16,7 @@ const arg = (name) => {
 async function migrate(database, { dryRun = false, log = console.log, upTo } = {}) {
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST, port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER, password: process.env.DB_PASSWORD, database,
+    ...adminCredentials(), database,
   });
   try {
     const [[{ tableCount }]] = await conn.query(

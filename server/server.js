@@ -4,6 +4,14 @@ const cors = require('cors');
 const { Server } = require('socket.io');
 require('dotenv').config();
 
+// The running app uses the restricted MySQL account (docs/mysql-app-user.sql), never root: root
+// would let any bug or injection change the schema or drop the database.
+if (String(process.env.DB_USER || '').trim().toLowerCase() === 'root') {
+  console.error('Refusing to start: DB_USER is root. Set DB_USER/DB_PASSWORD to the restricted app account '
+    + '(docs/mysql-app-user.sql); root belongs in DB_ADMIN_USER for migrations and backups only.');
+  process.exit(1);
+}
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {

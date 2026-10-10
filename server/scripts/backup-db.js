@@ -6,6 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 require('./lib/sql'); // loads server/.env
+const { adminCredentials } = require('./lib/admin-credentials');
 
 const BACKUP_DIR = path.join(os.homedir(), 'hospital_backups');
 
@@ -18,10 +19,10 @@ function backupDatabase(database, { log = console.log } = {}) {
   fs.mkdirSync(BACKUP_DIR, { recursive: true, mode: 0o700 });
   const file = path.join(BACKUP_DIR, `${database}_${timestamp()}.sql`);
   execFileSync('mysqldump', [
-    '-h', process.env.DB_HOST || '127.0.0.1', '-P', String(process.env.DB_PORT || 3306), '-u', process.env.DB_USER,
+    '-h', process.env.DB_HOST || '127.0.0.1', '-P', String(process.env.DB_PORT || 3306), '-u', adminCredentials().user,
     '--single-transaction', '--routines', '--triggers', '--events', '--set-gtid-purged=OFF',
     `--result-file=${file}`, database,
-  ], { env: { ...process.env, MYSQL_PWD: process.env.DB_PASSWORD || '' }, stdio: ['ignore', 'ignore', 'inherit'] });
+  ], { env: { ...process.env, MYSQL_PWD: adminCredentials().password }, stdio: ['ignore', 'ignore', 'inherit'] });
   fs.chmodSync(file, 0o600); // contains patient data
 
   // mysqldump writes this trailer only when the dump finished cleanly.

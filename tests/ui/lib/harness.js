@@ -4,6 +4,7 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..', '..', '..');
 const mysql = require(path.join(ROOT, 'server', 'node_modules', 'mysql2', 'promise'));
 require(path.join(ROOT, 'server', 'node_modules', 'dotenv')).config({ path: path.join(ROOT, 'server', '.env') });
+const { adminCredentials } = require(path.join(ROOT, 'server', 'scripts', 'lib', 'admin-credentials'));
 
 const APP = 'http://localhost:5173';
 const API = 'http://localhost:5000/api';
@@ -25,7 +26,7 @@ async function login(page, username) {
 
 let connection;
 async function db() {
-  if (!connection) connection = await mysql.createConnection({ host: process.env.DB_HOST, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: TEST_DB });
+  if (!connection) connection = await mysql.createConnection({ host: process.env.DB_HOST, port: process.env.DB_PORT || 3306, ...adminCredentials(), database: TEST_DB });
   return connection;
 }
 async function closeDb() { if (connection) { await connection.end(); connection = null; } }

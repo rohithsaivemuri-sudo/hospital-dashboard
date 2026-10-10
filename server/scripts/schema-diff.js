@@ -3,6 +3,7 @@
 const path = require('path');
 const mysql = require('mysql2/promise');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+const { adminCredentials } = require('./lib/admin-credentials');
 
 const IGNORE_TABLES = ['schema_migrations'];
 
@@ -52,7 +53,7 @@ async function snapshot(conn, schema) {
 async function diffSchemas(a, b) {
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST, port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER, password: process.env.DB_PASSWORD,
+    ...adminCredentials(),
   });
   try {
     const [sa, sb] = [await snapshot(conn, a), await snapshot(conn, b)];

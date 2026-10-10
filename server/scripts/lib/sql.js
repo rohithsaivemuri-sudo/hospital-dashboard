@@ -4,6 +4,7 @@ const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
+const { adminCredentials } = require('./admin-credentials');
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const MIGRATIONS_DIR = path.join(ROOT, 'database', 'migrations');
@@ -11,11 +12,11 @@ const MIGRATIONS_DIR = path.join(ROOT, 'database', 'migrations');
 const connectionArgs = () => [
   '-h', process.env.DB_HOST || '127.0.0.1',
   '-P', String(process.env.DB_PORT || 3306),
-  '-u', process.env.DB_USER,
+  '-u', adminCredentials().user,
 ];
 
 // Password goes through the environment, never argv.
-const mysqlEnv = () => ({ ...process.env, MYSQL_PWD: process.env.DB_PASSWORD || '' });
+const mysqlEnv = () => ({ ...process.env, MYSQL_PWD: adminCredentials().password });
 
 // Runs SQL text against `database`. Any `USE <db>;` statement is rejected so a file can never
 // switch away from the database it was pointed at.

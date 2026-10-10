@@ -337,7 +337,7 @@ test('transitions are audited inside their transaction with both state changes',
 // committed), so a request can be made to race the close deterministically.
 async function holdFinishing(encounterId) {
   const mysql = require('mysql2/promise');
-  const conn = await mysql.createConnection({ host: process.env.DB_HOST, port: process.env.DB_PORT || 3306, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: TEST_DB });
+  const conn = await mysql.createConnection({ host: process.env.DB_HOST, port: process.env.DB_PORT || 3306, ...require('../scripts/lib/admin-credentials').adminCredentials(), database: TEST_DB });
   await conn.beginTransaction();
   await conn.query('SELECT encounter_id FROM encounters WHERE encounter_id = ? FOR UPDATE', [encounterId]);
   await conn.query("UPDATE encounters SET status = 'FINISHED', end_timestamp = NOW() WHERE encounter_id = ?", [encounterId]);

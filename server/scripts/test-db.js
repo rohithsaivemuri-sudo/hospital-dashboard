@@ -4,6 +4,7 @@ const path = require('path');
 const mysql = require('mysql2/promise');
 const { ROOT, runSqlFile } = require('./lib/sql');
 const { migrate } = require('./migrate');
+const { adminCredentials } = require('./lib/admin-credentials');
 
 const TEST_DB = process.env.TEST_DB_NAME || 'hospital_db_test';
 
@@ -13,7 +14,7 @@ async function buildTestDb({ log = console.log } = {}) {
   }
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST, port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER, password: process.env.DB_PASSWORD,
+    ...adminCredentials(),
   });
   try {
     await conn.query(`DROP DATABASE IF EXISTS \`${TEST_DB}\``);
