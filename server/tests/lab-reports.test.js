@@ -3,7 +3,7 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { USERS, LAB_REPORT_DIR, api, rawRequest, login, db, closeDb } = require('./helpers');
+const { USERS, LAB_REPORT_DIR, api, rawRequest, login, db, closeDb, visitInProgress } = require('./helpers');
 
 after(closeDb);
 
@@ -17,11 +17,13 @@ let lab, doctor, otherDoctor;
 let fixture; // { orderId, resultId, attachmentId, patientId }
 
 async function completedOrderWithReport(patientId) {
+  const visit = await visitInProgress(doctor, patientId); // orders are filed under a visit in progress
   const order = await api('POST', '/lab/orders', { token: doctor.token, body: {
     patient_id: patientId, doctor_id: doctor.user.doctor_id, tests: [{ test_id: 1 }], notes: 'report test',
   } });
   assert.equal(order.status, 201, JSON.stringify(order.body));
   const orderId = order.body.data.id;
+  await visit.close();
   assert.equal((await api('PUT', `/lab/orders/${orderId}/status`, { token: lab.token, body: { status: 'PROCESSING' } })).status, 200);
   const result = await api('POST', '/lab/results', { token: lab.token, body: { order_id: orderId, result_value: '13.9', unit: 'g/dL' } });
   assert.equal(result.status, 201, JSON.stringify(result.body));

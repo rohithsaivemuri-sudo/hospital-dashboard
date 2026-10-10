@@ -347,9 +347,28 @@ export default function PatientDetail() {
   const isMyEncounter = user?.role === 'DOCTOR' && openEncounter && Number(openEncounter.doctor_id) === Number(user.doctor_id);
 
   // The note is filed under the doctor's in-progress visit when there is one.
-  const noteVisit = isMyEncounter && openEncounter.status === 'IN_PROGRESS' ? openEncounter : null;
+  const noteVisit = user?.role === 'DOCTOR' ? (history.encounters || []).find(e => e.status === 'IN_PROGRESS' && Number(e.doctor_id) === Number(user.doctor_id)) || null : null;
   const noteLabel = noteVisit ? '+ Write note for current visit' : '+ Write note';
   const noteButton = <button onClick={() => setShowEncounterModal(true)} style={{ padding: '8px 16px', background: 'var(--info)', color: 'white', border: 'none', borderRadius: '4px' }}>{noteLabel}</button>;
+
+  // Orders (lab tests, prescriptions) are filed under the doctor's visit in progress, else under the
+  // admission they are the admitting doctor for; the server refuses them otherwise.
+  const at = (t) => (t ? new Date(t).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '');
+  const myAdmission = user?.role === 'DOCTOR' && currentAdmission && Number(currentAdmission.doctor_id) === Number(user.doctor_id) ? currentAdmission : null;
+  const orderTarget = noteVisit ? `Filed under the visit with ${noteVisit.doctor_name}, started ${at(noteVisit.start_timestamp)}.`
+    : myAdmission ? `Filed under the admission from ${at(myAdmission.admission_date)}.` : null;
+  const orderTargetBox = (
+    <p data-testid="order-target" style={{ marginTop: 0, fontWeight: 600, color: orderTarget ? 'var(--text-primary)' : 'var(--danger)' }}>
+      {orderTarget || 'Start the visit first: orders are filed under your visit in progress with this patient, or under an admission you are the admitting doctor for.'}
+    </p>
+  );
+  const filedUnder = (r) => {
+    const e = r.encounter_id && (history.encounters || []).find(x => x.encounter_id === r.encounter_id);
+    if (e) return `Visit, ${at(e.arrived_at || e.start_timestamp)}`;
+    const a = r.admission_id && (history.admissions || []).find(x => x.admission_id === r.admission_id);
+    if (a) return `Admission, ${at(a.admission_date)}`;
+    return 'Not recorded';
+  };
 
   const runEncounterAction = async (action) => {
     if (action === 'finish' && !window.confirm('Sign and close this visit? Its notes cannot be edited afterwards.')) return;
@@ -471,12 +490,13 @@ export default function PatientDetail() {
           </div>
           {history.labs?.length > 0 ? (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr style={{ textAlign: 'left', background: '#f1f5f9' }}><th style={{ padding: '8px' }}>Date</th><th style={{ padding: '8px' }}>Test Name</th><th style={{ padding: '8px' }}>Status</th>{canViewResults && <th style={{ padding: '8px' }}>Result</th>}</tr></thead>
+              <thead><tr style={{ textAlign: 'left', background: '#f1f5f9' }}><th style={{ padding: '8px' }}>Date</th><th style={{ padding: '8px' }}>Test Name</th><th style={{ padding: '8px' }}>Filed under</th><th style={{ padding: '8px' }}>Status</th>{canViewResults && <th style={{ padding: '8px' }}>Result</th>}</tr></thead>
               <tbody>
                 {history.labs.map(l => (
                   <tr key={l.order_id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '8px' }}>{new Date(l.order_date).toLocaleDateString()}</td>
                     <td style={{ padding: '8px' }}>{l.test_name}</td>
+                    <td style={{ padding: '8px' }} data-testid="filed-under">{filedUnder(l)}</td>
                     <td style={{ padding: '8px' }}><strong>{l.status}</strong></td>
                     {canViewResults && (
                       <td style={{ padding: '8px' }}>
@@ -500,7 +520,7 @@ export default function PatientDetail() {
           </div>
           {history.prescriptions?.length > 0 ? (
              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-             <thead><tr style={{ textAlign: 'left', background: '#f1f5f9' }}><th style={{ padding: '8px' }}>Date</th><th style={{ padding: '8px' }}>Medications</th><th style={{ padding: '8px' }}>Status</th>{user?.role === 'DOCTOR' && <th style={{ padding: '8px' }}></th>}</tr></thead>
+             <thead><tr style={{ textAlign: 'left', background: '#f1f5f9' }}><th style={{ padding: '8px' }}>Date</th><th style={{ padding: '8px' }}>Medications</th><th style={{ padding: '8px' }}>Filed under</th><th style={{ padding: '8px' }}>Status</th>{user?.role === 'DOCTOR' && <th style={{ padding: '8px' }}></th>}</tr></thead>
              <tbody>
                {history.prescriptions.map(p => (
                  <tr key={p.prescription_id} style={{ borderBottom: '1px solid var(--border)' }}>
@@ -508,6 +528,7 @@ export default function PatientDetail() {
                    <td style={{ padding: '8px' }}>
                      {p.medication_details ? p.medication_details.split('\n').map((line, i) => <div key={i}>{line}</div>) : 'No medications'}
                    </td>
+                   <td style={{ padding: '8px', verticalAlign: 'top' }} data-testid="filed-under">{filedUnder(p)}</td>
                    <td style={{ padding: '8px', verticalAlign: 'top' }}><strong>{p.status}</strong></td>
                    {user?.role === 'DOCTOR' && (
                      <td style={{ padding: '8px', verticalAlign: 'top' }}>
@@ -654,6 +675,7 @@ export default function PatientDetail() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', width: '500px' }}>
             <h2 style={{ marginTop: 0 }}>ORDER LAB TESTS</h2>
+            {orderTargetBox}
             <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <select name="test_id" value={currentTestId} onChange={(e) => setCurrentTestId(e.target.value)} style={{ flex: 1, padding: '8px' }}>
@@ -677,7 +699,7 @@ export default function PatientDetail() {
               <div style={{ marginBottom: '16px' }}><label>Clinical Notes</label><textarea value={labNotes} onChange={(e) => setLabNotes(e.target.value)} style={{ width: '100%', padding: '8px', height: '60px' }} /></div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                 <button type="button" onClick={() => setShowLabModal(false)} style={{ padding: '8px 16px' }}>Cancel</button>
-                <button type="submit" style={{ padding: '8px 16px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px' }}>Order Tests</button>
+                <button type="submit" disabled={!orderTarget} style={{ padding: '8px 16px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px' }}>Order Tests</button>
               </div>
             </form>
           </div>
@@ -688,6 +710,7 @@ export default function PatientDetail() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', width: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
             <h2 style={{ marginTop: 0 }}>CREATE PRESCRIPTION</h2>
+            {orderTargetBox}
             <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                 <Field label="Medicine"><select name="medicine_id" value={currentMed} onChange={e => setCurrentMed(e.target.value)} style={{ padding: '8px' }}><option value="">-- Select Medicine --</option>{medicines.map(m => (<option key={m.medicine_id} value={m.medicine_id}>{m.name} (Stock: {m.stock_quantity})</option>))}</select></Field>
@@ -728,7 +751,7 @@ export default function PatientDetail() {
               <div style={{ marginBottom: '16px' }}><Field label="Notes"><textarea name="prescription_notes" value={prescNotes} onChange={(e) => setPrescNotes(e.target.value)} style={{ width: '100%', padding: '8px', height: '60px', boxSizing: 'border-box' }} /></Field></div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                 <button type="button" onClick={() => setShowPrescriptionModal(false)} style={{ padding: '8px 16px' }}>Cancel</button>
-                <button type="submit" style={{ padding: '8px 16px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px' }}>Create Prescription</button>
+                <button type="submit" disabled={!orderTarget} style={{ padding: '8px 16px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px' }}>Create Prescription</button>
               </div>
             </form>
           </div>

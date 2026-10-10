@@ -198,7 +198,22 @@ async function resolveEncounterForRecord(connection, { encounterId, patientId, d
   return open.length === 1 ? open[0].encounter_id : null;
 }
 
+// Where a new order (lab order, prescription) is filed: the doctor's in-progress visit, else the
+// active admission they are the admitting doctor for. Neither: refused, so no order is unanchored.
+async function resolveOrderContext(connection, { encounterId, patientId, doctorId, consultationId }) {
+  const encounter = await resolveEncounterForRecord(connection, { encounterId, patientId, doctorId, consultationId });
+  if (encounter) {
+    const [[e]] = await connection.execute('SELECT admission_id FROM encounters WHERE encounter_id = ?', [encounter]);
+    return { encounterId: encounter, admissionId: e?.admission_id ?? null };
+  }
+  const [admissions] = await connection.execute(
+    'SELECT admission_id FROM admissions WHERE patient_id = ? AND doctor_id = ? AND status = "ACTIVE" FOR SHARE', [patientId ?? null, doctorId ?? null]
+  );
+  if (admissions.length === 1) return { encounterId: null, admissionId: admissions[0].admission_id };
+  throw new EncounterError(409, 'Start the visit first: orders are filed under your visit in progress with this patient, or under an admission you are the admitting doctor for');
+}
+
 module.exports = {
   TRANSITIONS, APPOINTMENT_MIRROR, CLOSED, EncounterError,
-  arriveAppointment, arriveWalkIn, transitionEncounter, applyAppointmentStatus, resolveEncounterForRecord,
+  arriveAppointment, arriveWalkIn, transitionEncounter, applyAppointmentStatus, resolveEncounterForRecord, resolveOrderContext,
 };

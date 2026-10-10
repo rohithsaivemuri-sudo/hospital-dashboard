@@ -3,16 +3,17 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
-const { diagnoseFailures, selectOption, login, closeDb, open, clickButton, waitForText } = require('./lib/harness');
+const { diagnoseFailures, selectOption, login, closeDb, open, clickButton, waitForText, visitInProgress } = require('./lib/harness');
 
-let browser, page;
+let browser, page, visit;
 diagnoseFailures(() => page);
 before(async () => {
+  visit = await visitInProgress(1); // orders are filed under a visit in progress
   browser = await launch();
   page = await browser.newPage();
   await login(page, 'dr.smith');
 });
-after(async () => { await browser.close(); await closeDb(); });
+after(async () => { await visit.close(); await browser.close(); await closeDb(); });
 
 async function openDialog() {
   await open(page, '/patients/1');

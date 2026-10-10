@@ -1,7 +1,7 @@
 // Phase 1 step 1 (report Section L, Spec 1): transaction-safe, deadlock-free dispensing.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { USERS, api, login, db, closeDb, setStock } = require('./helpers');
+const { USERS, api, login, db, closeDb, setStock, visitInProgress } = require('./helpers');
 
 after(closeDb);
 
@@ -13,7 +13,7 @@ const ROUNDS = 30;
 
 let doctor;
 let pharmacy;
-let patientId;
+let patientId, visit;
 
 before(async () => {
   doctor = await login(USERS.DOCTOR);
@@ -21,7 +21,9 @@ before(async () => {
   [[{ patient_id: patientId }]] = await db().query(
     'SELECT patient_id FROM appointments WHERE doctor_id = ? ORDER BY patient_id LIMIT 1', [doctor.user.doctor_id]
   );
+  visit = await visitInProgress(doctor, patientId); // orders are filed under a visit in progress
 });
+after(() => visit?.close());
 
 const stockOf = async (medicineId) => (await db().query('SELECT stock_quantity FROM medicines WHERE medicine_id = ?', [medicineId]))[0][0].stock_quantity;
 const item = (medicine_id, quantity) => ({ medicine_id, dosage: '1 tab', frequency: 'Once daily', duration: '1 day', quantity });

@@ -3,7 +3,7 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
-const { diagnoseFailures, login, db, closeDb, open, call, tokenOf } = require('./lib/harness');
+const { diagnoseFailures, login, db, closeDb, open, call, tokenOf, visitInProgress } = require('./lib/harness');
 
 const GLUCOSE = 5; // 70–100 mg/dL
 let browser, page, orderId;
@@ -11,8 +11,10 @@ diagnoseFailures(() => page);
 before(async () => {
   await (await db()).query('UPDATE lab_tests SET critical_low = 40, critical_high = 400 WHERE test_id = ?', [GLUCOSE]);
   const [doc, lab] = [await tokenOf('dr.smith'), await tokenOf('lab_staff')];
+  const visit = await visitInProgress(1); // orders are filed under a visit in progress
   orderId = (await call('POST', '/lab/orders', doc, { patient_id: 1, doctor_id: 1, tests: [{ test_id: GLUCOSE }], notes: '' })).body.data.id;
   await call('PUT', `/lab/orders/${orderId}/status`, lab, { status: 'PROCESSING' });
+  await visit.close();
   browser = await launch();
   page = await browser.newPage();
   await login(page, 'lab_staff');

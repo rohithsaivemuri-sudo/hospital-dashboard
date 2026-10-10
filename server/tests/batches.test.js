@@ -2,20 +2,22 @@
 // change: medicines.stock_quantity = SUM(medicine_batches.quantity) for every medicine.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { USERS, api, login, db, closeDb, setStock, stockMismatches } = require('./helpers');
+const { USERS, api, login, db, closeDb, setStock, stockMismatches, visitInProgress } = require('./helpers');
 
 after(closeDb);
 
 // Medicines reserved for this file.
 const MED = 10;
 const MED2 = 11;
-let pharmacy, doctor, patientId;
+let pharmacy, doctor, patientId, visit;
 
 before(async () => {
   pharmacy = await login(USERS.PHARMACY);
   doctor = await login(USERS.DOCTOR);
   [[{ patient_id: patientId }]] = await db().query('SELECT patient_id FROM appointments WHERE doctor_id = ? LIMIT 1', [doctor.user.doctor_id]);
+  visit = await visitInProgress(doctor, patientId); // orders are filed under a visit in progress
 });
+after(() => visit?.close());
 
 const stock = (body, med = MED) => api('POST', `/medicines/${med}/stock`, { token: pharmacy.token, body });
 const total = async (med = MED) => (await db().query('SELECT stock_quantity FROM medicines WHERE medicine_id = ?', [med]))[0][0].stock_quantity;

@@ -3,21 +3,23 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
-const { USERS, PASSWORD, SERVER_STDERR, api, rawRequest, login, db, closeDb, setStock } = require('./helpers');
+const { USERS, PASSWORD, SERVER_STDERR, api, rawRequest, login, db, closeDb, setStock, visitInProgress } = require('./helpers');
 const { sanitizeDetails } = require('../utils/audit');
 
 after(closeDb);
 
 const NOTE_MARKER = 'AUDIT-LEAK-CHECK confidential clinical narrative';
 let admin, doctor, reception, pharmacy, lab, nurse;
-let patientId;
+let patientId, visit;
 
 before(async () => {
   [admin, doctor, reception, pharmacy, lab, nurse] = await Promise.all(
     [USERS.ADMIN, USERS.DOCTOR, USERS.RECEPTIONIST, USERS.PHARMACY, USERS.LABORATORY, USERS.NURSE].map(login)
   );
   [[{ patient_id: patientId }]] = await db().query('SELECT patient_id FROM appointments WHERE doctor_id = ? ORDER BY patient_id LIMIT 1', [doctor.user.doctor_id]);
+  visit = await visitInProgress(doctor, patientId); // orders are filed under a visit in progress
 });
+after(() => visit?.close());
 
 const maxAuditId = async () => (await db().query('SELECT COALESCE(MAX(audit_id), 0) AS m FROM audit_logs'))[0][0].m;
 const rowsSince = async (id) => (await db().query('SELECT * FROM audit_logs WHERE audit_id > ? ORDER BY audit_id', [id]))[0];

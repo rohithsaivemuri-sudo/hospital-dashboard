@@ -56,7 +56,8 @@ export default function VisitsPanel({ patientId, history, noteButton }) {
   const definitions = vitalsData?.definitions || [];
   const encounters = [...(history.encounters || [])].sort((a, b) => (OPEN.includes(b.status) - OPEN.includes(a.status)));
   const ids = new Set(encounters.map(e => e.encounter_id));
-  const of = (list, id) => (list || []).filter(r => (id == null ? !ids.has(r.encounter_id) : r.encounter_id === id));
+  // Orders filed under an admission (no visit) belong to the admission, not to the unlinked group.
+  const of = (list, id) => (list || []).filter(r => (id == null ? !ids.has(r.encounter_id) && r.admission_id == null : r.encounter_id === id));
   const records = (id) => ({
     notes: of(history.consultations, id), labs: of(history.labs, id), prescriptions: of(history.prescriptions, id),
     // A reading taken on the ward belongs to the admission, not to an unlinked group.

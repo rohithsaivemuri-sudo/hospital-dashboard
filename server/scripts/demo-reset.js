@@ -116,7 +116,7 @@ async function createActivity(conn, accounts) {
   const checkIn = async (id) => (await call('POST', '/encounters', rec, { appointment_id: id })).data;
   const [inProgress, triaged] = [await checkIn(smithAppts[0]), await checkIn(smithAppts[1])];
   await checkIn(smithAppts[2]); // arrived, waiting for triage
-  await checkIn(patelAppts[0]);
+  const patelVisit = await checkIn(patelAppts[0]);
   await call('POST', '/encounters', rec, { patient_id: next(), doctor_id: smith }); // a walk-in
 
   // Nurse: vitals at triage (one abnormal temperature); the walk-in is still waiting.
@@ -145,7 +145,8 @@ async function createActivity(conn, accounts) {
 
   // Laboratory: work in every state (ordered, processing, completed with an automatic flag).
   const lab = t('lab_staff');
-  const patelPatient = (await conn.query('SELECT patient_id FROM appointments WHERE appointment_id = ?', [patelAppts[0]]))[0][0].patient_id;
+  const patelPatient = patelVisit.patient_id;
+  await call('POST', `/encounters/${patelVisit.encounter_id}/start`, t('dr.patel')); // orders are filed under a visit in progress
   const processing = await order(t('dr.patel'), patel, patelPatient, 'Thyroid Profile');
   await call('PUT', `/lab/orders/${processing}/status`, lab, { status: 'PROCESSING' });
   const done = await order(t('dr.patel'), patel, patelPatient, 'Blood Glucose Fasting');

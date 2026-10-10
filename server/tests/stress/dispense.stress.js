@@ -2,7 +2,7 @@
 // Not part of `npm test`: it takes ~1 minute. Rebuilds hospital_db_test and runs its own server.
 //   STRESS_ROUNDS (default 300) rounds of each scenario; exits 1 on any deadlock, error or stock drift.
 const { globalSetup, globalTeardown } = require('../global-setup');
-const { USERS, api, login, db, closeDb, setStock, stockMismatches } = require('../helpers');
+const { USERS, api, login, db, closeDb, setStock, stockMismatches, visitInProgress } = require('../helpers');
 
 const ROUNDS = Number(process.env.STRESS_ROUNDS || 300);
 const WIDTH = 4; // concurrent create/dispense pairs per round in scenario 1
@@ -22,6 +22,7 @@ async function main() {
   const doctor = await login(USERS.DOCTOR);
   const pharmacy = await login(USERS.PHARMACY);
   const [[{ patient_id }]] = await db().query('SELECT patient_id FROM appointments WHERE doctor_id = ? LIMIT 1', [doctor.user.doctor_id]);
+  await visitInProgress(doctor, patient_id); // orders are filed under a visit in progress (the test database is rebuilt next run)
   const prescribe = (items) => api('POST', '/prescriptions', { token: doctor.token, body: { patient_id, doctor_id: doctor.user.doctor_id, items } });
   const dispense = (id) => api('POST', `/prescriptions/${id}/dispense`, { token: pharmacy.token });
   await setStock(MED_A, 1000000);

@@ -1,7 +1,7 @@
 // Phase 2 step 6: bedside Medication Administration Record.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { USERS, api, login, db, closeDb, setStock } = require('./helpers');
+const { USERS, api, login, db, closeDb, setStock, visitInProgress } = require('./helpers');
 const { toSqlUtc, formatIst, istDate } = require('../utils/marTime');
 
 after(closeDb);
@@ -88,8 +88,10 @@ test('dispensing schedules ward doses for an admitted patient, capped by duratio
   // An outpatient under dr.smith's care (no active admission).
   const [[outpatient]] = await db().query(`SELECT DISTINCT patient_id FROM appointments WHERE doctor_id = ?
     AND patient_id NOT IN (SELECT patient_id FROM admissions WHERE status = 'ACTIVE') LIMIT 1`, [doctor.user.doctor_id]);
+  const visit = await visitInProgress(doctor, outpatient.patient_id); // outpatient orders need a visit in progress
   const out = await prescribeAndDispense(outpatient.patient_id, [order(MEDS.A, { frequency_code: 'TDS', duration_days: 3, quantity: 9 })]);
   assert.equal(out.doses, 0, 'take-home medicines are not put on a ward MAR');
+  await visit.close();
 });
 
 test('the MAR read shows IST times, and overdue is computed when it is read', async () => {

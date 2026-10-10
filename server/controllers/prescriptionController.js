@@ -23,7 +23,7 @@ function structuredFields(item, index) {
   return { code, route, durationDays, unitsPerDose };
 }
 const { writeAudit } = require('../utils/audit');
-const { resolveEncounterForRecord } = require('../utils/encounters');
+const { resolveOrderContext } = require('../utils/encounters');
 
 const { canAccessPatient, patientFilter } = require('../utils/patientAccess');
 const checkDoctorAuth = (req, patientId, scope = 'prescriptions') => canAccessPatient(req.user, patientId, scope);
@@ -79,8 +79,8 @@ exports.create = async (req, res) => {
       }
     }
 
-    const encounterId = await resolveEncounterForRecord(connection, { encounterId: encounter_id, patientId: patient_id, doctorId: doctor_id, consultationId: consultation_id });
-    const [result] = await connection.execute('INSERT INTO prescriptions (consultation_id, patient_id, doctor_id, prescription_date, status, notes, encounter_id) VALUES (?, ?, ?, NOW(), "CREATED", ?, ?)', [consultation_id || null, patient_id, doctor_id, notes || null, encounterId]);
+    const { encounterId, admissionId } = await resolveOrderContext(connection, { encounterId: encounter_id, patientId: patient_id, doctorId: doctor_id, consultationId: consultation_id });
+    const [result] = await connection.execute('INSERT INTO prescriptions (consultation_id, patient_id, doctor_id, prescription_date, status, notes, encounter_id, admission_id) VALUES (?, ?, ?, NOW(), "CREATED", ?, ?, ?)', [consultation_id || null, patient_id, doctor_id, notes || null, encounterId, admissionId]);
     const prescription_id = result.insertId;
     // Each prescription_items insert takes a shared FK lock on its medicines row. Take those
     // locks up front in medicine_id order so prescribing cannot deadlock with dispensing.
@@ -93,7 +93,7 @@ exports.create = async (req, res) => {
       );
     }
     await writeAudit(connection, req, { action: 'CREATE_PRESCRIPTION', entityType: 'prescription', entityId: prescription_id, patientId: patient_id,
-      details: { consultation_id: consultation_id ? Number(consultation_id) : null, encounter_id: encounterId, medicine_ids: items.map(item => Number(item.medicine_id)), item_count: items.length } });
+      details: { consultation_id: consultation_id ? Number(consultation_id) : null, encounter_id: encounterId, admission_id: admissionId, medicine_ids: items.map(item => Number(item.medicine_id)), item_count: items.length } });
     await connection.commit();
     res.status(201).json({ success: true, data: { id: prescription_id } });
   } catch (error) { 

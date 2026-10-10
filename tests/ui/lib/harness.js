@@ -32,6 +32,19 @@ async function db() {
   if (!connection) connection = await mysql.createConnection({ host: process.env.DB_HOST, port: process.env.DB_PORT || 3306, ...adminCredentials(), database: TEST_DB });
   return connection;
 }
+// Orders need a visit in progress (or an admission). Starts one for the doctor with the patient
+// unless it already exists; close() finishes only a visit started here.
+async function visitInProgress(patientId, username = 'dr.smith') {
+  const doc = await tokenOf(username);
+  const [[{ doctor_id: doctorId }]] = await (await db()).query('SELECT d.doctor_id FROM doctors d JOIN users u ON u.user_id = d.user_id WHERE u.username = ?', [username]);
+  const [[visit]] = await (await db()).query("SELECT encounter_id, status FROM encounters WHERE patient_id = ? AND doctor_id = ? AND status IN ('ARRIVED','TRIAGED','IN_PROGRESS') ORDER BY encounter_id DESC LIMIT 1", [patientId, doctorId]);
+  if (visit?.status === 'IN_PROGRESS') return { encounterId: visit.encounter_id, close: async () => {} };
+  const id = visit?.encounter_id ?? (await call('POST', '/encounters', await tokenOf('reception1'), { patient_id: patientId, doctor_id: doctorId })).body.data.encounter_id;
+  const started = await call('POST', `/encounters/${id}/start`, doc);
+  if (started.status !== 200) throw new Error(`start visit ${id}: ${started.status} ${started.body?.message}`);
+  return { encounterId: id, close: () => call('POST', `/encounters/${id}/finish`, doc) };
+}
+
 async function closeDb() { if (connection) { await connection.end(); connection = null; } }
 
 // Opens a page and waits until it has settled: the document has loaded and none of the app's own
@@ -101,4 +114,4 @@ function diagnoseFailures(getPages) {
   });
 }
 
-module.exports = { APP_PORT, API_PORT, selectOption, apiIdle, pendingApi, diagnoseFailures, ROOT, APP, API, PASSWORD, TEST_DB, call, tokenOf, login, db, closeDb, open, clickButton, waitForText };
+module.exports = { visitInProgress, APP_PORT, API_PORT, selectOption, apiIdle, pendingApi, diagnoseFailures, ROOT, APP, API, PASSWORD, TEST_DB, call, tokenOf, login, db, closeDb, open, clickButton, waitForText };

@@ -1,7 +1,7 @@
 // Regression smoke suite for flows that worked before the HIS roadmap changes.
 const { test, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { USERS, api, login, db, closeDb } = require('./helpers');
+const { USERS, api, login, db, closeDb, visitInProgress } = require('./helpers');
 
 after(closeDb);
 
@@ -50,6 +50,7 @@ test('doctor prescribes and pharmacy dispenses, decrementing stock', async () =>
   const [[{ patient_id }]] = await db().query('SELECT patient_id FROM appointments WHERE doctor_id = ? LIMIT 1', [doctorId]);
   const [[before]] = await db().query('SELECT stock_quantity FROM medicines WHERE medicine_id = 1');
 
+  const visit = await visitInProgress(doctor, patient_id); // orders are filed under a visit in progress
   const created = await api('POST', '/prescriptions', { token: doctor.token, body: {
     patient_id, doctor_id: doctorId, notes: 'smoke',
     items: [{ medicine_id: 1, dosage: '500mg', frequency: 'Twice daily', duration: '3 days', quantity: 6 }],
@@ -62,6 +63,7 @@ test('doctor prescribes and pharmacy dispenses, decrementing stock', async () =>
   assert.equal(afterRow.stock_quantity, before.stock_quantity - 6);
   const [[rx]] = await db().query('SELECT status FROM prescriptions WHERE prescription_id = ?', [created.body.data.id]);
   assert.equal(rx.status, 'DISPENSED');
+  await visit.close();
 });
 
 test('doctor orders a lab test and the lab processes and completes it', async () => {
@@ -70,6 +72,7 @@ test('doctor orders a lab test and the lab processes and completes it', async ()
   const doctorId = doctor.user.doctor_id;
   const [[{ patient_id }]] = await db().query('SELECT patient_id FROM appointments WHERE doctor_id = ? LIMIT 1', [doctorId]);
 
+  const visit = await visitInProgress(doctor, patient_id); // orders are filed under a visit in progress
   const order = await api('POST', '/lab/orders', { token: doctor.token, body: {
     patient_id, doctor_id: doctorId, tests: [{ test_id: 1 }], notes: 'smoke',
   } });
@@ -83,4 +86,5 @@ test('doctor orders a lab test and the lab processes and completes it', async ()
   assert.equal(result.status, 201, JSON.stringify(result.body));
   const [[o]] = await db().query('SELECT status FROM lab_orders WHERE order_id = ?', [orderId]);
   assert.equal(o.status, 'COMPLETED');
+  await visit.close();
 });

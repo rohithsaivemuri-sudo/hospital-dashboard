@@ -89,8 +89,26 @@ async function stockMismatches() {
   return rows;
 }
 
+// Orders need a visit in progress (or an admission). Starts one for the doctor with the patient
+// unless it already exists; close() finishes only a visit started here.
+async function visitInProgress(doctor, patientId) {
+  const open = async () => (await db().query("SELECT encounter_id, status FROM encounters WHERE patient_id = ? AND doctor_id = ? AND status IN ('ARRIVED','TRIAGED','IN_PROGRESS') ORDER BY encounter_id DESC LIMIT 1", [patientId, doctor.user.doctor_id]))[0][0];
+  let visit = await open(); const existed = visit?.status === 'IN_PROGRESS';
+  if (!visit) {
+    const reception = await login(USERS.RECEPTIONIST);
+    const res = await api('POST', '/encounters', { token: reception.token, body: { patient_id: patientId, doctor_id: doctor.user.doctor_id } });
+    if (res.status !== 201) throw new Error(`walk-in for patient ${patientId}: ${res.status} ${res.body?.message}`);
+    visit = res.body.data;
+  }
+  if (!existed) {
+    const res = await api('POST', `/encounters/${visit.encounter_id}/start`, { token: doctor.token });
+    if (res.status !== 200) throw new Error(`start visit ${visit.encounter_id}: ${res.status} ${res.body?.message}`);
+  }
+  return { encounterId: visit.encounter_id, close: existed ? async () => {} : () => api('POST', `/encounters/${visit.encounter_id}/finish`, { token: doctor.token }) };
+}
+
 async function closeDb() {
   if (pool) { await pool.end(); pool = undefined; }
 }
 
-module.exports = { TEST_PORT, BASE, TEST_DB, LAB_REPORT_DIR, SERVER_STDERR, PASSWORD, USERS, api, rawRequest, login, db, closeDb, setStock, stockMismatches };
+module.exports = { TEST_PORT, BASE, TEST_DB, LAB_REPORT_DIR, SERVER_STDERR, PASSWORD, USERS, api, rawRequest, login, db, closeDb, setStock, stockMismatches, visitInProgress };

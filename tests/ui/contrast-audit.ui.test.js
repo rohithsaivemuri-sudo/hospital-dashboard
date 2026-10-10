@@ -3,7 +3,7 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
-const { diagnoseFailures, selectOption, APP, call, tokenOf, login, db, closeDb, open, clickButton } = require('./lib/harness');
+const { diagnoseFailures, selectOption, APP, call, tokenOf, login, db, closeDb, open, clickButton, visitInProgress } = require('./lib/harness');
 
 let browser;
 let currentPage;
@@ -33,6 +33,8 @@ before(async () => {
   const [[p]] = await conn.query(`SELECT patient_id FROM patients WHERE patient_id NOT IN (SELECT patient_id FROM admissions WHERE status = 'ACTIVE')
     AND patient_id NOT IN (SELECT patient_id FROM encounters WHERE status IN ('ARRIVED','TRIAGED','IN_PROGRESS')) ORDER BY patient_id DESC LIMIT 1`);
   await call('POST', '/encounters', rec, { patient_id: p.patient_id, doctor_id: 1 });
+  // Orders are filed under a visit in progress; it stays open so the doctor's dialogs can be scanned.
+  fixtures.visit = await visitInProgress(1);
   const processing = (await call('POST', '/lab/orders', doc, { patient_id: 1, doctor_id: 1, tests: [{ test_id: 5 }], notes: '' })).body.data.id;
   await call('PUT', `/lab/orders/${processing}/status`, lab, { status: 'PROCESSING' });
   const done = (await call('POST', '/lab/orders', doc, { patient_id: 1, doctor_id: 1, tests: [{ test_id: 5 }], notes: '' })).body.data.id;
@@ -42,7 +44,7 @@ before(async () => {
   const [[mar]] = await conn.query("SELECT patient_id FROM prescriptions WHERE notes = 'Demo MAR seed (migration 008)'");
   Object.assign(fixtures, { marPatient: mar.patient_id, pharm });
 });
-after(async () => { await browser.close(); await closeDb(); });
+after(async () => { await fixtures.visit?.close(); await browser.close(); await closeDb(); });
 
 const ROLES = { ADMIN: 'admin', DOCTOR: 'dr.smith', NURSE: 'nurse1', RECEPTIONIST: 'reception1', LABORATORY: 'lab_staff', PHARMACY: 'pharmacy_staff' };
 
@@ -59,7 +61,7 @@ test('every page and dialog reachable by each role has readable buttons', async 
     }
     if (role === 'DOCTOR') {
       for (const tab of ['Overview', 'Visits', 'Vitals', 'Admissions', 'Lab Tests', 'Prescriptions', 'Surgery']) await scanAfter(page, '/patients/1', tab, `${role} /patients/1`);
-      for (const dialog of ['+ Write note', '+ Order Lab Tests', '+ Create Prescription', '+ Request Surgery', 'Admit Patient']) {
+      for (const dialog of ['+ Write note for current visit', '+ Order Lab Tests', '+ Create Prescription', '+ Request Surgery', 'Admit Patient']) {
         await scanAfter(page, '/patients/1', dialog, `${role} /patients/1`).catch(e => findings.push({ where: `${role} ${dialog}`, reason: `could not open: ${e.message}` }));
       }
       await open(page, '/patients/1'); await clickButton(page, 'Lab Tests'); await clickButton(page, 'View Result');
