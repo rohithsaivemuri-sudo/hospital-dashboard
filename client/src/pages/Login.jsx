@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import ReportProblemLink from '../components/ReportProblemLink';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -29,6 +30,7 @@ export default function Login() {
           <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} style={{ padding: '10px' }} required />
           <button type="submit" className="btn btn-primary" style={{ padding: '10px' }}>Login</button>
         </form>
+        <div style={{ marginTop: '16px', textAlign: 'center' }}><ReportProblemLink /></div>
       </div>
     </div>
   );
