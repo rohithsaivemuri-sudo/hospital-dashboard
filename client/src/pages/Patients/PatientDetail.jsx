@@ -433,7 +433,12 @@ export default function PatientDetail() {
             {user?.role === 'DOCTOR' && <button onClick={() => setShowLabModal(true)} style={{ padding: '8px 16px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '4px' }}>+ Order Lab Tests</button>}
             {user?.role === 'DOCTOR' && <button onClick={() => setShowPrescriptionModal(true)} style={{ padding: '8px 16px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '4px' }}>+ Create Prescription</button>}
             {user?.role === 'DOCTOR' && <button onClick={() => setShowSurgeryModal(true)} style={{ padding: '8px 16px', background: 'var(--warning)', color: 'var(--text-primary)', border: 'none', borderRadius: '4px' }}>+ Request Surgery</button>}
-            {user?.role === 'DOCTOR' && currentAdmission && <button onClick={() => handleDischarge(currentAdmission.admission_id)} style={{ padding: '8px 16px', background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '4px' }}>Discharge Patient</button>}
+            {user?.role === 'DOCTOR' && currentAdmission && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <button disabled={!myAdmission} title={myAdmission ? undefined : 'Only the admitting doctor can discharge'} onClick={() => handleDischarge(currentAdmission.admission_id)} style={{ padding: '8px 16px', background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '4px', opacity: myAdmission ? 1 : 0.6, cursor: myAdmission ? 'pointer' : 'not-allowed' }}>Discharge Patient</button>
+                {!myAdmission && <span data-testid="discharge-reason" style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Only {currentAdmission.doctor_name}, the admitting doctor, can discharge this patient.</span>}
+              </span>
+            )}
             {user?.role === 'DOCTOR' && !currentAdmission && <button onClick={openAdmissionModal} style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px' }}>Admit Patient</button>}
           </div>
         </div>
