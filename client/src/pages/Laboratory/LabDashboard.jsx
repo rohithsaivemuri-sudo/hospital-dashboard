@@ -189,7 +189,7 @@ export default function LabDashboard() {
                 {rows.filter(o => o.status === st).map(o => (
                   <div key={o.order_id} data-order={o.order_id} style={{ background: 'var(--bg-card)', borderRadius: 6, padding: 10, marginBottom: 10, boxShadow: 'var(--shadow)', borderLeft: `4px solid ${o.interpretation && o.interpretation !== 'NORMAL' ? 'var(--danger)' : 'var(--border)'}` }}>
                     <div style={{ fontWeight: 'bold' }}>#{o.order_id} {o.test_name}</div>
-                    <div style={{ fontSize: 13 }}>{o.patient_name} · Dr. {o.doctor_name}</div>
+                    <div style={{ fontSize: 13 }}>{o.patient_name} · {o.doctor_name}</div>
                     <div style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '4px 0 8px' }}>{new Date(o.order_date).toLocaleString()}{o.interpretation ? <strong style={{ color: flagColor(o.interpretation), marginLeft: 8 }}>{o.interpretation}</strong> : null}</div>
                     {actionFor(o)}
                   </div>
@@ -217,7 +217,7 @@ export default function LabDashboard() {
                 <td style={{ padding: 12, borderBottom: '1px solid var(--border)' }}>{o.order_id}</td>
                 <td style={{ padding: 12, borderBottom: '1px solid var(--border)' }}>{o.patient_name}</td>
                 <td style={{ padding: 12, borderBottom: '1px solid var(--border)' }}>{o.test_name}</td>
-                <td style={{ padding: 12, borderBottom: '1px solid var(--border)' }}>Dr. {o.doctor_name}</td>
+                <td style={{ padding: 12, borderBottom: '1px solid var(--border)' }}>{o.doctor_name}</td>
                 <td style={{ padding: 12, borderBottom: '1px solid var(--border)' }}>{new Date(o.order_date).toLocaleDateString()}</td>
                 <td style={{ padding: 12, borderBottom: '1px solid var(--border)' }}>
                   <span style={{ 
