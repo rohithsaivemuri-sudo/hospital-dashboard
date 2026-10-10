@@ -14,7 +14,8 @@ test('the app refuses to start when DB_USER is root', () => {
   for (const user of ['root', ' Root ']) {
     const r = run(['server.js'], { DB_USER: user, PORT: '0' });
     assert.equal(r.status, 1, `DB_USER=${JSON.stringify(user)}: exit ${r.status}`);
-    assert.match(r.stderr, /Refusing to start: DB_USER is root/);
+    assert.match(r.stderr, /Refusing to start/);
+    assert.match(r.stderr, /DB_USER is root/);
   }
 });
 
