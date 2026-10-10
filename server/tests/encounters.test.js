@@ -386,3 +386,20 @@ test('a record created while its visit is being closed is not attached to the cl
   const [attached] = await db().query('SELECT order_id FROM lab_orders WHERE encounter_id = ?', [enc.encounter_id]);
   assert.deepEqual(attached, []);
 });
+
+test('two visits for the same doctor and patient started at the same moment: exactly one starts', async () => {
+  const [[p]] = await db().query(`SELECT patient_id FROM patients WHERE patient_id NOT IN (SELECT patient_id FROM encounters WHERE status IN ('ARRIVED','TRIAGED','IN_PROGRESS'))
+    AND patient_id NOT IN (SELECT patient_id FROM admissions WHERE status = 'ACTIVE') ORDER BY patient_id DESC LIMIT 1`);
+  const walkIn = async () => (await api('POST', '/encounters', { token: reception.token, body: { patient_id: p.patient_id, doctor_id: doctor.user.doctor_id } })).body.data.encounter_id;
+  const doubles = [];
+  for (let round = 0; round < 15; round++) {
+    const [a, b] = [await walkIn(), await walkIn()];
+    const [ra, rb] = await Promise.all([act(a, 'start', doctor), act(b, 'start', doctor)]);
+    const [[{ n }]] = await db().query("SELECT COUNT(*) n FROM encounters WHERE patient_id = ? AND doctor_id = ? AND status = 'IN_PROGRESS'", [p.patient_id, doctor.user.doctor_id]);
+    if (Number(n) !== 1) doubles.push({ round, statuses: [ra.status, rb.status], inProgress: Number(n) });
+    else assert.deepEqual([ra.status, rb.status].sort(), [200, 409], JSON.stringify([ra.body, rb.body]));
+    // Void both before the next round (allowed from ARRIVED and IN_PROGRESS).
+    for (const id of [a, b]) assert.equal((await act(id, 'entered-in-error', doctor)).status, 200);
+  }
+  assert.deepEqual(doubles, [], 'never two IN_PROGRESS visits for one doctor and patient');
+});

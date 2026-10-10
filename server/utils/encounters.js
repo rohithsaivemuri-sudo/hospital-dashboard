@@ -118,8 +118,12 @@ async function transitionEncounter(connection, req, encounterId, action, authori
   }
   if (action === 'start') {
     // One open visit per doctor and patient, so new records attach to an unambiguous encounter.
+    // Starts for the same patient are serialised on the patient row (lock order: appointment ->
+    // encounter -> patient), and the check is a locking read so it sees a start that just committed;
+    // otherwise two different visits started at the same moment could both pass it.
+    await connection.execute('SELECT patient_id FROM patients WHERE patient_id = ? FOR UPDATE', [encounter.patient_id]);
     const [[open]] = await connection.execute(
-      'SELECT encounter_id FROM encounters WHERE doctor_id = ? AND patient_id = ? AND status = "IN_PROGRESS" AND encounter_id <> ?',
+      'SELECT encounter_id FROM encounters WHERE doctor_id = ? AND patient_id = ? AND status = "IN_PROGRESS" AND encounter_id <> ? FOR SHARE',
       [encounter.doctor_id, encounter.patient_id, encounter.encounter_id]
     );
     if (open) throw new EncounterError(409, `This doctor already has encounter #${open.encounter_id} in progress with this patient; finish it first`);
