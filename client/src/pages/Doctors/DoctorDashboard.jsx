@@ -5,6 +5,7 @@ import { getDoctor, getAppointments, getPatients, getDoctorAnalytics, getCurrent
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FaUserMd, FaHospitalUser, FaExclamationTriangle, FaCalendarCheck, FaNotesMedical, FaUserInjured, FaBed, FaBell } from 'react-icons/fa';
+import { appointmentStatus, visitStatus, hhmm, plural } from '../../utils/labels';
 
 // Open visits in plain words, and where each came from.
 const VISIT_STATUS = { ARRIVED: 'Waiting, not yet triaged', TRIAGED: 'Triaged, ready for you', IN_PROGRESS: 'With you now' };
@@ -165,7 +166,7 @@ export default function DoctorDashboard() {
                   <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{v.arrived_at ? new Date(v.arrived_at).toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</td>
                   <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}><Link to={`/patients/${v.patient_id}`}>{v.patient_name}</Link></td>
                   <td data-testid="visit-source" style={{ padding: '8px', borderBottom: '1px solid var(--border)', color: v.encounter_type === 'EMERGENCY' ? 'var(--danger)' : 'inherit', fontWeight: v.encounter_type === 'EMERGENCY' ? 'bold' : 'normal' }}>{visitSource(v)}</td>
-                  <td data-testid="visit-status" style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{VISIT_STATUS[v.status] || v.status.replaceAll('_', ' ')}</td>
+                  <td data-testid="visit-status" style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{VISIT_STATUS[v.status] || visitStatus(v.status)}</td>
                   <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>
                     {['ARRIVED', 'TRIAGED'].includes(v.status) && <button onClick={() => visitAction(v, 'start')} style={{ padding: '4px 8px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Start Visit</button>}
                     {v.status === 'IN_PROGRESS' && <button onClick={() => visitAction(v, 'finish')} style={{ padding: '4px 8px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Sign &amp; Close</button>}
@@ -200,9 +201,9 @@ export default function DoctorDashboard() {
               <tbody>
                 {appointments.sort((a,b) => a.appointment_time.localeCompare(b.appointment_time)).map(app => (
                   <tr key={app.appointment_id}>
-                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{app.appointment_time}</td>
+                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{hhmm(app.appointment_time)}</td>
                     <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{app.patient_name}</td>
-                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{app.encounter_status === 'TRIAGED' ? 'TRIAGED' : app.status}</td>
+                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{app.encounter_status === 'TRIAGED' ? visitStatus('TRIAGED') : appointmentStatus(app.status)}</td>
                     <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <Link to={`/patients/${app.patient_id}`} style={{ padding: '4px 8px', background: 'var(--secondary)', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>Open</Link>
@@ -229,7 +230,7 @@ export default function DoctorDashboard() {
             ))}
             {admissions.length > 0 && (
                <li style={{ padding: '12px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between' }}>
-                 <span>You have {admissions.length} active admissions to round on.</span>
+                 <span>You have {plural(admissions.length, 'active admission')} to round on.</span>
                </li>
             )}
             {visits.length === 0 && admissions.length === 0 && (
