@@ -10,7 +10,7 @@ const MED_A = 18;
 const MED_B = 19;
 
 const item = (medicine_id) => ({ medicine_id, dosage: '1 tab', frequency: 'Once daily', duration: '1 day', quantity: 1 });
-const isDeadlock = (res) => /deadlock/i.test(res.body?.message || '');
+const isDeadlock = (res) => res.body?.code === 'DB_DEADLOCK'; // server errors are generic; deadlocks carry this code
 
 async function stock() {
   const [rows] = await db().query('SELECT medicine_id, stock_quantity FROM medicines WHERE medicine_id IN (?, ?) ORDER BY medicine_id', [MED_A, MED_B]);

@@ -16,7 +16,7 @@ export default function Login() {
       toast.success('Logged in successfully');
       navigate('/');
     } catch (err) {
-      toast.error('Login failed');
+      toast.error(err.response?.data?.message || 'Login failed'); // e.g. invalid credentials, or rate limited
     }
   };
 

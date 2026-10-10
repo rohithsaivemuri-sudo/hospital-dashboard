@@ -40,6 +40,16 @@ test('pages: / and client-side routes return the app shell, never cached', async
   }
 });
 
+test('production adds a Content-Security-Policy and HSTS', async () => {
+  const res = await fetch(BASE + '/');
+  const csp = res.headers.get('content-security-policy') || '';
+  assert.match(csp, /default-src 'self'/);
+  assert.match(csp, /script-src 'self'(;|$)/, 'no inline or remote scripts');
+  assert.match(csp, /frame-ancestors 'none'/);
+  assert.match(csp, /connect-src 'self' ws:\/\/localhost:5097/);
+  assert.match(res.headers.get('strict-transport-security') || '', /max-age=\d+/);
+});
+
 test('assets are served with long-lived caching; a missing asset is a 404, not the page', async () => {
   const html = await (await fetch(BASE + '/')).text();
   const asset = html.match(/src="(\/assets\/[^"]+\.js)"/)[1];

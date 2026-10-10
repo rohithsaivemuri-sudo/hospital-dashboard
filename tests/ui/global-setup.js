@@ -33,7 +33,7 @@ async function globalSetup() {
   fs.rmSync(reports, { recursive: true, force: true });
   fs.mkdirSync(reports, { recursive: true });
   children.push(spawn(process.execPath, ['server.js'], {
-    cwd: path.join(ROOT, 'server'), env: { ...process.env, DB_NAME: TEST_DB, PORT: '5000', LAB_REPORT_DIR: reports }, stdio: 'ignore',
+    cwd: path.join(ROOT, 'server'), env: { ...process.env, DB_NAME: TEST_DB, PORT: '5000', LAB_REPORT_DIR: reports, LOGIN_MAX_PER_IP: '1000000', LOGIN_MAX_FAILURES: '1000000' }, stdio: 'ignore',
   }));
   children.push(spawn(path.join(ROOT, 'client', 'node_modules', '.bin', 'vite'), ['--port', '5173', '--strictPort'], {
     cwd: path.join(ROOT, 'client'), stdio: 'ignore',

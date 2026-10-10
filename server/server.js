@@ -16,12 +16,22 @@ const io = new Server(server, {
   cors: {
     origin: config.clientUrl,
     methods: ['GET', 'POST', 'PUT', 'DELETE']
-  }
+  },
+  // The cors option covers HTTP long-polling only; WebSocket upgrades are checked here. Requests
+  // without an Origin header (non-browser clients) still need a valid token (sockets/socketHandler).
+  allowRequest: (req, callback) => callback(null, !req.headers.origin || req.headers.origin === config.clientUrl),
 });
 
 // Middleware
+const { requestId, securityHeaders, loginRateLimit, safeErrorResponses, errorHandler } = require('./middleware/security');
+app.disable('x-powered-by');
+app.set('trust proxy', config.trustProxy);
+app.use(requestId);
+app.use(securityHeaders(config));
+app.use(safeErrorResponses);
 app.use(cors({ origin: config.clientUrl }));
-app.use(express.json());
+app.use(express.json({ limit: config.jsonLimit }));
+app.post('/api/auth/login', loginRateLimit(config.loginLimit));
 
 // Socket.io setup
 require('./sockets/socketHandler')(io);
@@ -102,6 +112,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 // Unknown API paths answer in JSON, not with an HTML page.
 app.use('/api', (req, res) => res.status(404).json({ success: false, message: 'Not found' }));
+app.use(errorHandler);
 
 const PORT = config.port;
 server.listen(PORT, () => {

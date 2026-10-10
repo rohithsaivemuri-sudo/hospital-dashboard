@@ -27,7 +27,8 @@ async function globalSetup() {
   server = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
     cwd: path.join(__dirname, '..'),
     // dotenv never overrides variables that are already set, so these win over server/.env.
-    env: { ...process.env, DB_NAME: TEST_DB, PORT: String(TEST_PORT), LAB_REPORT_DIR },
+    // The suite logs in hundreds of times from one address; security.test.js checks the limits themselves.
+    env: { ...process.env, DB_NAME: TEST_DB, PORT: String(TEST_PORT), LAB_REPORT_DIR, LOGIN_MAX_PER_IP: '1000000', LOGIN_MAX_FAILURES: '1000000' },
     stdio: ['ignore', 'ignore', 'pipe'],
   });
   server.stderr.on('data', (chunk) => {

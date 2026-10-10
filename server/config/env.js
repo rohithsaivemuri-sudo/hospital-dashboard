@@ -41,6 +41,23 @@ function checkConfig(env = process.env) {
   else if (clientUrl && !originOf(clientUrl)) errors.push(`CLIENT_URL must be an origin like https://hospital.example.org (no path)`);
   else clientUrl = originOf(clientUrl);
 
+  // Hardening knobs (positive whole numbers; sensible defaults).
+  const positive = (key, dflt) => {
+    if (env[key] === undefined || env[key] === '') return dflt;
+    if (!/^[1-9]\d*$/.test(String(env[key]))) { errors.push(`${key} must be a positive whole number`); return dflt; }
+    return Number(env[key]);
+  };
+  const loginLimit = {
+    windowMs: positive('LOGIN_WINDOW_MINUTES', 15) * 60000,
+    maxPerIp: positive('LOGIN_MAX_PER_IP', 100),
+    maxFailures: positive('LOGIN_MAX_FAILURES', 10),
+  };
+  const jsonLimit = env.JSON_BODY_LIMIT || '100kb';
+  if (!/^\d+(b|kb|mb)$/i.test(jsonLimit)) errors.push('JSON_BODY_LIMIT must look like 100kb or 1mb');
+  // Number of reverse proxies in front of the app (so rate limiting sees the client address).
+  const trustProxy = env.TRUST_PROXY === undefined || env.TRUST_PROXY === '' ? false : /^\d+$/.test(env.TRUST_PROXY) ? Number(env.TRUST_PROXY) : null;
+  if (trustProxy === null) errors.push('TRUST_PROXY must be the number of proxies in front of the app (e.g. 1), or empty');
+
   const labReportDir = path.resolve(env.LAB_REPORT_DIR || path.join(__dirname, '..', 'uploads', 'lab-reports'));
   try {
     fs.mkdirSync(labReportDir, { recursive: true });
@@ -49,7 +66,7 @@ function checkConfig(env = process.env) {
 
   return {
     errors,
-    config: { mode, production, port: Number(env.PORT || 5000), clientUrl, labReportDir },
+    config: { mode, production, port: Number(env.PORT || 5000), clientUrl, labReportDir, loginLimit, jsonLimit, trustProxy },
   };
 }
 

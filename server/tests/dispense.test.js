@@ -35,7 +35,8 @@ async function prescribe(items) {
 }
 
 const dispense = (id, token = pharmacy.token) => api('POST', `/prescriptions/${id}/dispense`, { token });
-const isDeadlock = (res) => res.status === 500 && /deadlock/i.test(res.body?.message || '');
+// Server errors are generic for clients; deadlocks carry a machine-readable code.
+const isDeadlock = (res) => res.status === 500 && res.body?.code === 'DB_DEADLOCK';
 
 test('concurrent dispenses with opposite item order never deadlock (Spec 1 concurrency test)', async () => {
   await setStock(MED_A, 100000);
