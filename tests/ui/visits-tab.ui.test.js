@@ -59,6 +59,7 @@ test('every visit is listed, the open one first and marked current, with status,
 });
 
 test('under each visit: its notes, vitals, lab orders and prescriptions, and nothing from the other visit', async () => {
+  await page.waitForFunction((id) => document.querySelector(`[data-testid="visit-card"][data-encounter="${id}"]`)?.innerText.includes('Pulse 88'), { timeout: 5000 }, current); // vitals load separately
   const now = await card(current);
   assert.match(now, new RegExp(`Current visit headache ${stamp}`));
   assert.match(now, /Pulse 88/);
