@@ -4,6 +4,7 @@ import { FaUsersCog, FaUserPlus } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
 import { getUsers, registerUser, deactivateUser, reactivateUser, getDepartments, isForbidden } from '../../services/api';
 import AccessDenied from '../../components/AccessDenied';
+import { staffName } from '../../utils/staff';
 
 const ROLES = ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'LABORATORY', 'PHARMACY'];
 const EMPTY = { username: '', password: '', role: 'RECEPTIONIST', full_name: '', email: '', phone: '', department_id: '', specialization: '', shift: 'MORNING', max_workload: 5 };
@@ -41,7 +42,7 @@ export default function StaffAccounts() {
       const body = { ...form };
       if (body.role !== 'DOCTOR') ['department_id', 'specialization', 'shift', 'max_workload'].forEach(k => delete body[k]);
       await registerUser(body);
-      toast.success(`Account created for ${form.full_name}`);
+      toast.success(`Account created for ${staffName(form.full_name, form.username)}`);
       setForm(EMPTY);
       await load();
     } catch (err) {
@@ -53,10 +54,10 @@ export default function StaffAccounts() {
 
   const toggle = async (u) => {
     const deactivating = u.is_active;
-    if (deactivating && !window.confirm(`Deactivate ${u.full_name}? They will be signed out and unable to log in.`)) return;
+    if (deactivating && !window.confirm(`Deactivate ${staffName(u.full_name, u.username)}? They will be signed out and unable to log in.`)) return;
     try {
       await (deactivating ? deactivateUser(u.user_id) : reactivateUser(u.user_id));
-      toast.success(`${u.full_name} ${deactivating ? 'deactivated' : 'reactivated'}`);
+      toast.success(`${staffName(u.full_name, u.username)} ${deactivating ? 'deactivated' : 'reactivated'}`);
       await load();
     } catch (err) {
       if (!isForbidden(err)) toast.error(err.response?.data?.message || 'Could not update the account');

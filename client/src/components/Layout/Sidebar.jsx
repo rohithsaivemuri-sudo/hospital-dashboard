@@ -41,7 +41,7 @@ export default function Sidebar() {
         })}
       </nav>
       <div style={{ padding: '20px', borderTop: '1px solid #334155' }}>
-        <div style={{ marginBottom: '10px', color: 'white' }}>{user?.name}</div>
+        <div style={{ marginBottom: '10px', color: 'white' }}>{user?.full_name || user?.username}</div>
         <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'transparent', color: 'var(--sidebar-text)', border: 'none', cursor: 'pointer' }}>
           <FaSignOutAlt /> Logout
         </button>

@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { FaUserNurse } from 'react-icons/fa';
 import { getNurseAssignments, createNurseAssignment, endNurseAssignment, getUsers, getWards, isForbidden } from '../../services/api';
 import AccessDenied from '../../components/AccessDenied';
+import { staffName } from '../../utils/staff';
 
 const card = { background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)' };
 const input = { padding: '8px', border: '1px solid var(--border)', borderRadius: '6px' };
@@ -44,7 +45,7 @@ export default function NurseAssignments() {
   };
 
   const end = async (row) => {
-    if (!window.confirm(`End ${row.nurse_name}'s assignment to ${row.ward_name} today?`)) return;
+    if (!window.confirm(`End ${staffName(row.nurse_name, row.nurse_username)}'s assignment to ${row.ward_name} today?`)) return;
     try {
       await endNurseAssignment(row.assignment_id);
       toast.success('Assignment ended');
@@ -61,12 +62,12 @@ export default function NurseAssignments() {
       <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}><FaUserNurse color="var(--primary)" /> Nurse Assignments</h1>
       <form onSubmit={submit} style={{ ...card, display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
         <label style={{ display: 'grid' }}>Nurse
-          <select required value={form.nurse_user_id} onChange={e => setForm({ ...form, nurse_user_id: e.target.value })} style={input}>
-            <option value="">Select…</option>{nurses.map(n => <option key={n.user_id} value={n.user_id}>{n.full_name}</option>)}
+          <select required name="nurse_user_id" value={form.nurse_user_id} onChange={e => setForm({ ...form, nurse_user_id: e.target.value })} style={input}>
+            <option value="">Select…</option>{nurses.map(n => <option key={n.user_id} value={n.user_id}>{staffName(n.full_name, n.username)}</option>)}
           </select>
         </label>
         <label style={{ display: 'grid' }}>Ward
-          <select required value={form.ward_id} onChange={e => setForm({ ...form, ward_id: e.target.value })} style={input}>
+          <select required name="ward_id" value={form.ward_id} onChange={e => setForm({ ...form, ward_id: e.target.value })} style={input}>
             <option value="">Select…</option>{wards.map(w => <option key={w.ward_id} value={w.ward_id}>{w.name}</option>)}
           </select>
         </label>
@@ -81,7 +82,7 @@ export default function NurseAssignments() {
           <tbody>
             {rows.map(r => (
               <tr key={r.assignment_id}>
-                <td style={cell}>{r.nurse_name}</td><td style={cell}>{r.ward_name}</td>
+                <td style={cell}>{staffName(r.nurse_name, r.nurse_username)}</td><td style={cell}>{r.ward_name}</td>
                 <td style={cell}>{day(r.start_date)}</td><td style={cell}>{r.end_date ? day(r.end_date) : 'Ongoing'}</td>
                 <td style={cell}>{r.is_current ? 'Current' : 'Not current'}</td>
                 <td style={cell}>{r.is_current && !r.end_date && <button onClick={() => end(r)} style={{ padding: '4px 10px', background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>End</button>}</td>

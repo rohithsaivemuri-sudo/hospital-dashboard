@@ -32,7 +32,7 @@ exports.login = async (req, res) => {
     
     const token = jwt.sign({ user_id: user.user_id, username: user.username, role: user.role, doctor_id }, process.env.JWT_SECRET, { expiresIn: '1d' });
     logAccess(req, { action: 'LOGIN_SUCCESS', statusCode: 200, userId: user.user_id, role: user.role });
-    res.json({ success: true, token, user: { user_id: user.user_id, username: user.username, role: user.role, doctor_id } });
+    res.json({ success: true, token, user: { user_id: user.user_id, username: user.username, full_name: user.full_name, role: user.role, doctor_id } });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
@@ -64,7 +64,9 @@ exports.register = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const user = req.user;
+    const user = { ...req.user };
+    const [[row]] = await pool.execute('SELECT full_name FROM users WHERE user_id = ?', [user.user_id]);
+    user.full_name = row ? row.full_name : null;
     if (user.role === 'DOCTOR') {
       const [doctors] = await pool.execute('SELECT doctor_id FROM doctors WHERE user_id = ?', [user.user_id]);
       if (doctors.length > 0) {
