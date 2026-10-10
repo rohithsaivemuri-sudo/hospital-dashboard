@@ -19,19 +19,21 @@
 -- definer's rights, so they keep working. audit_logs stays append-only: its triggers reject UPDATE and
 -- DELETE whatever the account's grants.
 --
--- After switching server/.env to this account, the maintenance tools still need an administrative
--- account, because they read the same DB_USER/DB_PASSWORD:
---   npm run db:migrate, scripts/backup-db.js (mysqldump), scripts/schema-diff.js,
---   npm test / npm run test:ui (they create and drop hospital_db_test).
--- Run those with the admin account set only for that command, for example:
---   read -s ADMIN_PW && DB_USER=root DB_PASSWORD="$ADMIN_PW" npm run -s db:migrate
--- (dotenv does not override variables that are already set.)
+-- The app connects with DB_USER/DB_PASSWORD (this account) and refuses to start as root. The
+-- maintenance tools use a separate administrative account from DB_ADMIN_USER/DB_ADMIN_PASSWORD:
+--   npm run db:migrate, scripts/backup-db.js (mysqldump), scripts/schema-diff.js, and the test
+--   suites' database build (they create and drop hospital_db_test).
 
 CREATE USER 'hospital_app'@'127.0.0.1' IDENTIFIED BY RANDOM PASSWORD;
 
 GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON `hospital_db`.* TO 'hospital_app'@'127.0.0.1';
 
--- Check: should list exactly USAGE and the five privileges above on `hospital_db`.*
+-- Local development only (omit on a server): the test suites run the app against hospital_db_test,
+-- and this lets them do so under the same restricted account. The admin account still builds that
+-- database (DB_ADMIN_USER); a database-level grant survives it being dropped and rebuilt.
+GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON `hospital_db_test`.* TO 'hospital_app'@'127.0.0.1';
+
+-- Check: should list USAGE and the five privileges on `hospital_db`.* (and `hospital_db_test`.* locally)
 SHOW GRANTS FOR 'hospital_app'@'127.0.0.1';
 
 -- To generate a new password later (also printed once):
