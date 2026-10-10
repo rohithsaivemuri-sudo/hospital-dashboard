@@ -3,6 +3,7 @@ import { getBeds, getBedSummary } from '../../services/api';
 import { SocketContext } from '../../context/SocketContext';
 import { FaBed } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { tint } from '../../utils/colors';
 
 export default function BedDashboard() {
   const [beds, setBeds] = useState([]);
@@ -133,9 +134,9 @@ export default function BedDashboard() {
           {beds.map((bed) => {
             const color = getStatusColor(bed.status);
             return (
-              <div key={bed.bed_id} style={{
-                border: `1px solid ${color}40`,
-                backgroundColor: `${color}10`,
+              <div key={bed.bed_id} data-testid="bed-tile" data-status={bed.status} style={{
+                border: `1px solid ${tint(color, 25)}`,
+                backgroundColor: tint(color, 6),
                 padding: '16px 8px',
                 borderRadius: 'var(--radius)',
                 display: 'flex',
@@ -155,7 +156,7 @@ export default function BedDashboard() {
                   fontSize: '11px', 
                   fontWeight: 600,
                   color: color,
-                  backgroundColor: `${color}20`,
+                  backgroundColor: tint(color, 12.5),
                   padding: '2px 6px',
                   borderRadius: '10px'
                 }}>

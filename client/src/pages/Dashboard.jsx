@@ -4,6 +4,7 @@ import { getDashboardStats } from '../services/api';
 import { SocketContext } from '../context/SocketContext';
 import { FaUserMd, FaBed, FaAmbulance, FaChartLine } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { tint } from '../utils/colors';
 
 const StatCard = ({ title, value, icon, color }) => (
   <div style={{
@@ -16,7 +17,7 @@ const StatCard = ({ title, value, icon, color }) => (
     gap: '16px'
   }}>
     <div style={{
-      backgroundColor: `${color}20`,
+      backgroundColor: tint(color, 12.5),
       color: color,
       padding: '16px',
       borderRadius: '50%',

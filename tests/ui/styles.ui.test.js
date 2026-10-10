@@ -42,3 +42,15 @@ test('no white text on the --warning background', () => {
   }
   assert.deepEqual(bad, []);
 });
+
+test('no colour gets a hex alpha suffix appended (invalid for var(--name) colours)', () => {
+  // `${color}20` only works when color is '#rrggbb'; with 'var(--success)' it yields invalid CSS
+  // that browsers drop. Use tint() from utils/colors.js.
+  const bad = [];
+  for (const f of files(SRC)) {
+    fs.readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
+      if (/\$\{[^}]*\}[0-9a-fA-F]{2}`/.test(line)) bad.push(`${rel(f)}:${i + 1}`);
+    });
+  }
+  assert.deepEqual(bad, []);
+});
