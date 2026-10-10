@@ -10,9 +10,12 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (isAuthenticated) {
+      // The server rejects connections without a valid token for an active account, and
+      // disconnects a user's sockets when the account is deactivated.
       const newSocket = io('/', {
         auth: { token: localStorage.getItem('token') }
       });
+      newSocket.on('connect_error', (err) => console.warn('Live updates unavailable:', err.message));
       setSocket(newSocket);
 
       return () => newSocket.close();

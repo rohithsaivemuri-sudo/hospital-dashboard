@@ -1,4 +1,7 @@
 const pool = require('../config/db');
+const { withTransaction } = require('../utils/audit');
+const { applyAppointmentStatus } = require('../utils/encounters');
+const { canAccessPatient, patientFilter } = require('../utils/patientAccess');
 exports.create = async (req, res) => {
   try {
     const { patient_id, doctor_id, appointment_date, appointment_time, reason } = req.body;
@@ -8,9 +11,17 @@ exports.create = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Forbidden: Cannot create appointment for another doctor' });
     }
 
+    // appointments.department_id is NOT NULL: take it from the doctor being booked.
+    const [[doctor]] = await pool.execute('SELECT department_id FROM doctors WHERE doctor_id = ?', [doctor_id ?? null]);
+    if (!doctor) return res.status(400).json({ success: false, message: 'Doctor not found' });
+
     try {
-      const [result] = await pool.execute('INSERT INTO appointments (patient_id, doctor_id, appointment_date, appointment_time, reason, status) VALUES (?, ?, ?, ?, ?, "SCHEDULED")', [patient_id, doctor_id, appointment_date, appointment_time, reason]);
-      res.status(201).json({ success: true, data: { id: result.insertId } });
+      const id = await withTransaction(req, async (connection, audit) => {
+        const [result] = await connection.execute('INSERT INTO appointments (patient_id, doctor_id, department_id, appointment_date, appointment_time, reason, status) VALUES (?, ?, ?, ?, ?, ?, "BOOKED")', [patient_id, doctor_id, doctor.department_id, appointment_date, appointment_time, reason ?? null]);
+        await audit({ action: 'CREATE_APPOINTMENT', entityType: 'appointment', entityId: result.insertId, patientId: patient_id, details: { doctor_id: Number(doctor_id) } });
+        return result.insertId;
+      });
+      res.status(201).json({ success: true, data: { id } });
     } catch(err) {
       if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ success: false, message: 'Double booking detected' });
       throw err;
@@ -21,10 +32,11 @@ exports.list = async (req, res) => {
   try {
     const { date, doctor_id, status } = req.query;
     let query = `
-      SELECT a.*, p.name as patient_name, d.name as doctor_name 
+      SELECT a.*, p.name as patient_name, d.name as doctor_name, e.encounter_id, e.status as encounter_status
       FROM appointments a
       LEFT JOIN patients p ON a.patient_id = p.patient_id
       LEFT JOIN doctors d ON a.doctor_id = d.doctor_id
+      LEFT JOIN encounters e ON e.appointment_id = a.appointment_id
       WHERE 1=1
     `;
     let params = [];
@@ -35,6 +47,12 @@ exports.list = async (req, res) => {
     } else if (doctor_id) { 
       query += ' AND a.doctor_id = ?'; 
       params.push(doctor_id); 
+    }
+    // Nurses see appointments of their assigned patients only (same scope as GET /api/patients).
+    if (req.user.role === 'NURSE') {
+      const scope = patientFilter(req.user, 'demographics', 'a.patient_id');
+      query += ` AND ${scope.sql}`;
+      params.push(...scope.params);
     }
     
     if (date) { query += ' AND a.appointment_date = ?'; params.push(date); }
@@ -55,6 +73,9 @@ exports.getById = async (req, res) => {
 
     const [rows] = await pool.execute(query, params);
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Not found' });
+    if (req.user.role === 'NURSE' && !(await canAccessPatient(req.user, rows[0].patient_id, 'demographics'))) {
+      return res.status(403).json({ success: false, message: 'Forbidden: patient is not assigned to you' });
+    }
     res.json({ success: true, data: rows[0] });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
@@ -67,9 +88,16 @@ exports.updateStatus = async (req, res) => {
       if (rows.length === 0) return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
-    await pool.execute('UPDATE appointments SET status = ? WHERE appointment_id = ?', [status, req.params.id]);
+    // Starting and finishing a visit is the assigned doctor's action (POST /api/encounters/:id/start|finish).
+    if (['IN_PROGRESS', 'COMPLETED'].includes(status)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: visits are started and finished by the doctor from the visit itself' });
+    }
+
+    // Status changes go through the encounter state machine, which keeps the appointment and its
+    // encounter in step (same transaction) and rejects invalid transitions with 409.
+    await withTransaction(req, (connection) => applyAppointmentStatus(connection, req, req.params.id, status));
     res.json({ success: true, message: 'Updated successfully' });
-  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+  } catch (error) { res.status(error.status || 500).json({ success: false, message: error.message }); }
 };
 exports.getByDoctor = async (req, res) => {
   try {
@@ -79,7 +107,14 @@ exports.getByDoctor = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
-    const [rows] = await pool.execute('SELECT * FROM appointments WHERE doctor_id = ?', [targetDoctorId]);
+    let sql = 'SELECT * FROM appointments WHERE doctor_id = ?';
+    const params = [targetDoctorId];
+    if (req.user.role === 'NURSE') {
+      const scope = patientFilter(req.user, 'demographics', 'patient_id');
+      sql += ` AND ${scope.sql}`;
+      params.push(...scope.params);
+    }
+    const [rows] = await pool.execute(sql, params);
     res.json({ success: true, data: rows });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };

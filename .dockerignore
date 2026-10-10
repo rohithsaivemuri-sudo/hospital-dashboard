@@ -1,0 +1,16 @@
+# Never in the image: secrets, dependencies (installed inside), local data, tests, tooling.
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+client/dist
+server/uploads
+server/tests
+tests
+coverage
+*.log
+.git
+.github
+.vscode
+.idea
+.DS_Store

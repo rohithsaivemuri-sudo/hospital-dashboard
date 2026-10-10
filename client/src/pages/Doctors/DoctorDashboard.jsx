@@ -1,17 +1,27 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { getDoctor, getAppointments, getPatients, getDoctorAnalytics, getCurrentAdmissions } from '../../services/api';
+import { SocketContext } from '../../context/SocketContext';
+import { getDoctor, getAppointments, getPatients, getDoctorAnalytics, getCurrentAdmissions, encounterAction, getEncounterQueue } from '../../services/api';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FaUserMd, FaHospitalUser, FaExclamationTriangle, FaCalendarCheck, FaNotesMedical, FaUserInjured, FaBed, FaBell } from 'react-icons/fa';
-import api from '../../services/api';
+
+// Open visits in plain words, and where each came from.
+const VISIT_STATUS = { ARRIVED: 'Waiting, not yet triaged', TRIAGED: 'Triaged, ready for you', IN_PROGRESS: 'With you now' };
+const visitSource = (v) => (v.encounter_type === 'EMERGENCY' ? 'Emergency'
+  : v.encounter_type === 'INPATIENT' ? 'Inpatient'
+  : v.appointment_id ? `Appointment ${String(v.appointment_time || '').slice(0, 5)}` : 'Walk-in');
 
 export default function DoctorDashboard() {
   const { user } = useContext(AuthContext);
+  const socket = useContext(SocketContext);
   const [doctor, setDoctor] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
   const [admissions, setAdmissions] = useState([]);
+  // Every open visit (ARRIVED, TRIAGED, IN_PROGRESS) for this doctor: appointments, walk-ins and
+  // emergency visits alike, from GET /api/encounters/queue.
+  const [visits, setVisits] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,6 +31,34 @@ export default function DoctorDashboard() {
       fetchDashboardData();
     }
   }, [user]);
+
+  // Live queue: the server sends encounter:updated { encounterId, status } for this doctor's visits
+  // (check-in, triage, start, finish, cancel); refetch today's appointments without a full reload.
+  useEffect(() => {
+    if (!socket) return;
+    const refreshQueue = async ({ status } = {}) => {
+      if (status === 'ARRIVED') toast('A patient has checked in', { icon: '🔔' });
+      if (status === 'TRIAGED') toast('A patient has been triaged', { icon: '🩺' });
+      try {
+        const d = new Date();
+        const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const [apptRes, queueRes] = await Promise.all([getAppointments({ date: today }), getEncounterQueue()]);
+        setAppointments(apptRes.data?.data || apptRes.data || []);
+        setVisits(queueRes.data?.data || []);
+      } catch (err) { console.error(err); }
+    };
+    const refreshAdmissions = async () => {
+      try { setAdmissions((await getCurrentAdmissions()).data?.data || []); } catch (err) { console.error(err); }
+    };
+    socket.on('encounter:updated', refreshQueue);
+    socket.on('admission:new', refreshAdmissions);
+    socket.on('admission:discharged', refreshAdmissions);
+    return () => {
+      socket.off('encounter:updated', refreshQueue);
+      socket.off('admission:new', refreshAdmissions);
+      socket.off('admission:discharged', refreshAdmissions);
+    };
+  }, [socket]);
 
   const fetchDashboardData = async () => {
     try {
@@ -37,6 +75,7 @@ export default function DoctorDashboard() {
       
       const apptRes = await getAppointments({ date: today });
       setAppointments(apptRes.data?.data || apptRes.data || []);
+      setVisits((await getEncounterQueue()).data?.data || []);
 
       const patRes = await getPatients();
       setPatients(patRes.data?.data || patRes.data || []);
@@ -52,13 +91,25 @@ export default function DoctorDashboard() {
     }
   };
 
-  const updateAppointmentStatus = async (id, status) => {
+  const visitAction = async (visit, action) => {
+    if (action === 'finish' && !window.confirm('Sign and close this visit? Its notes cannot be edited afterwards.')) return;
     try {
-      await api.put(`/appointments/${id}/status`, { status });
-      toast.success(`Appointment marked as ${status}`);
+      await encounterAction(visit.encounter_id, action);
+      toast.success(action === 'start' ? 'Visit started' : 'Visit signed and closed');
+      fetchDashboardData();
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed to update the visit'); }
+  };
+
+  // Visits run on the appointment's encounter (start / sign & close); the appointment status follows it.
+  const updateAppointmentStatus = async (id, status) => {
+    const app = appointments.find(a => a.appointment_id === id);
+    try {
+      if (!app?.encounter_id) return toast.error('This patient has not been checked in yet');
+      await encounterAction(app.encounter_id, status === 'IN_PROGRESS' ? 'start' : 'finish');
+      toast.success(status === 'IN_PROGRESS' ? 'Visit started' : 'Visit signed and closed');
       fetchDashboardData(); // Refetch
     } catch (err) {
-      toast.error('Failed to update status');
+      toast.error(err.response?.data?.message || 'Failed to update status');
     }
   };
 
@@ -98,6 +149,34 @@ export default function DoctorDashboard() {
         </div>
       </div>
 
+      {/* MY OPEN VISITS: the queue, whatever brought the patient in */}
+      <div data-testid="open-visits" style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', marginBottom: '24px' }}>
+        <h2 style={{ marginTop: 0, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}><FaHospitalUser /> My Open Visits <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>· {visits.length}</span></h2>
+        {visits.length === 0 ? <p style={{ color: 'var(--text-secondary)', margin: 0 }}>No patients waiting for you.</p> : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f9fafb', textAlign: 'left' }}>
+                {['Arrived', 'Patient', 'Visit', 'Status', 'Action'].map(h => <th key={h} style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {visits.map(v => (
+                <tr key={v.encounter_id} data-testid="open-visit" data-encounter={v.encounter_id}>
+                  <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{v.arrived_at ? new Date(v.arrived_at).toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</td>
+                  <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}><Link to={`/patients/${v.patient_id}`}>{v.patient_name}</Link></td>
+                  <td data-testid="visit-source" style={{ padding: '8px', borderBottom: '1px solid var(--border)', color: v.encounter_type === 'EMERGENCY' ? 'var(--danger)' : 'inherit', fontWeight: v.encounter_type === 'EMERGENCY' ? 'bold' : 'normal' }}>{visitSource(v)}</td>
+                  <td data-testid="visit-status" style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{VISIT_STATUS[v.status] || v.status.replaceAll('_', ' ')}</td>
+                  <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>
+                    {['ARRIVED', 'TRIAGED'].includes(v.status) && <button onClick={() => visitAction(v, 'start')} style={{ padding: '4px 8px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Start Visit</button>}
+                    {v.status === 'IN_PROGRESS' && <button onClick={() => visitAction(v, 'finish')} style={{ padding: '4px 8px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Sign &amp; Close</button>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
         
         {/* TODAY'S APPOINTMENTS */}
@@ -123,12 +202,12 @@ export default function DoctorDashboard() {
                   <tr key={app.appointment_id}>
                     <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{app.appointment_time}</td>
                     <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{app.patient_name}</td>
-                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{app.status}</td>
+                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{app.encounter_status === 'TRIAGED' ? 'TRIAGED' : app.status}</td>
                     <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <Link to={`/patients/${app.patient_id}`} style={{ padding: '4px 8px', background: 'var(--secondary)', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>Open</Link>
                         {app.status === 'CHECKED_IN' && <button onClick={() => updateAppointmentStatus(app.appointment_id, 'IN_PROGRESS')} style={{ padding: '4px 8px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Start Visit</button>}
-                        {app.status === 'IN_PROGRESS' && <button onClick={() => updateAppointmentStatus(app.appointment_id, 'COMPLETED')} style={{ padding: '4px 8px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Complete Visit</button>}
+                        {app.status === 'IN_PROGRESS' && <button onClick={() => updateAppointmentStatus(app.appointment_id, 'COMPLETED')} style={{ padding: '4px 8px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Sign &amp; Close</button>}
                       </div>
                     </td>
                   </tr>
@@ -142,10 +221,10 @@ export default function DoctorDashboard() {
         <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)' }}>
           <h2 style={{ marginTop: 0, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}><FaBell color="var(--warning)" /> Needs Attention</h2>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {appointments.filter(a => a.status === 'CHECKED_IN' || a.status === 'IN_PROGRESS').map(a => (
-               <li key={`appt-${a.appointment_id}`} style={{ padding: '12px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between' }}>
-                 <span>Patient <strong>{a.patient_name}</strong> is {a.status === 'CHECKED_IN' ? 'waiting' : 'in progress'}.</span>
-                 <Link to={`/patients/${a.patient_id}`}>Open Patient</Link>
+            {visits.map(v => (
+               <li key={`visit-${v.encounter_id}`} style={{ padding: '12px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between' }}>
+                 <span>Patient <strong>{v.patient_name}</strong> ({visitSource(v).toLowerCase()}) is {v.status === 'IN_PROGRESS' ? 'in progress' : 'waiting'}.</span>
+                 <Link to={`/patients/${v.patient_id}`}>Open Patient</Link>
                </li>
             ))}
             {admissions.length > 0 && (
@@ -153,7 +232,7 @@ export default function DoctorDashboard() {
                  <span>You have {admissions.length} active admissions to round on.</span>
                </li>
             )}
-            {appointments.filter(a => a.status === 'CHECKED_IN' || a.status === 'IN_PROGRESS').length === 0 && admissions.length === 0 && (
+            {visits.length === 0 && admissions.length === 0 && (
               <li style={{ color: 'var(--text-secondary)' }}>You're all caught up!</li>
             )}
           </ul>

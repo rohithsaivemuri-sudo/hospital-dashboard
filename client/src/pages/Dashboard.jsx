@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { Link } from 'react-router-dom';
 import { getDashboardStats } from '../services/api';
 import { SocketContext } from '../context/SocketContext';
 import { FaUserMd, FaBed, FaAmbulance, FaChartLine } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { tint } from '../utils/colors';
 
 const StatCard = ({ title, value, icon, color }) => (
   <div style={{
@@ -15,7 +17,7 @@ const StatCard = ({ title, value, icon, color }) => (
     gap: '16px'
   }}>
     <div style={{
-      backgroundColor: `${color}20`,
+      backgroundColor: tint(color, 12.5),
       color: color,
       padding: '16px',
       borderRadius: '50%',
@@ -65,8 +67,8 @@ export default function Dashboard() {
       fetchStats();
     };
 
-    const handleEmergency = (data) => {
-      toast('Emergency Update: ' + (data?.message || 'New patient allocated'), { icon: '🚑' });
+    const handleEmergency = () => {
+      toast('Emergency update: a patient was allocated a bed', { icon: '🚑' });
       fetchStats();
     };
 
@@ -120,6 +122,35 @@ export default function Dashboard() {
           color="var(--warning)" 
         />
       </div>
+
+      {/* Security: requests refused (401/403) in the last 24 hours, from the audit trail. */}
+      {stats?.deniedAccessLast24h !== undefined && (
+        <div data-testid="denied-access" style={{ marginTop: '24px', background: 'var(--bg-card)', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Denied access (last 24 hours)</div>
+            <div style={{ fontSize: '24px', fontWeight: 700, color: stats.deniedAccessLast24h ? 'var(--danger)' : 'var(--success)' }}>{stats.deniedAccessLast24h}</div>
+          </div>
+          <Link to={`/audit?outcome=DENIED&from=${(() => { const d = new Date(Date.now() - 864e5); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })()}`}>Review in audit log</Link>
+        </div>
+      )}
+
+      {/* Laboratory workload: counts only. The work queue itself belongs to laboratory staff. */}
+      {stats?.labWorkload && (
+        <div data-testid="lab-workload" style={{ marginTop: '24px', background: 'var(--bg-card)', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: '24px' }}>
+          <h2 style={{ margin: '0 0 16px', fontSize: '18px' }}>Laboratory workload</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px' }}>
+            {[['Awaiting processing', stats.labWorkload.ordered, 'var(--warning)'],
+              ['In progress', stats.labWorkload.processing, 'var(--primary)'],
+              ['Completed today', stats.labWorkload.completedToday, 'var(--success)'],
+              ['Overdue (> 24 h)', stats.labWorkload.overdue, 'var(--danger)']].map(([label, value, color]) => (
+              <div key={label}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{label}</div>
+                <div style={{ fontSize: '24px', fontWeight: 700, color }}>{value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

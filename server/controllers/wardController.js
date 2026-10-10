@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { withTransaction } = require('../utils/audit');
 exports.list = async (req, res) => {
   try {
     const [rows] = await pool.execute('SELECT * FROM wards');
@@ -8,8 +9,12 @@ exports.list = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     const { name, department_id, floor } = req.body;
-    const [result] = await pool.execute('INSERT INTO wards (name, department_id, floor) VALUES (?, ?, ?)', [name, department_id, floor]);
-    res.status(201).json({ success: true, data: { id: result.insertId } });
+    const id = await withTransaction(req, async (connection, audit) => {
+      const [result] = await connection.execute('INSERT INTO wards (name, department_id, floor) VALUES (?, ?, ?)', [name, department_id, floor]);
+      await audit({ action: 'CREATE_WARD', entityType: 'ward', entityId: result.insertId });
+      return result.insertId;
+    });
+    res.status(201).json({ success: true, data: { id } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.getById = async (req, res) => {

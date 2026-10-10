@@ -1,4 +1,5 @@
 import React from 'react';
+import { tint } from '../utils/colors';
 
 const colors = {
   AVAILABLE: 'var(--success)',
@@ -12,7 +13,7 @@ const colors = {
 export default function StatusBadge({ status }) {
   const color = colors[status] || 'var(--text-secondary)';
   return (
-    <span style={{ padding: '4px 8px', borderRadius: '12px', background: `${color}20`, color: color, fontSize: '0.85em', fontWeight: 'bold' }}>
+    <span style={{ padding: '4px 8px', borderRadius: '12px', background: tint(color, 12.5), color: color, fontSize: '0.85em', fontWeight: 'bold' }}>
       {status}
     </span>
   );

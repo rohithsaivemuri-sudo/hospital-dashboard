@@ -1,4 +1,5 @@
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const api = axios.create({ baseURL: '/api' });
 
@@ -15,9 +16,16 @@ api.interceptors.response.use(
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
+    if (error.response?.status === 403) {
+      // Permission is enforced by the server; tell the user why, once per distinct reason.
+      const message = error.response.data?.message || 'You do not have access to this.';
+      toast.error(message, { id: `forbidden:${message}` });
+    }
     return Promise.reject(error);
   }
 );
+
+export const isForbidden = (error) => error?.response?.status === 403;
 
 // Auth
 export const login = (credentials) => api.post('/auth/login', credentials);
@@ -31,7 +39,10 @@ export const getPatients = (params) => api.get('/patients', { params });
 export const getPatient = (id) => api.get(`/patients/${id}`);
 export const createPatient = (data) => api.post('/patients', data);
 export const updatePatient = (id, data) => api.put(`/patients/${id}`, data);
+export const checkDuplicatePatients = (data) => api.post('/patients/duplicates', data);
 export const getPatientHistory = (id) => api.get(`/patients/${id}/history`);
+export const getPatientAdmissions = (id) => api.get(`/patients/${id}/admissions`);
+export const getPatientAppointments = (id) => api.get(`/patients/${id}/appointments`);
 
 // Doctors
 export const getDoctors = (params) => api.get('/doctors', { params });
@@ -60,6 +71,7 @@ export const createEmergency = (data) => api.post('/emergency', data);
 export const getEmergencies = () => api.get('/emergency');
 export const getEmergencyQueue = () => api.get('/emergency/queue');
 export const allocateEmergency = (id) => api.post(`/emergency/${id}/allocate`);
+export const linkEmergencyPatient = (id, patientId) => api.put(`/emergency/${id}/patient`, { patient_id: patientId });
 
 // Appointments
 export const getAppointments = (params) => api.get('/appointments', { params });
@@ -81,6 +93,7 @@ export const createPrescription = (data) => api.post('/prescriptions', data);
 export const dispensePrescription = (id) => api.post(`/prescriptions/${id}/dispense`);
 export const getPrescription = (id) => api.get(`/prescriptions/${id}`);
 export const updateMedicineStock = (id, data) => api.post(`/medicines/${id}/stock`, data);
+export const getMedicineBatches = (id) => api.get(`/medicines/${id}/batches`);
 
 // Lab
 export const getLabTests = () => api.get('/lab/tests');
@@ -90,7 +103,41 @@ export const updateLabOrderStatus = (id, status) => api.put(`/lab/orders/${id}/s
 export const addLabResult = (data) => api.post('/lab/results', data);
 export const getLabResult = (orderId) => api.get(`/lab/results/${orderId}`);
 export const downloadLabReport = (id) => api.get(`/lab/attachments/${id}`, { responseType: 'blob' });
+export const downloadLabResultReport = (resultId, attachmentId) => api.get(`/lab/reports/${resultId}/download`, { params: attachmentId ? { attachment_id: attachmentId } : {}, responseType: 'blob' });
 export const uploadLabReport = (orderId, data) => api.post(`/lab/results/${orderId}/attachments`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
+
+// Staff accounts (admin)
+export const getUsers = () => api.get('/users');
+export const getAuditLogs = (params) => api.get('/audit-logs', { params });
+export const getAuditActions = () => api.get('/audit-logs/actions');
+export const registerUser = (data) => api.post('/auth/register', data);
+export const deactivateUser = (id) => api.put(`/users/${id}/deactivate`);
+export const reactivateUser = (id) => api.put(`/users/${id}/reactivate`);
+
+// Nursing
+export const getNurseStation = () => api.get('/nurse/station');
+export const getNurseAssignments = () => api.get('/nurse-assignments');
+export const createNurseAssignment = (data) => api.post('/nurse-assignments', data);
+export const endNurseAssignment = (id, data = {}) => api.put(`/nurse-assignments/${id}`, data);
+export const getWards = () => api.get('/wards');
+
+// Medication administration record
+export const getPatientMar = (patientId) => api.get(`/mar/patients/${patientId}`);
+export const getPatientVitals = (patientId) => api.get(`/vitals/patients/${patientId}`);
+export const recordVitals = (data) => api.post('/vitals', data);
+export const administerDose = (id, data) => api.post(`/mar/doses/${id}/administer`, data);
+export const refuseDose = (id, data) => api.post(`/mar/doses/${id}/refuse`, data);
+export const missDose = (id, data) => api.post(`/mar/doses/${id}/missed`, data);
+export const giveAsNeeded = (itemId, data) => api.post(`/mar/items/${itemId}/given`, data);
+export const cancelPrescription = (id) => api.post(`/prescriptions/${id}/cancel`);
+
+// Encounters
+export const getEncounterQueue = () => api.get('/encounters/queue');
+export const checkInAppointment = (appointmentId) => api.post('/encounters', { appointment_id: appointmentId });
+export const encounterAction = (encounterId, action) => api.post(`/encounters/${encounterId}/${action}`);
+
+// Surgery
+export const createSurgeryRequest = (data) => api.post('/surgery', data);
 
 // Billing
 export const getBills = (params) => api.get('/bills', { params });
@@ -102,17 +149,23 @@ export const generateBill = (admissionId) => api.post(`/bills/generate/${admissi
 
 export default {
   login, getMe, getDashboardStats,
-  getPatients, getPatient, createPatient, updatePatient, getPatientHistory,
+  getPatients, getPatient, createPatient, updatePatient, checkDuplicatePatients, getPatientHistory,
   getDoctors, getDoctor, createDoctor, getAvailableDoctors, updateDoctorStatus, getDoctorAnalytics,
   getDepartments,
   getBeds, getAvailableBeds, getBedSummary, updateBedStatus,
   getAmbulances, updateAmbulanceStatus, reportEmergency,
-  createEmergency, getEmergencies, getEmergencyQueue, allocateEmergency,
+  createEmergency, getEmergencies, getEmergencyQueue, allocateEmergency, linkEmergencyPatient,
   getAppointments, createAppointment, updateAppointmentStatus,
   getAdmissions, getCurrentAdmissions, createAdmission, dischargePatient,
   createConsultation,
-  getPrescriptions, createPrescription, dispensePrescription, getPrescription, updateMedicineStock,
-  getLabTests, createLabOrder, getLabOrders, updateLabOrderStatus, addLabResult, getLabResult, uploadLabReport, downloadLabReport,
+  getPrescriptions, createPrescription, dispensePrescription, getPrescription, updateMedicineStock, getMedicineBatches,
+  getLabTests, createLabOrder, getLabOrders, updateLabOrderStatus, addLabResult, getLabResult, uploadLabReport, downloadLabReport, downloadLabResultReport,
+  getEncounterQueue, checkInAppointment, encounterAction,
+  getPatientMar, administerDose, refuseDose, missDose, giveAsNeeded, cancelPrescription,
+  getUsers, registerUser, deactivateUser, reactivateUser,
+  getNurseStation, getNurseAssignments, createNurseAssignment, endNurseAssignment, getWards,
+  getPatientAdmissions, getPatientAppointments,
+  createSurgeryRequest,
   getBills, getBill, createBill, addBillItem, payBill, generateBill
 };
 export const getMedicines = () => api.get('/medicines');

@@ -23,7 +23,13 @@ export default function AppointmentForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await createAppointment(formData);
+      const res = await createAppointment({
+        patient_id: formData.patientId,
+        doctor_id: formData.doctorId,
+        appointment_date: formData.date,
+        appointment_time: formData.time,
+        reason: formData.reason
+      });
       if (res.data?.success) {
         toast.success('Appointment created successfully!');
         navigate('/appointments');
@@ -32,7 +38,7 @@ export default function AppointmentForm() {
       }
     } catch (err) {
       console.error(err);
-      toast.error('An error occurred while saving.');
+      toast.error(err.response?.data?.message || 'An error occurred while saving.');
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { withTransaction, changedFields } = require('../utils/audit');
 exports.list = async (req, res) => {
   try {
     const [rows] = await pool.execute('SELECT * FROM departments');
@@ -16,14 +17,23 @@ exports.getById = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     const { name, description } = req.body;
-    const [result] = await pool.execute('INSERT INTO departments (name, description) VALUES (?, ?)', [name, description]);
-    res.status(201).json({ success: true, data: { id: result.insertId } });
+    const id = await withTransaction(req, async (connection, audit) => {
+      const [result] = await connection.execute('INSERT INTO departments (name, description) VALUES (?, ?)', [name, description]);
+      await audit({ action: 'CREATE_DEPARTMENT', entityType: 'department', entityId: result.insertId });
+      return result.insertId;
+    });
+    res.status(201).json({ success: true, data: { id } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.update = async (req, res) => {
   try {
     const { name, description } = req.body;
-    await pool.execute('UPDATE departments SET name = ?, description = ? WHERE department_id = ?', [name, description, req.params.id]);
+    await withTransaction(req, async (connection, audit) => {
+      const [[before]] = await connection.execute('SELECT * FROM departments WHERE department_id = ? FOR UPDATE', [req.params.id]);
+      await connection.execute('UPDATE departments SET name = ?, description = ? WHERE department_id = ?', [name, description, req.params.id]);
+      const changed = before ? changedFields(before, req.body, ['name', 'description']) : [];
+      if (changed.length) await audit({ action: 'UPDATE_DEPARTMENT', entityType: 'department', entityId: before.department_id, details: { changed_fields: changed } });
+    });
     res.json({ success: true, message: 'Updated successfully' });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };

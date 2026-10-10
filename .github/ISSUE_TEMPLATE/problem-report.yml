@@ -1,0 +1,54 @@
+name: Report a problem
+description: Something in the hospital system did not work as expected.
+title: "Problem: "
+labels: ["bug", "from-app"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not include patient information** — no names, MRNs, ABHA numbers, phone numbers, results or notes.
+        This repository may be public. Describe the problem in general terms; screenshots must not show patient details.
+  - type: input
+    id: role
+    attributes:
+      label: Your role
+      description: Filled in by the "Report a problem" link.
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: Filled in by the link. Record numbers are replaced by :id.
+    validations:
+      required: true
+  - type: input
+    id: time
+    attributes:
+      label: When it happened
+      description: Filled in by the link (your device's time, with its offset from UTC).
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      placeholder: "e.g. Clicking Save vitals showed an error and nothing was saved."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Click ...
+  - type: input
+    id: request-id
+    attributes:
+      label: Request id (if an error message showed one)
+      placeholder: "e.g. 2d4cc1de-9e81-4940-95f4-79993be8d86f"
