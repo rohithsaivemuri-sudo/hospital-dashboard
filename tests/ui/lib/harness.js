@@ -1,13 +1,16 @@
-// Shared helpers for the browser tests. They drive the real client (Vite, :5173) against the API
-// server (:5000) running on hospital_db_test only — never the development database.
+// Shared helpers for the browser tests. They drive the real client (Vite, UI_APP_PORT, default 5174)
+// against the API server (UI_API_PORT, default 5100) running on hospital_db_test only — never the
+// development database. Their own ports, so a development server or the demo can keep running.
 const path = require('path');
 const ROOT = path.join(__dirname, '..', '..', '..');
 const mysql = require(path.join(ROOT, 'server', 'node_modules', 'mysql2', 'promise'));
 require(path.join(ROOT, 'server', 'node_modules', 'dotenv')).config({ path: path.join(ROOT, 'server', '.env') });
 const { adminCredentials } = require(path.join(ROOT, 'server', 'scripts', 'lib', 'admin-credentials'));
 
-const APP = 'http://localhost:5173';
-const API = 'http://localhost:5000/api';
+const APP_PORT = Number(process.env.UI_APP_PORT || 5174);
+const API_PORT = Number(process.env.UI_API_PORT || 5100);
+const APP = `http://localhost:${APP_PORT}`;
+const API = `http://localhost:${API_PORT}/api`;
 const PASSWORD = 'password123';
 const TEST_DB = 'hospital_db_test';
 
@@ -98,4 +101,4 @@ function diagnoseFailures(getPages) {
   });
 }
 
-module.exports = { selectOption, apiIdle, pendingApi, diagnoseFailures, ROOT, APP, API, PASSWORD, TEST_DB, call, tokenOf, login, db, closeDb, open, clickButton, waitForText };
+module.exports = { APP_PORT, API_PORT, selectOption, apiIdle, pendingApi, diagnoseFailures, ROOT, APP, API, PASSWORD, TEST_DB, call, tokenOf, login, db, closeDb, open, clickButton, waitForText };

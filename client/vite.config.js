@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// API server the dev proxy forwards to (the browser tests run their own on another port).
+const api = `http://localhost:${process.env.API_PORT || 5000}`
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
@@ -8,11 +11,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: api,
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:5000',
+        target: api,
         ws: true,
       }
     }
