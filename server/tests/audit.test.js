@@ -187,8 +187,12 @@ test('admissions, billing, appointments, emergencies, surgery, beds and doctors 
   assert.equal(emergency.rows[0].action, 'CREATE_EMERGENCY');
   const allocate = await changeRows(() => api('POST', `/emergency/${emergency.res.body.data.id}/allocate`, { token: admin.token }));
   assert.equal(allocate.res.status, 200);
-  assert.equal(allocate.rows.length, 1, 'allocation writes one audit row in its own transaction');
-  assert.ok(['ALLOCATE_EMERGENCY', 'EMERGENCY_QUEUED'].includes(allocate.rows[0].action));
+  // Queued: one EMERGENCY_QUEUED row. Allocated: the visit's row (created or linked) and the
+  // allocation's, written in the same transaction (emergency visits).
+  const actions = allocate.rows.map(r => r.action);
+  assert.ok(JSON.stringify(actions) === '["EMERGENCY_QUEUED"]'
+    || (actions.length === 2 && ['ENCOUNTER_ARRIVED', 'ENCOUNTER_LINKED_ADMISSION'].includes(actions[0]) && actions[1] === 'ALLOCATE_EMERGENCY'),
+    `allocation audit rows: ${JSON.stringify(actions)}`);
 
   const surgery = await changeRows(() => api('POST', '/surgery', { token: doctor.token, body: { patient_id: patientId, doctor_id: doctor.user.doctor_id, procedure_name: 'Appendectomy', diagnosis: NOTE_MARKER, requested_date: '2031-04-04', notes: NOTE_MARKER } }));
   assert.equal(surgery.rows[0].action, 'CREATE_SURGERY_REQUEST');

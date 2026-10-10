@@ -71,6 +71,7 @@ export const createEmergency = (data) => api.post('/emergency', data);
 export const getEmergencies = () => api.get('/emergency');
 export const getEmergencyQueue = () => api.get('/emergency/queue');
 export const allocateEmergency = (id) => api.post(`/emergency/${id}/allocate`);
+export const linkEmergencyPatient = (id, patientId) => api.put(`/emergency/${id}/patient`, { patient_id: patientId });
 
 // Appointments
 export const getAppointments = (params) => api.get('/appointments', { params });
@@ -153,7 +154,7 @@ export default {
   getDepartments,
   getBeds, getAvailableBeds, getBedSummary, updateBedStatus,
   getAmbulances, updateAmbulanceStatus, reportEmergency,
-  createEmergency, getEmergencies, getEmergencyQueue, allocateEmergency,
+  createEmergency, getEmergencies, getEmergencyQueue, allocateEmergency, linkEmergencyPatient,
   getAppointments, createAppointment, updateAppointmentStatus,
   getAdmissions, getCurrentAdmissions, createAdmission, dischargePatient,
   createConsultation,

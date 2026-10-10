@@ -11,4 +11,5 @@ router.get('/queue', controller.getQueue);
 router.get('/:id', controller.getById);
 router.put('/:id', controller.update);
 router.post('/:id/allocate', controller.allocate);
+router.put('/:id/patient', controller.linkPatient);
 module.exports = router;
