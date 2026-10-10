@@ -75,7 +75,9 @@ exports.update = async (req, res) => {
       const [[before]] = await connection.execute('SELECT * FROM consultations WHERE consultation_id = ? FOR UPDATE', [req.params.id]);
       // Notes on a finished, cancelled or voided encounter are signed and immutable.
       if (before && before.encounter_id) {
-        const [[enc]] = await connection.execute('SELECT status FROM encounters WHERE encounter_id = ?', [before.encounter_id]);
+        // Locking read: waits for a Sign & Close in progress and sees its committed status (a plain
+        // read would see the pre-close snapshot and let the edit through).
+        const [[enc]] = await connection.execute('SELECT status FROM encounters WHERE encounter_id = ? FOR SHARE', [before.encounter_id]);
         if (CLOSED.includes(enc.status)) throw new EncounterError(409, `This note belongs to a ${enc.status} encounter and can no longer be edited`);
       }
       await connection.execute('UPDATE consultations SET symptoms = ?, diagnosis = ?, assessment = ?, plan = ?, notes = ? WHERE consultation_id = ?', [symptoms || '', diagnosis || '', assessment || '', plan || '', notes || '', req.params.id]);

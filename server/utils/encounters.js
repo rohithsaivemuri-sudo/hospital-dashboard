@@ -174,7 +174,9 @@ async function applyAppointmentStatus(connection, req, appointmentId, status) {
 // the patient is used, or NULL (e.g. inpatient rounds with no open visit).
 async function resolveEncounterForRecord(connection, { encounterId, patientId, doctorId, consultationId }) {
   if (encounterId) {
-    const [[e]] = await connection.execute('SELECT encounter_id, patient_id, doctor_id, status FROM encounters WHERE encounter_id = ?', [encounterId]);
+    // Locking reads here and below: a visit being closed concurrently is seen as closed, so a new
+    // record is never filed under an encounter that finishes in the meantime.
+    const [[e]] = await connection.execute('SELECT encounter_id, patient_id, doctor_id, status FROM encounters WHERE encounter_id = ? FOR SHARE', [encounterId]);
     if (!e) throw new EncounterError(400, 'Encounter not found');
     if (Number(e.patient_id) !== Number(patientId) || Number(e.doctor_id) !== Number(doctorId)) {
       throw new EncounterError(400, 'Encounter belongs to a different patient or doctor');
@@ -187,7 +189,7 @@ async function resolveEncounterForRecord(connection, { encounterId, patientId, d
     if (c && c.encounter_id) return c.encounter_id;
   }
   const [open] = await connection.execute(
-    'SELECT encounter_id FROM encounters WHERE patient_id = ? AND doctor_id = ? AND status = "IN_PROGRESS"', [patientId ?? null, doctorId ?? null]
+    'SELECT encounter_id FROM encounters WHERE patient_id = ? AND doctor_id = ? AND status = "IN_PROGRESS" FOR SHARE', [patientId ?? null, doctorId ?? null]
   );
   return open.length === 1 ? open[0].encounter_id : null;
 }

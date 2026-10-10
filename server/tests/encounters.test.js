@@ -332,3 +332,57 @@ test('transitions are audited inside their transaction with both state changes',
   assert.deepEqual(rows.map(r => r.action), ['ENCOUNTER_ARRIVED', 'ENCOUNTER_STARTED']);
   assert.deepEqual(rows[1].details, { from: 'ARRIVED', to: 'IN_PROGRESS', appointment_id: appointmentId, appointment: { from: 'CHECKED_IN', to: 'IN_PROGRESS' } });
 });
+
+// A second database connection that holds an encounter mid-finish (locked, status FINISHED, not yet
+// committed), so a request can be made to race the close deterministically.
+async function holdFinishing(encounterId) {
+  const mysql = require('mysql2/promise');
+  const conn = await mysql.createConnection({ host: process.env.DB_HOST, port: process.env.DB_PORT || 3306, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: TEST_DB });
+  await conn.beginTransaction();
+  await conn.query('SELECT encounter_id FROM encounters WHERE encounter_id = ? FOR UPDATE', [encounterId]);
+  await conn.query("UPDATE encounters SET status = 'FINISHED', end_timestamp = NOW() WHERE encounter_id = ?", [encounterId]);
+  return { commit: async () => { await conn.commit(); await conn.end(); } };
+}
+const settled = (p) => Promise.race([p.then(() => true), new Promise(r => setTimeout(() => r(false), 400))]);
+
+test('a note edit racing Sign & Close waits for the close and is then refused', async () => {
+  const appointmentId = await book();
+  const enc = await checkIn(appointmentId);
+  await act(enc.encounter_id, 'start', doctor);
+  const consult = await api('POST', '/consultations', { token: doctor.token, body: { appointment_id: appointmentId, patient_id: 1, doctor_id: doctor.user.doctor_id, symptoms: 'signed text', diagnosis: 'd' } });
+  assert.equal(consult.status, 201);
+
+  const closing = await holdFinishing(enc.encounter_id);
+  let edit, waited;
+  try {
+    edit = api('PUT', `/consultations/${consult.body.data.id}`, { token: doctor.token, body: { symptoms: 'edited during close', diagnosis: 'd' } });
+    waited = !(await settled(edit));
+  } finally { await closing.commit(); } // always release the lock, even if an assertion fails
+  assert.ok(waited, 'the edit waits for the closing transaction');
+  const res = await edit;
+  assert.equal(res.status, 409, JSON.stringify(res.body));
+  const [[row]] = await db().query('SELECT symptoms FROM consultations WHERE consultation_id = ?', [consult.body.data.id]);
+  assert.equal(row.symptoms, 'signed text');
+});
+
+test('a record created while its visit is being closed is not attached to the closed visit', async () => {
+  const appointmentId = await book();
+  const enc = await checkIn(appointmentId);
+  await act(enc.encounter_id, 'start', doctor);
+
+  const closing = await holdFinishing(enc.encounter_id);
+  let explicit, automatic, waited;
+  try {
+  explicit = api('POST', '/lab/orders', { token: doctor.token, body: { patient_id: 1, doctor_id: doctor.user.doctor_id, tests: [{ test_id: 3 }], notes: '', encounter_id: enc.encounter_id } });
+  automatic = api('POST', '/lab/orders', { token: doctor.token, body: { patient_id: 1, doctor_id: doctor.user.doctor_id, tests: [{ test_id: 3 }], notes: '' } });
+  waited = !(await settled(explicit));
+  } finally { await closing.commit(); }
+  assert.ok(waited, 'waits for the closing transaction');
+  const [e, a] = await Promise.all([explicit, automatic]);
+  assert.equal(e.status, 409, 'naming the closed visit is refused');
+  assert.equal(a.status, 201);
+  const [[order]] = await db().query('SELECT encounter_id FROM lab_orders WHERE order_id = ?', [a.body.data.id]);
+  assert.notEqual(order.encounter_id, enc.encounter_id, 'not filed under the visit that closed');
+  const [attached] = await db().query('SELECT order_id FROM lab_orders WHERE encounter_id = ?', [enc.encounter_id]);
+  assert.deepEqual(attached, []);
+});
