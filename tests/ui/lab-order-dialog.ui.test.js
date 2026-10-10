@@ -3,9 +3,10 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
-const { login, db, closeDb, open, clickButton, waitForText } = require('./lib/harness');
+const { diagnoseFailures, selectOption, login, db, closeDb, open, clickButton, waitForText } = require('./lib/harness');
 
 let browser, page;
+diagnoseFailures(() => page);
 before(async () => {
   browser = await launch();
   page = await browser.newPage();
@@ -25,10 +26,10 @@ test('"+ Add Test" is readable, and an added test plus a chosen-but-not-added te
   await openDialog();
   const add = await readability('+ Add Test');
   assert.ok(add.ok, `+ Add Test: ${add.reason}`);
-  await page.select('select[name="test_id"]', '2');
+  await selectOption(page, 'select[name="test_id"]', '2');
   await clickButton(page, '+ Add Test');
   await page.waitForFunction(() => document.body.innerText.includes('Remove'));
-  await page.select('select[name="test_id"]', '5');
+  await selectOption(page, 'select[name="test_id"]', '5');
   const [res] = await Promise.all([
     page.waitForResponse(r => r.url().endsWith('/api/lab/orders') && r.request().method() === 'POST'),
     clickButton(page, 'Order Tests'),
@@ -39,7 +40,7 @@ test('"+ Add Test" is readable, and an added test plus a chosen-but-not-added te
 
 test('choosing a test without pressing "+ Add Test" still orders it', async () => {
   await openDialog();
-  await page.select('select[name="test_id"]', '6');
+  await selectOption(page, 'select[name="test_id"]', '6');
   const [req] = await Promise.all([orderRequest(), clickButton(page, 'Order Tests')]);
   assert.deepEqual(JSON.parse(req.postData()).tests, [{ test_id: '6' }]);
   await page.waitForFunction(() => !document.querySelector('select[name="test_id"]'));

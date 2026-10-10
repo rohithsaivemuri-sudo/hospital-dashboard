@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const { launch, violations } = require('./lib/readable');
-const { login, db, closeDb, open, call, tokenOf } = require('./lib/harness');
+const { diagnoseFailures, login, db, closeDb, open, call, tokenOf } = require('./lib/harness');
 
 const SRC = path.join(__dirname, '..', '..', 'client', 'src');
 const files = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap(d => {
@@ -24,6 +24,7 @@ test('no status label replaces only the first underscore', () => {
 });
 
 let browser, page, appointmentId;
+diagnoseFailures(() => page);
 before(async () => {
   const [rec, doc] = [await tokenOf('reception1'), await tokenOf('dr.smith')];
   const [[p]] = await (await db()).query(`SELECT patient_id FROM patients WHERE patient_id NOT IN (SELECT patient_id FROM encounters WHERE status IN ('ARRIVED','TRIAGED','IN_PROGRESS')) ORDER BY patient_id LIMIT 1`);

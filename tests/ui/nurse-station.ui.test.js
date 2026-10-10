@@ -3,9 +3,10 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
-const { login, db, closeDb, open, call, tokenOf, clickButton } = require('./lib/harness');
+const { diagnoseFailures, login, db, closeDb, open, call, tokenOf, clickButton } = require('./lib/harness');
 
 let browser, page, encounterId;
+diagnoseFailures(() => page);
 before(async () => {
   const [[p]] = await (await db()).query(`SELECT patient_id FROM patients WHERE patient_id NOT IN (SELECT patient_id FROM admissions WHERE status = 'ACTIVE')
     AND patient_id NOT IN (SELECT patient_id FROM encounters WHERE status IN ('ARRIVED','TRIAGED','IN_PROGRESS')) ORDER BY patient_id LIMIT 1`);

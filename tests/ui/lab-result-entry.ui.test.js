@@ -3,10 +3,11 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
-const { login, db, closeDb, open, call, tokenOf } = require('./lib/harness');
+const { diagnoseFailures, login, db, closeDb, open, call, tokenOf } = require('./lib/harness');
 
 const GLUCOSE = 5; // 70–100 mg/dL
 let browser, page, orderId;
+diagnoseFailures(() => page);
 before(async () => {
   await (await db()).query('UPDATE lab_tests SET critical_low = 40, critical_high = 400 WHERE test_id = ?', [GLUCOSE]);
   const [doc, lab] = [await tokenOf('dr.smith'), await tokenOf('lab_staff')];

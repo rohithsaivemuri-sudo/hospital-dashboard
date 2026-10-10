@@ -61,7 +61,23 @@ function pageHelpers(MIN, SELECTOR) {
 
 const violations = [];
 
+// Recent events per page, written out by diagnose() when a test fails.
+const journals = new WeakMap();
+function journal(page) {
+  const events = [];
+  const push = (e) => { events.push(`${new Date().toISOString().slice(11, 23)} ${e}`); if (events.length > 60) events.shift(); };
+  page.on('console', m => { if (['error', 'warn'].includes(m.type())) push(`console.${m.type()}: ${m.text().slice(0, 200)}`); });
+  page.on('pageerror', e => push(`pageerror: ${e.message.slice(0, 200)}`));
+  page.on('requestfailed', r => push(`requestfailed: ${r.method()} ${r.url()} ${r.failure()?.errorText}`));
+  page.on('response', r => { if (r.status() >= 400) push(`HTTP ${r.status()} ${r.request().method()} ${r.url()}`); });
+  page.on('framenavigated', f => { if (f === page.mainFrame()) push(`navigated ${f.url()}`); });
+  page.on('close', () => push('page closed'));
+  journals.set(page, events);
+}
+
 async function guard(page) {
+  journal(page);
+  require('./harness').pendingApi(page); // start tracking API requests before the first navigation
   await page.exposeFunction('__reportUnreadable', (info) => {
     violations.push(info);
     console.log(`FAIL clicked an unreadable ${info.tag} "${info.text}" on ${info.page}: ${info.reason}${info.fg ? ` (text ${info.fg} on ${info.bg})` : ''}`);
@@ -93,4 +109,19 @@ function failExitOnViolations() {
   process.exit = (code) => exit(violations.length && !code ? 1 : code);
 }
 
-module.exports = { launch, violations, failExitOnViolations, MIN_CONTRAST };
+// Writes a screenshot and the page's recent events for a failed test (see lib/harness.js).
+async function diagnose(page, label) {
+  const fs = require('fs'); const os = require('os');
+  const dir = path.join(os.tmpdir(), 'hms-ui-failures');
+  fs.mkdirSync(dir, { recursive: true });
+  const base = path.join(dir, `${Date.now()}-${label.replace(/[^a-z0-9]+/gi, '-').slice(0, 80)}`);
+  const lines = [`test: ${label}`];
+  try { lines.push(`url: ${page.url()}`); } catch { /* page gone */ }
+  try { lines.push(`text: ${(await page.evaluate(() => document.body.innerText)).slice(0, 1500).replace(/\n+/g, ' | ')}`); } catch (e) { lines.push(`text: <${e.message}>`); }
+  lines.push('events:', ...(journals.get(page) || []));
+  try { await page.screenshot({ path: `${base}.png` }); } catch { /* page gone */ }
+  fs.writeFileSync(`${base}.txt`, lines.join('\n'));
+  console.log(`  diagnostics: ${base}.txt`);
+}
+
+module.exports = { launch, violations, failExitOnViolations, diagnose, MIN_CONTRAST };

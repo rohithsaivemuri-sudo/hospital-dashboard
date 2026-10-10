@@ -3,9 +3,11 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
-const { APP, call, tokenOf, login, db, closeDb, open, clickButton } = require('./lib/harness');
+const { diagnoseFailures, selectOption, APP, call, tokenOf, login, db, closeDb, open, clickButton } = require('./lib/harness');
 
 let browser;
+let currentPage;
+diagnoseFailures(() => currentPage);
 const findings = [];
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -15,7 +17,7 @@ async function scan(page, where) {
 }
 // Opens a dialog (or tab) with a real click on the named button, scans, then reloads the page.
 async function scanAfter(page, path, buttonText, where) {
-  await page.goto(APP + path);
+  await open(page, path);
   await clickButton(page, buttonText);
   await scan(page, `${where} › ${buttonText}`);
 }
@@ -48,10 +50,11 @@ test('every page and dialog reachable by each role has readable buttons', async 
   for (const [role, username] of Object.entries(ROLES)) {
     const ctx = await browser.createBrowserContext();
     const page = await ctx.newPage();
+    currentPage = page;
     await login(page, username);
     await scan(page, `${role} /`);
     for (const path of [...new Set(await sidebarPages(page))]) {
-      await page.goto(APP + path);
+      await open(page, path);
       await scan(page, `${role} ${path}`);
     }
     if (role === 'DOCTOR') {
@@ -59,19 +62,19 @@ test('every page and dialog reachable by each role has readable buttons', async 
       for (const dialog of ['+ New Clinical Encounter', '+ Order Lab Tests', '+ Create Prescription', '+ Request Surgery', 'Admit Patient']) {
         await scanAfter(page, '/patients/1', dialog, `${role} /patients/1`).catch(e => findings.push({ where: `${role} ${dialog}`, reason: `could not open: ${e.message}` }));
       }
-      await page.goto(APP + '/patients/1'); await clickButton(page, 'Lab Tests'); await clickButton(page, 'View Result');
+      await open(page, '/patients/1'); await clickButton(page, 'Lab Tests'); await clickButton(page, 'View Result');
       await scan(page, `${role} /patients/1 › View Result`);
     }
     if (role === 'NURSE') {
       await scanAfter(page, '/', 'Record vitals', `${role} /`);
-      await page.goto(`${APP}/mar/${fixtures.marPatient}`);
+      await open(page, `/mar/${fixtures.marPatient}`);
       await scan(page, `${role} MAR`);
       const actionable = await page.$('button[data-dose]:not([disabled])');
       if (actionable) { await actionable.click(); await scan(page, `${role} MAR › dose dialog`); }
       for (const tab of ['Admissions', 'Vitals', 'Lab Tests', 'Prescriptions', 'Appointments']) await scanAfter(page, `/patients/${fixtures.marPatient}`, tab, `${role} chart`);
     }
     if (role === 'RECEPTIONIST' || role === 'ADMIN') {
-      for (const path of ['/patients/new', '/patients/1/edit', '/appointments/new']) { await page.goto(APP + path); await scan(page, `${role} ${path}`); }
+      for (const path of ['/patients/new', '/patients/1/edit', '/appointments/new']) { await open(page, path); await scan(page, `${role} ${path}`); }
     }
     if (role === 'RECEPTIONIST') {
       // Registration with a likely duplicate: the warning and the "Register Anyway" button.
@@ -79,14 +82,13 @@ test('every page and dialog reachable by each role has readable buttons', async 
       await open(page, '/patients/new');
       await page.type('[name="name"]', 'Audit Duplicate Check');
       await page.$eval('[name="date_of_birth"]', el => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, '1990-01-01'); el.dispatchEvent(new Event('input', { bubbles: true })); });
-      await page.select('[name="gender"]', 'FEMALE');
+      await selectOption(page, '[name="gender"]', 'FEMALE');
       await page.type('[name="phone"]', existing.phone);
       await clickButton(page, 'Register Patient', 'form');
       await page.waitForSelector('[data-testid="duplicate-warning"]');
       await scan(page, `${role} /patients/new › duplicate warning`);
     }
     if (role === 'LABORATORY') {
-      await page.goto(APP + '/laboratory');
       await scanAfter(page, '/laboratory', 'Table', `${role} /laboratory`);
       await scanAfter(page, '/laboratory', 'Enter Result', `${role} /laboratory`);
       await scanAfter(page, '/laboratory', 'View Result', `${role} /laboratory`);

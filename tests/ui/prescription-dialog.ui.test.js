@@ -3,9 +3,10 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
-const { login, closeDb, open, clickButton, waitForText } = require('./lib/harness');
+const { diagnoseFailures, selectOption, login, closeDb, open, clickButton, waitForText } = require('./lib/harness');
 
 let browser, page;
+diagnoseFailures(() => page);
 before(async () => {
   browser = await launch();
   page = await browser.newPage();
@@ -19,7 +20,7 @@ async function openDialog() {
   await page.waitForSelector('select[name="medicine_id"]');
 }
 async function fillRow({ medicine, dosage, frequency, duration, quantity }) {
-  await page.select('select[name="medicine_id"]', String(medicine));
+  await selectOption(page, 'select[name="medicine_id"]', String(medicine));
   if (dosage) await page.type('input[name="dosage"]', dosage);
   if (frequency) await page.type('input[name="frequency"]', frequency);
   if (duration) await page.type('input[name="duration"]', duration);
