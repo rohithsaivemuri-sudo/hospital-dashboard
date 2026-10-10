@@ -33,7 +33,7 @@ Live DB: MySQL 9.7.1, `STRICT_TRANS_TABLES`, `REPEATABLE-READ`, InnoDB.
 ⚠ **The SQL files in `database/` do not reproduce the live schema.**
 - Live `pharmacy_stock_movements.movement_type` includes `DISPENSE`, and the table has a `reference_id` column; neither appears in any file.
 - `schema.sql:373-412` contains ALTERs that were never applied (there is no `lab_reports` or `pharmacy_transactions` table).
-- `lab_pharmacy_workflow.sql` is not run by `db:init`.
+- `lab_pharmacy_workflow.sql` is not part of any build (the schema comes from `database/migrations/`).
 
 `database/migrations/000_baseline.sql` (a dump of the live schema) is now the source of truth.
 
@@ -133,7 +133,7 @@ Shared components: `DataTable`, `StatCard`, `StatusBadge`, `LoadingSpinner`, `Pr
 
 - **Install:** `npm run install:all`.
 - **Start:** `npm run start` (server via nodemon on port 5000, Vite on port 5173).
-- ⚠ **Do not run** `npm run db:init`, `server/run_setup.js` or `server/test_seed.js`. They `DROP DATABASE hospital_db` or re-seed it, and they hard-code the root password.
+- The old `npm run db:init`, `server/run_setup.js` and `server/test_seed.js` (which dropped `hospital_db`) were removed: an empty database is built with `npm --prefix server run db:migrate`, sample data with `npm run demo:reset` (`_demo` databases only). See docs/deploy.md.
 - **Demo users:** all passwords are `password123`. Users: `admin`, `dr.smith` … `dr.agarwal`, `reception1`, `nurse1`, `lab_staff`, `pharmacy_staff`.
 - **Legacy test scripts** (they need a running server on hospital_db and mutate it): `tests/concurrency_test.js`, `tests/load_test.js`, and the root `test_*.js/.mjs` files.
 - **Automated suite** (added on `feature/his-roadmap`): `cd server && npm test`. It rebuilds the throwaway `hospital_db_test` from `database/migrations/`, starts the server against it on port 5099, and runs `server/tests/*.test.js` with `node:test`. It never touches `hospital_db`.

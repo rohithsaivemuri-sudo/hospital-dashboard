@@ -43,3 +43,15 @@ test('npm run start:prod sets CLIENT_URL to its own address (sockets check the O
   assert.match(script, /NODE_ENV=production/);
   assert.match(script, /CLIENT_URL="\$\{CLIENT_URL_PROD:-http:\/\/localhost:5000\}"/);
 });
+
+test('nothing can drop hospital_db: no npm script drops a database, and only the guarded builder does', () => {
+  const { execFileSync } = require('child_process');
+  for (const pkg of ['package.json', 'server/package.json', 'client/package.json']) {
+    for (const [name, script] of Object.entries(JSON.parse(read(pkg)).scripts || {})) assert.ok(!/DROP\s+DATABASE/i.test(script), `${pkg} ${name}`);
+  }
+  for (const gone of ['server/run_setup.js', 'server/test_seed.js']) assert.ok(!fs.existsSync(path.join(ROOT, gone)), `${gone} was removed`);
+  const files = execFileSync('git', ['ls-files', '--', 'server'], { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(f => /\.js$/.test(f) && !/\/tests\//.test(f));
+  const dropping = files.filter(f => /DROP\s+DATABASE/i.test(read(f)));
+  assert.deepEqual(dropping, ['server/scripts/lib/build-db.js']);
+  assert.match(read('server/scripts/lib/build-db.js'), /only databases whose names end in _test or _demo/);
+});

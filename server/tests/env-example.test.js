@@ -12,7 +12,7 @@ const listed = new Map(example.split('\n').filter(l => /^[A-Z_][A-Z0-9_]*=/.test
 
 test('every process.env variable used by the server is in .env.example', () => {
   const files = execFileSync('git', ['ls-files', '--', '.'], { cwd: SERVER, encoding: 'utf8' }).split('\n')
-    .filter(f => /\.js$/.test(f) && !/node_modules/.test(f) && !/^(run_setup|test_seed)\.js$/.test(f));
+    .filter(f => /\.js$/.test(f) && !/node_modules/.test(f));
   const used = new Set(files.flatMap(f => [...fs.readFileSync(path.join(SERVER, f), 'utf8').matchAll(/process\.env\.([A-Z_][A-Z0-9_]*)/g)].map(m => m[1])));
   const missing = [...used].filter(v => !listed.has(v)).sort();
   assert.deepEqual(missing, []);
