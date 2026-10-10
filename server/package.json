@@ -12,7 +12,8 @@
     "db:migrate:status": "node scripts/migrate.js --dry-run",
     "db:test:rebuild": "node scripts/test-db.js",
     "db:schema-diff": "node scripts/schema-diff.js",
-    "demo:reset": "node scripts/demo-reset.js"
+    "demo:reset": "node scripts/demo-reset.js",
+    "accounts": "node scripts/accounts.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

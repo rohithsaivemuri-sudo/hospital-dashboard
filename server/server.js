@@ -130,9 +130,29 @@ app.use('/api', (req, res) => res.status(404).json({ success: false, message: 'N
 app.use(errorHandler);
 
 const PORT = config.port;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const { accountsWithDefaultPassword } = require('./services/accountService');
+
+// In production and in the demo database, no account may still have the old shared default
+// password (password123): refuse to start and say which accounts to fix.
+async function start() {
+  const demo = /_demo$/.test(process.env.DB_NAME || '');
+  if (config.production || demo) {
+    let flagged;
+    try { flagged = await accountsWithDefaultPassword(pool); } catch (e) {
+      console.error(`Refusing to start: could not check accounts for the default password (${e.code || e.message})`);
+      process.exit(1);
+    }
+    if (flagged.length) {
+      console.error(`Refusing to start in ${config.production ? 'production' : 'demo'} mode: ${flagged.length} account(s) still use the default password password123: ${flagged.join(', ')}.`);
+      console.error(`Give them new passwords with: npm run accounts -- reset ${flagged.join(' ')}`);
+      process.exit(1);
+    }
+  }
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+start();
 
 // Graceful shutdown (SIGTERM from a container runtime or process manager, or Ctrl-C): stop taking new
 // connections, let requests in flight finish, close sockets and the database pool, then exit.
