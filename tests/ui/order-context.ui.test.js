@@ -28,7 +28,7 @@ before(async () => {
 after(async () => {
   const doc = await tokenOf('dr.smith');
   await call('POST', `/encounters/${encounter}/finish`, doc);
-  await call('PUT', `/admissions/${admission}/discharge`, doc, {});
+  await call('POST', `/admissions/${admission}/discharge`, doc, {});
   await browser.close(); await closeDb();
 });
 

@@ -423,7 +423,7 @@ export default function PatientDetail() {
       </div>
 
       {/* CONTENT */}
-      {activeTab === 'Vitals' && <VitalsPanel patientId={id} />}
+      {activeTab === 'Vitals' && <VitalsPanel patientId={id} prefer={searchParams.get('for')} />}
 
       {activeTab === 'Overview' && (
         <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)' }}>

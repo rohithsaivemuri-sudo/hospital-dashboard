@@ -32,7 +32,7 @@ before(async () => {
 });
 after(async () => {
   await api('POST', `/encounters/${encounterId}/finish`, { token: doctor.token });
-  await api('PUT', `/admissions/${admissionId}/discharge`, { token: doctor.token, body: {} });
+  await api('POST', `/admissions/${admissionId}/discharge`, { token: doctor.token, body: {} });
 });
 
 test('orders during an in-progress visit are filed under that visit', async () => {

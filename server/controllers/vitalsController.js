@@ -15,8 +15,12 @@ const httpError = (status, message) => Object.assign(new Error(message), { statu
 
 const READING_SQL = `
   SELECT v.vital_id, v.patient_id, v.encounter_id, v.admission_id, DATE_FORMAT(v.recorded_at_utc, '%Y-%m-%d %H:%i:%s') AS recorded_at_utc,
-         v.recorded_by, u.full_name AS recorded_by_name, ${KEYS.map(k => `v.${k}`).join(', ')}, v.notes
-  FROM vital_signs v JOIN users u ON u.user_id = v.recorded_by`;
+         v.recorded_by, u.full_name AS recorded_by_name, ${KEYS.map(k => `v.${k}`).join(', ')}, v.notes,
+         CASE WHEN v.encounter_id IS NOT NULL THEN CONCAT('Visit with ', vd.name)
+              WHEN v.admission_id IS NOT NULL THEN CONCAT('Admission · ', aw.name, ' bed ', ab.bed_number) END AS filed_under
+  FROM vital_signs v JOIN users u ON u.user_id = v.recorded_by
+  LEFT JOIN encounters ve ON ve.encounter_id = v.encounter_id LEFT JOIN doctors vd ON vd.doctor_id = ve.doctor_id
+  LEFT JOIN admissions va ON va.admission_id = v.admission_id LEFT JOIN beds ab ON ab.bed_id = va.bed_id LEFT JOIN wards aw ON aw.ward_id = ab.ward_id`;
 
 const present = (row) => {
   const at = fromSqlUtc(row.recorded_at_utc);

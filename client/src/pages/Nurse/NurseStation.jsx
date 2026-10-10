@@ -98,7 +98,7 @@ export default function NurseStation() {
                       <>
                         <Link to={`/patients/${b.patient_id}`} style={{ display: 'block', marginTop: '4px' }}>{b.patient_name}</Link>
                         <Link to={`/mar/${b.patient_id}`} data-testid="bed-mar-link" style={{ fontSize: '12px' }}>Medication record</Link>
-                        {' · '}<Link to={`/patients/${b.patient_id}?tab=Vitals`} data-testid="bed-vitals-link" style={{ fontSize: '12px' }}>Vitals</Link>
+                        {' · '}<Link to={`/patients/${b.patient_id}?tab=Vitals&for=admission`} data-testid="bed-vitals-link" style={{ fontSize: '12px' }}>Vitals</Link>
                         <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{b.age} yrs · {b.gender} · {b.doctor_name}</div>
                         {hasAllergies(b.allergies) && <div style={{ fontSize: '12px', color: 'var(--danger)', fontWeight: 'bold' }}>Allergies: {b.allergies}</div>}
                       </>

@@ -30,23 +30,27 @@ export function useVitals(patientId) {
 }
 
 // Where the reading will be filed, in words.
-const contextLabel = (data) => (data.open_admission
-  ? `Admission · ${data.open_admission.ward_name} bed ${data.open_admission.bed_number}`
-  : data.open_encounter ? `Visit with ${data.open_encounter.doctor_name} (${data.open_encounter.status.replaceAll('_', ' ')})` : null);
+const admissionLabel = (a) => `Admission · ${a.ward_name} bed ${a.bed_number}`;
+const visitLabel = (e) => `Visit with ${e.doctor_name} (${e.status.replaceAll('_', ' ')})`;
 
-export function VitalsEntryForm({ patientId, data, onSaved, encounterId }) {
+// prefer: 'admission' or 'visit', from where the nurse came (bed card or outpatient row). When the
+// patient has both an admission and an open visit, the nurse chooses; the default follows prefer,
+// else the admission (as the server would).
+export function VitalsEntryForm({ patientId, data, onSaved, encounterId, prefer }) {
   const blank = Object.fromEntries(data.definitions.map(d => [d.key, '']));
   const encounter = data.open_encounter && (!encounterId || data.open_encounter.encounter_id === encounterId) ? data.open_encounter : null;
-  // A visit reading is filed against the visit; otherwise against the admission (server picks the same way).
-  const filedOnVisit = Boolean(encounterId || (!data.open_admission && encounter));
-  const canTriage = filedOnVisit && encounter?.status === 'ARRIVED';
+  const admission = data.open_admission;
+  const wanted = encounterId ? 'visit' : prefer;
+  const [target, setTarget] = useState(admission && encounter ? (wanted === 'visit' ? 'visit' : 'admission') : encounter ? 'visit' : 'admission');
+  const filedOnVisit = target === 'visit' && Boolean(encounter);
+  const canTriage = filedOnVisit && encounter.status === 'ARRIVED';
   const [values, setValues] = useState(blank);
   const [notes, setNotes] = useState('');
   const [markTriaged, setMarkTriaged] = useState(canTriage);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  const context = filedOnVisit && encounter ? `Visit with ${encounter.doctor_name} (${encounter.status.replaceAll('_', ' ')})` : contextLabel(data);
+  const context = filedOnVisit ? visitLabel(encounter) : admission ? admissionLabel(admission) : null;
   if (!context) return <p style={{ color: 'var(--text-secondary)' }}>No open visit or admission: vitals can be recorded once the patient is checked in or admitted.</p>;
 
   const impossible = data.definitions.filter(d => isImpossible(d, values[d.key]));
@@ -58,7 +62,8 @@ export function VitalsEntryForm({ patientId, data, onSaved, encounterId }) {
     setSaving(true);
     try {
       const body = { patient_id: Number(patientId), notes: notes.trim() || undefined, mark_triaged: canTriage && markTriaged };
-      if (filedOnVisit && encounter) body.encounter_id = encounter.encounter_id;
+      if (filedOnVisit) body.encounter_id = encounter.encounter_id;
+      else body.admission_id = admission.admission_id;
       for (const d of data.definitions) if (values[d.key] !== '') body[d.key] = values[d.key];
       const res = await recordVitals(body);
       const saved = res.data.data;
@@ -75,7 +80,14 @@ export function VitalsEntryForm({ patientId, data, onSaved, encounterId }) {
 
   return (
     <form onSubmit={submit} data-testid="vitals-form" style={{ display: 'grid', gap: '12px' }}>
-      <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Filed under: <strong>{context}</strong></div>
+      {admission && encounter && (
+        <fieldset style={{ border: '1px solid var(--border)', borderRadius: '6px', padding: '8px 12px', display: 'flex', flexWrap: 'wrap', gap: '6px 16px' }}>
+          <legend style={{ fontSize: '14px' }}>This patient is admitted and has an open visit. File the reading under:</legend>
+          <label style={{ fontSize: '14px' }}><input type="radio" name="vitals-context" value="admission" checked={target === 'admission'} onChange={() => setTarget('admission')} /> {admissionLabel(admission)}</label>
+          <label style={{ fontSize: '14px' }}><input type="radio" name="vitals-context" value="visit" checked={target === 'visit'} onChange={() => setTarget('visit')} /> {visitLabel(encounter)}</label>
+        </fieldset>
+      )}
+      <div data-testid="vitals-target" style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Filed under: <strong>{context}</strong></div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
         {data.definitions.map(d => {
           const v = values[d.key];
@@ -160,7 +172,7 @@ function TrendChart({ def, readings }) {
   );
 }
 
-export default function VitalsPanel({ patientId }) {
+export default function VitalsPanel({ patientId, prefer }) {
   const { data, denied, reload } = useVitals(patientId);
   if (denied) return <div style={card}><p>You do not have access to this patient's vitals.</p></div>;
   if (!data) return <div style={card}>Loading vitals…</div>;
@@ -173,7 +185,7 @@ export default function VitalsPanel({ patientId }) {
       {data.can_record && (
         <div style={card}>
           <h2 style={{ marginTop: 0 }}>Record vitals</h2>
-          <VitalsEntryForm patientId={patientId} data={data} onSaved={reload} />
+          <VitalsEntryForm patientId={patientId} data={data} onSaved={reload} prefer={prefer} />
         </div>
       )}
       <div style={card}>
@@ -193,6 +205,7 @@ export default function VitalsPanel({ patientId }) {
                 <th style={{ padding: '8px' }}>Time</th>
                 {data.definitions.filter(d => d.key !== 'bp_diastolic').map(d => <th key={d.key} style={{ padding: '8px' }}>{d.key === 'bp_systolic' ? 'BP' : d.label}</th>)}
                 <th style={{ padding: '8px' }}>By</th>
+                <th style={{ padding: '8px' }}>Filed under</th>
               </tr></thead>
               <tbody>
                 {recent.map(r => (
@@ -205,6 +218,7 @@ export default function VitalsPanel({ patientId }) {
                       return <td key={d.key} style={{ padding: '8px', color: bad ? DANGER : 'inherit', fontWeight: bad ? 'bold' : 'normal' }}>{text}</td>;
                     })}
                     <td style={{ padding: '8px' }}>{r.recorded_by_name}</td>
+                    <td style={{ padding: '8px' }} data-testid="reading-context">{r.filed_under || '—'}</td>
                   </tr>
                 ))}
               </tbody>
