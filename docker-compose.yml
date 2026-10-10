@@ -1,0 +1,49 @@
+# Hospital Management System with MySQL. Usage (docs/deploy.md):
+#   cp .env.docker.example .env   # then fill in the three secrets
+#   docker compose up -d --build
+# The app is published on 127.0.0.1 only; put a TLS reverse proxy in front for real use.
+name: hospital
+
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: hospital_db
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysqladmin ping -h 127.0.0.1 -uroot --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    # No host port: only the app container reaches MySQL.
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: hospital_db
+      DB_USER: hospital_app
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD (the app account) in .env}
+      DB_ADMIN_USER: root
+      DB_ADMIN_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:8080}
+      TRUST_PROXY: ${TRUST_PROXY:-}
+    volumes:
+      - uploads:/data/uploads
+      - backups:/data/backups
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:5000"
+
+volumes:
+  db-data:
+  uploads:
+  backups:

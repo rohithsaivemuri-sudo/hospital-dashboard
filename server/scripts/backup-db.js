@@ -8,7 +8,8 @@ const path = require('path');
 require('./lib/sql'); // loads server/.env
 const { adminCredentials } = require('./lib/admin-credentials');
 
-const BACKUP_DIR = path.join(os.homedir(), 'hospital_backups');
+// BACKUP_DIR overrides the folder (the container keeps backups on a volume).
+const BACKUP_DIR = process.env.BACKUP_DIR ? path.resolve(process.env.BACKUP_DIR) : path.join(os.homedir(), 'hospital_backups');
 
 function timestamp(d = new Date()) {
   const p = (n) => String(n).padStart(2, '0');

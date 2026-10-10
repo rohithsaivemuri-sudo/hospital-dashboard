@@ -43,9 +43,10 @@ async function migrate(database, { dryRun = false, log = console.log, upTo } = {
       return pending;
     }
 
-    // Back up any real (non-test) database before changing it; abort if the backup fails.
+    // Back up any real (non-test) database before changing it; abort if the backup fails. A
+    // brand-new empty database (e.g. a container's first start) has nothing to back up.
     const willApply = pending.filter(f => !(f.startsWith('000_') && Number(tableCount) > 0));
-    if (willApply.length && !database.endsWith('_test')) backupDatabase(database, { log });
+    if (willApply.length && !database.endsWith('_test') && Number(tableCount) > 0) backupDatabase(database, { log });
 
     await conn.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
       version VARCHAR(255) PRIMARY KEY,
