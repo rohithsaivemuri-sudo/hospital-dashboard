@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { withTransaction } = require('../utils/audit');
 const { applyAppointmentStatus } = require('../utils/encounters');
+const { canAccessPatient, patientFilter } = require('../utils/patientAccess');
 exports.create = async (req, res) => {
   try {
     const { patient_id, doctor_id, appointment_date, appointment_time, reason } = req.body;
@@ -47,6 +48,12 @@ exports.list = async (req, res) => {
       query += ' AND a.doctor_id = ?'; 
       params.push(doctor_id); 
     }
+    // Nurses see appointments of their assigned patients only (same scope as GET /api/patients).
+    if (req.user.role === 'NURSE') {
+      const scope = patientFilter(req.user, 'demographics', 'a.patient_id');
+      query += ` AND ${scope.sql}`;
+      params.push(...scope.params);
+    }
     
     if (date) { query += ' AND a.appointment_date = ?'; params.push(date); }
     if (status) { query += ' AND a.status = ?'; params.push(status); }
@@ -66,6 +73,9 @@ exports.getById = async (req, res) => {
 
     const [rows] = await pool.execute(query, params);
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Not found' });
+    if (req.user.role === 'NURSE' && !(await canAccessPatient(req.user, rows[0].patient_id, 'demographics'))) {
+      return res.status(403).json({ success: false, message: 'Forbidden: patient is not assigned to you' });
+    }
     res.json({ success: true, data: rows[0] });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
@@ -97,7 +107,14 @@ exports.getByDoctor = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
-    const [rows] = await pool.execute('SELECT * FROM appointments WHERE doctor_id = ?', [targetDoctorId]);
+    let sql = 'SELECT * FROM appointments WHERE doctor_id = ?';
+    const params = [targetDoctorId];
+    if (req.user.role === 'NURSE') {
+      const scope = patientFilter(req.user, 'demographics', 'patient_id');
+      sql += ` AND ${scope.sql}`;
+      params.push(...scope.params);
+    }
+    const [rows] = await pool.execute(sql, params);
     res.json({ success: true, data: rows });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };

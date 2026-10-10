@@ -185,6 +185,31 @@ test('nurse scope: assigned-ward inpatients and open visits only, across patient
   for (const o of (await api('GET', '/lab/orders', { token: nurse.token })).body.data) assert.ok(scope.has(o.patient_id));
 });
 
+test('nurse appointment reads are limited to assigned patients (list, by id, by doctor)', async () => {
+  const scope = await nurseScope();
+  const [[outside]] = await db().query(`SELECT appointment_id, doctor_id, patient_id FROM appointments WHERE patient_id NOT IN (${[...scope].join(',')}) LIMIT 1`);
+  assert.ok(outside, 'fixture: an appointment for a patient outside the nurse scope');
+  const [[inside]] = await db().query(`SELECT appointment_id, patient_id FROM appointments WHERE patient_id IN (${[...scope].join(',')}) LIMIT 1`);
+  assert.ok(inside, 'fixture: an appointment for a patient inside the nurse scope');
+
+  const list = await api('GET', '/appointments', { token: nurse.token });
+  assert.equal(list.status, 200);
+  assert.ok(list.body.data.length > 0);
+  for (const a of list.body.data) assert.ok(scope.has(a.patient_id), `appointment ${a.appointment_id} (patient ${a.patient_id}) is outside the nurse scope`);
+  assert.ok(list.body.data.some(a => a.appointment_id === inside.appointment_id));
+
+  assert.equal((await api('GET', `/appointments/${inside.appointment_id}`, { token: nurse.token })).status, 200);
+  assert.equal((await api('GET', `/appointments/${outside.appointment_id}`, { token: nurse.token })).status, 403);
+
+  const byDoctor = await api('GET', `/appointments/doctor/${outside.doctor_id}`, { token: nurse.token });
+  assert.equal(byDoctor.status, 200);
+  for (const a of byDoctor.body.data) assert.ok(scope.has(a.patient_id), `doctor list leaks appointment ${a.appointment_id}`);
+
+  // Front desk and admin still see every appointment.
+  const all = await api('GET', '/appointments', { token: (await login(USERS.RECEPTIONIST)).token });
+  assert.ok(all.body.data.some(a => a.appointment_id === outside.appointment_id));
+});
+
 test('nurse history excludes consultation notes and surgery requests; the doctor sees them', async () => {
   const [[withNotes]] = await db().query('SELECT patient_id FROM consultations WHERE doctor_id = ? LIMIT 1', [doctor.user.doctor_id]);
   const docView = await api('GET', `/patients/${withNotes.patient_id}/history`, { token: doctor.token });
