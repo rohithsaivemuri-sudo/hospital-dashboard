@@ -68,7 +68,7 @@ export default function BedDashboard() {
     switch (status?.toUpperCase()) {
       case 'AVAILABLE': return 'var(--success)';
       case 'OCCUPIED': return 'var(--danger)';
-      case 'MAINTENANCE': return 'var(--warning)';
+      case 'MAINTENANCE': return '#b45309'; // amber dark enough to read as text on white (the yellow was 1.7:1)
       case 'CLEANING': return '#0ea5e9'; // light blue
       default: return 'var(--text-secondary)';
     }

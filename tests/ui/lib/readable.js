@@ -51,6 +51,9 @@ function pageHelpers(MIN, SELECTOR) {
   document.addEventListener('click', (e) => {
     const target = e.target instanceof Element ? e.target.closest(SELECTOR) : null;
     if (!target || target.disabled) return;
+    // A hidden <a download> created and clicked by the app's own code to save a file is not
+    // something a user clicks.
+    if (target.tagName === 'A' && (target.hasAttribute('download') || /^blob:/.test(target.href)) && !target.getBoundingClientRect().width) return;
     const r = readability(target);
     if (!r.ok && window.__reportUnreadable) window.__reportUnreadable({ ...r, page: location.pathname });
   }, true);

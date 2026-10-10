@@ -99,7 +99,7 @@ export default function AppointmentList() {
                       fontSize: '12px', 
                       fontWeight: 600,
                       backgroundColor: apt.status === 'COMPLETED' ? 'var(--success)' : (apt.status === 'CANCELLED' ? 'var(--danger)' : 'var(--warning)'),
-                      color: apt.status === 'SCHEDULED' ? '#000' : '#fff'
+                      color: ['COMPLETED', 'CANCELLED'].includes(apt.status) ? '#fff' : 'var(--text-primary)' // dark text on the yellow badge
                     }}>
                       {apt.status || 'SCHEDULED'}
                     </span>

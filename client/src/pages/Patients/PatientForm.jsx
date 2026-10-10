@@ -190,7 +190,7 @@ export default function PatientForm() {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
             <button type="button" onClick={() => navigate(-1)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer' }}>Cancel</button>
-            <button type="submit" disabled={saving || Boolean(abhaProblem)} style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: duplicates ? 'var(--warning)' : 'var(--primary)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button type="submit" disabled={saving || Boolean(abhaProblem)} style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: duplicates ? 'var(--warning)' : 'var(--primary)', color: duplicates ? 'var(--text-primary)' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <FaSave /> {saving ? 'Saving...' : editing ? 'Save Changes' : duplicates ? 'Register Anyway' : 'Register Patient'}
             </button>
           </div>

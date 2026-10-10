@@ -407,7 +407,7 @@ export default function PatientDetail() {
             {user?.role === 'DOCTOR' && <button onClick={() => setShowEncounterModal(true)} style={{ padding: '8px 16px', background: 'var(--info)', color: 'white', border: 'none', borderRadius: '4px' }}>+ New Clinical Encounter</button>}
             {user?.role === 'DOCTOR' && <button onClick={() => setShowLabModal(true)} style={{ padding: '8px 16px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '4px' }}>+ Order Lab Tests</button>}
             {user?.role === 'DOCTOR' && <button onClick={() => setShowPrescriptionModal(true)} style={{ padding: '8px 16px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '4px' }}>+ Create Prescription</button>}
-            {user?.role === 'DOCTOR' && <button onClick={() => setShowSurgeryModal(true)} style={{ padding: '8px 16px', background: 'var(--warning)', color: 'white', border: 'none', borderRadius: '4px' }}>+ Request Surgery</button>}
+            {user?.role === 'DOCTOR' && <button onClick={() => setShowSurgeryModal(true)} style={{ padding: '8px 16px', background: 'var(--warning)', color: 'var(--text-primary)', border: 'none', borderRadius: '4px' }}>+ Request Surgery</button>}
             {user?.role === 'DOCTOR' && currentAdmission && <button onClick={() => handleDischarge(currentAdmission.admission_id)} style={{ padding: '8px 16px', background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '4px' }}>Discharge Patient</button>}
             {user?.role === 'DOCTOR' && !currentAdmission && <button onClick={openAdmissionModal} style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px' }}>Admit Patient</button>}
           </div>

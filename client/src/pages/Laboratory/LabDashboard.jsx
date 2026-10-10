@@ -59,7 +59,7 @@ export default function LabDashboard() {
   const actionFor = (o) => (o.status === 'ORDERED'
     ? <button onClick={() => startProcessing(o.order_id)} style={{ padding: '6px 12px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Start Processing</button>
     : o.status === 'PROCESSING'
-      ? <button onClick={() => openEntry(o)} style={{ padding: '6px 12px', background: 'var(--warning)', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Enter Result</button>
+      ? <button onClick={() => openEntry(o)} style={{ padding: '6px 12px', background: 'var(--warning)', color: 'var(--text-primary)', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Enter Result</button>
       : <button onClick={() => showResult(o.order_id)} style={{ padding: '6px 12px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>View Result</button>);
 
   const startProcessing = async id => {

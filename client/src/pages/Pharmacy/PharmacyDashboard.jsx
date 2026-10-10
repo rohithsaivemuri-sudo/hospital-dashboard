@@ -278,7 +278,7 @@ export default function PharmacyDashboard() {
                       >Receive</button>
                       <button 
                         onClick={() => openAdjust(m)}
-                        style={{ padding: '6px 12px', background: 'var(--warning)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                        style={{ padding: '6px 12px', background: 'var(--warning)', color: 'var(--text-primary)', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                       >Adjust</button>
                       </>}
                     </td>
@@ -471,7 +471,7 @@ export default function PharmacyDashboard() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button type="button" onClick={() => setAdjustStockMedicine(null)} style={{ padding: '10px 16px', border: '1px solid var(--border)', background: 'white', borderRadius: '4px' }}>Cancel</button>
-                <button type="submit" style={{ padding: '10px 16px', border: 'none', background: 'var(--warning)', color: 'white', borderRadius: '4px' }}>Adjust Stock</button>
+                <button type="submit" style={{ padding: '10px 16px', border: 'none', background: 'var(--warning)', color: 'var(--text-primary)', borderRadius: '4px' }}>Adjust Stock</button>
               </div>
             </form>
           </div>
