@@ -3,13 +3,15 @@ import { createAppointment } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FaCalendarPlus, FaSave } from 'react-icons/fa';
+import PatientPicker from '../../components/PatientPicker';
+import DoctorPicker from '../../components/DoctorPicker';
 
 export default function AppointmentForm() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [patient, setPatient] = useState(null);
+  const [doctor, setDoctor] = useState(null);
   const [formData, setFormData] = useState({
-    patientId: '',
-    doctorId: '',
     date: '',
     time: '',
     reason: ''
@@ -21,11 +23,13 @@ export default function AppointmentForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!patient) return toast.error('Find and select the patient');
+    if (!doctor) return toast.error('Choose a doctor');
     setLoading(true);
     try {
       const res = await createAppointment({
-        patient_id: formData.patientId,
-        doctor_id: formData.doctorId,
+        patient_id: patient.patient_id,
+        doctor_id: doctor.doctor_id,
         appointment_date: formData.date,
         appointment_time: formData.time,
         reason: formData.reason
@@ -46,34 +50,20 @@ export default function AppointmentForm() {
 
   return (
     <div style={{ padding: '24px', backgroundColor: 'var(--bg-primary)', minHeight: '100vh', display: 'flex', justifyContent: 'center' }}>
-      <div style={{ backgroundColor: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', width: '100%', maxWidth: '600px' }}>
+      <div style={{ backgroundColor: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', width: '100%', maxWidth: '760px' }}>
         <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
           <FaCalendarPlus color="var(--primary)" /> Book Appointment
         </h2>
         
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Patient ID</label>
-            <input 
-              type="text" 
-              name="patientId" 
-              value={formData.patientId} 
-              onChange={handleChange} 
-              required 
-              style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px' }}
-            />
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Patient</label>
+            <PatientPicker value={patient} onChange={setPatient} />
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Doctor ID</label>
-            <input 
-              type="text" 
-              name="doctorId" 
-              value={formData.doctorId} 
-              onChange={handleChange} 
-              required
-              style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px' }}
-            />
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Doctor</label>
+            <DoctorPicker value={doctor?.doctor_id ?? ''} onChange={setDoctor} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
