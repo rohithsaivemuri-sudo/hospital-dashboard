@@ -57,6 +57,13 @@ exports.list = async (req, res) => {
     
     if (date) { query += ' AND a.appointment_date = ?'; params.push(date); }
     if (status) { query += ' AND a.status = ?'; params.push(status); }
+    // Visits from before a day that were never closed (checked in or with the doctor).
+    if (req.query.open_before !== undefined) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(req.query.open_before))) return res.status(400).json({ success: false, message: 'open_before must be a date (YYYY-MM-DD)' });
+      query += " AND a.appointment_date < ? AND (a.status IN ('CHECKED_IN', 'IN_PROGRESS') OR e.status IN ('ARRIVED', 'TRIAGED', 'IN_PROGRESS'))";
+      params.push(req.query.open_before);
+    }
+    query += ' ORDER BY a.appointment_date, a.appointment_time, a.appointment_id';
     const [rows] = await pool.execute(query, params);
     res.json({ success: true, data: rows });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }

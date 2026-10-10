@@ -1,5 +1,5 @@
 // CodeRabbit PR #1 item 6: status codes are shown with every underscore replaced
-// ("ENTERED_IN_ERROR" -> "ENTERED IN ERROR"), not only the first.
+// ("ENTERED_IN_ERROR" -> "Entered in error" since plain-word labels), not only the first.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -37,13 +37,16 @@ before(async () => {
 });
 after(async () => { await browser.close(); await closeDb(); });
 
-test('a voided visit reads "ENTERED IN ERROR" in the appointment list', async () => {
+test('a voided visit reads "Entered in error" in the appointment list', async () => {
   await open(page, '/appointments');
+  // The list shows one day at a time (today by default): go to the appointment's day.
+  await page.waitForSelector('input[name="appointment-date"]');
+  await page.$eval('input[name="appointment-date"]', el => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, '2031-03-03'); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); });
   const cell = await page.waitForFunction((id) => {
     const row = document.querySelector(`tr[data-appointment="${id}"]`);
-    return row && [...row.cells].map(c => c.innerText.trim()).find(t => /ENTERED/.test(t));
+    return row && [...row.cells].map(c => c.innerText.trim()).find(t => /entered/i.test(t));
   }, { polling: 100, timeout: 10000 }, appointmentId);
-  assert.equal(await cell.jsonValue(), 'ENTERED IN ERROR');
+  assert.equal(await cell.jsonValue(), 'Entered in error');
 });
 
 test('no unreadable button was clicked', () => assert.deepEqual(violations, []));
