@@ -55,12 +55,14 @@ export default function PharmacyDashboard() {
 
   useEffect(() => { load(); }, []);
 
+  // Pending (to dispense) first, then the newest.
   const filteredPrescriptions = useMemo(() => {
     return prescriptions.filter(p => {
       if (statusFilter !== 'ALL' && p.status !== statusFilter) return false;
       const term = search.toLowerCase();
       return p.patientName?.toLowerCase().includes(term) || String(p.prescription_id).includes(term);
-    });
+    }).sort((a, b) => (b.status === 'CREATED') - (a.status === 'CREATED')
+      || new Date(b.prescription_date) - new Date(a.prescription_date) || b.prescription_id - a.prescription_id);
   }, [prescriptions, statusFilter, search]);
 
   const stats = {
@@ -188,7 +190,7 @@ export default function PharmacyDashboard() {
             </thead>
             <tbody>
               {filteredPrescriptions.map(p => (
-                <tr key={p.prescription_id}>
+                <tr key={p.prescription_id} data-testid="rx-row" data-prescription={p.prescription_id} data-status={p.status} data-date={p.prescription_date}>
                   <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>#{p.prescription_id}</td>
                   <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
                     {p.patientName} <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{p.patient_age != null ? `${p.patient_age} yrs` : ''}</span>
@@ -205,7 +207,7 @@ export default function PharmacyDashboard() {
                     </span>
                   </td>
                   <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
-                    <button onClick={() => openDetail(p.prescription_id)} style={{ padding: '6px 12px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>View / Dispense</button>
+                    <button onClick={() => openDetail(p.prescription_id)} style={{ padding: '6px 12px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>{p.status === 'CREATED' ? 'View / Dispense' : 'View'}</button>
                   </td>
                 </tr>
               ))}
