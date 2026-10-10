@@ -80,7 +80,8 @@ const redact = (msg) => String(msg ?? '').replace(/'[^']*'/g, "'?'").replace(/"[
 function safeErrorResponses(req, res, next) {
   const json = res.json.bind(res);
   res.json = (body) => {
-    if (res.statusCode >= 500 && body && typeof body === 'object' && !body.__safe) {
+    // A handler may mark its own 5xx body as safe to send (e.g. /health's fixed 503 reply).
+    if (res.statusCode >= 500 && body && typeof body === 'object' && !res.locals.safeErrorBody) {
       const original = body.message || body.error;
       const deadlock = /deadlock/i.test(original || '');
       console.error(JSON.stringify({ level: 'error', time: new Date().toISOString(), request_id: req.id, method: req.method, path: req.baseUrl + (req.route?.path || ''), status: res.statusCode, error: redact(original) }));

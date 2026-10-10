@@ -5,8 +5,8 @@ const { writeAudit, withTransaction } = require('../utils/audit');
 const { resolveEncounterForRecord } = require('../utils/encounters');
 const { parseRange, parseNumeric, interpret, sameUnit } = require('../utils/labRanges');
 // Report files live outside any web root; they are only ever served by the authorised handlers below.
-// LAB_REPORT_DIR lets the test suite use a throwaway directory.
-const dir=path.resolve(process.env.LAB_REPORT_DIR||path.join(__dirname,'..','uploads','lab-reports'));fs.mkdirSync(dir,{recursive:true});
+// Folder: UPLOAD_DIR/lab-reports, or LAB_REPORT_DIR (utils/paths.js); checked writable at startup.
+const dir=require('../utils/paths').labReportDir();fs.mkdirSync(dir,{recursive:true});
 const upload=multer({storage:multer.diskStorage({destination:dir,filename:(q,f,cb)=>cb(null,`${Date.now()}-${Math.random().toString(36).slice(2)}${path.extname(f.originalname).toLowerCase()}`)}),limits:{fileSize:10*1024*1024},fileFilter:(q,f,cb)=>{const ok=['application/pdf','image/png','image/jpeg'].includes(f.mimetype)&&['.pdf','.png','.jpg','.jpeg'].includes(path.extname(f.originalname).toLowerCase());cb(ok?null:new Error('Only PDF, PNG, and JPEG reports are allowed'),ok)}});
 exports.uploadReport=upload.single('report');
 const lab=(q,s)=>q.user.role==='LABORATORY'||(s.status(403).json({success:false,message:'Forbidden'}),false);

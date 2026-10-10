@@ -58,15 +58,17 @@ function checkConfig(env = process.env) {
   const trustProxy = env.TRUST_PROXY === undefined || env.TRUST_PROXY === '' ? false : /^\d+$/.test(env.TRUST_PROXY) ? Number(env.TRUST_PROXY) : null;
   if (trustProxy === null) errors.push('TRUST_PROXY must be the number of proxies in front of the app (e.g. 1), or empty');
 
-  const labReportDir = path.resolve(env.LAB_REPORT_DIR || path.join(__dirname, '..', 'uploads', 'lab-reports'));
+  const labReportDir = require('../utils/paths').labReportDir(env);
   try {
     fs.mkdirSync(labReportDir, { recursive: true });
     fs.accessSync(labReportDir, fs.constants.W_OK);
-  } catch (e) { errors.push(`LAB_REPORT_DIR ${labReportDir} is not a writable folder (${e.code || e.message})`); }
+  } catch (e) { errors.push(`The lab report folder ${labReportDir} (UPLOAD_DIR/lab-reports or LAB_REPORT_DIR) is not writable (${e.code || e.message})`); }
+  const shutdownTimeoutMs = positive('SHUTDOWN_TIMEOUT_MS', 10000);
+  const logRequests = !/^(false|0|no|off)$/i.test(env.LOG_REQUESTS || '');
 
   return {
     errors,
-    config: { mode, production, port: Number(env.PORT || 5000), clientUrl, labReportDir, loginLimit, jsonLimit, trustProxy },
+    config: { mode, production, port: Number(env.PORT || 5000), clientUrl, labReportDir, loginLimit, jsonLimit, trustProxy, shutdownTimeoutMs, logRequests },
   };
 }
 

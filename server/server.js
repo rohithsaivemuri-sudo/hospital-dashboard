@@ -26,7 +26,9 @@ const io = new Server(server, {
 const { requestId, securityHeaders, loginRateLimit, safeErrorResponses, errorHandler } = require('./middleware/security');
 app.disable('x-powered-by');
 app.set('trust proxy', config.trustProxy);
+const { requestLog } = require('./middleware/requestLog');
 app.use(requestId);
+app.use(requestLog({ enabled: config.logRequests }));
 app.use(securityHeaders(config));
 app.use(safeErrorResponses);
 app.use(cors({ origin: config.clientUrl }));
@@ -93,6 +95,19 @@ app.use('/api/mar', verifyToken, marRoutes);
 app.use('/api/audit-logs', verifyToken, auditLogRoutes);
 app.use('/api/vitals', verifyToken, vitalsRoutes);
 
+// GET /health — for load balancers and container health checks: is the app up and can it reach
+// the database? No authentication, no details.
+const pool = require('./config/db');
+app.get('/health', async (req, res) => {
+  try {
+    await Promise.race([pool.query('SELECT 1'), new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))]);
+    res.set('Cache-Control', 'no-store').json({ status: 'ok', database: 'ok', uptime_s: Math.round(process.uptime()) });
+  } catch {
+    res.locals.safeErrorBody = true; // a fixed message, nothing to hide
+    res.status(503).set('Cache-Control', 'no-store').json({ status: 'error', database: 'unavailable' });
+  }
+});
+
 // Production: the built client is served from this same port, so pages, /api and /socket.io run
 // together (npm run start:prod). In development Vite serves the client and proxies to here.
 if (process.env.NODE_ENV === 'production') {
@@ -118,3 +133,29 @@ const PORT = config.port;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// Graceful shutdown (SIGTERM from a container runtime or process manager, or Ctrl-C): stop taking new
+// connections, let requests in flight finish, close sockets and the database pool, then exit.
+// After SHUTDOWN_TIMEOUT_MS remaining connections are cut and the exit code is 1.
+let shuttingDown = false;
+function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(JSON.stringify({ time: new Date().toISOString(), level: 'info', type: 'shutdown', signal, message: 'shutting down' }));
+  const timer = setTimeout(() => {
+    console.error(JSON.stringify({ time: new Date().toISOString(), level: 'error', type: 'shutdown', message: `forced after ${config.shutdownTimeoutMs} ms` }));
+    server.closeAllConnections();
+    process.exit(1);
+  }, config.shutdownTimeoutMs);
+  timer.unref();
+  // io.close disconnects every socket and closes the HTTP server, whose callback runs once the
+  // requests in flight have finished.
+  io.close(async () => {
+    try { await pool.end(); } catch { /* already closed */ }
+    console.log(JSON.stringify({ time: new Date().toISOString(), level: 'info', type: 'shutdown', message: 'stopped' }));
+    process.exit(0);
+  });
+  server.closeIdleConnections(); // keep-alive connections with no request in progress
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

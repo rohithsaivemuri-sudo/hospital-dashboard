@@ -46,7 +46,8 @@ test('production needs CLIENT_URL as a bare origin', () => {
 });
 
 test('the uploads folder must be writable', () => {
-  assert.ok(problems(good({ LAB_REPORT_DIR: '/dev/null/reports' })).some(e => e.startsWith('LAB_REPORT_DIR')));
+  assert.ok(problems(good({ LAB_REPORT_DIR: '/dev/null/reports' })).some(e => /lab report folder .* is not writable/.test(e)));
+  assert.ok(problems(good({ LAB_REPORT_DIR: undefined, UPLOAD_DIR: '/dev/null/uploads' })).some(e => /\/dev\/null\/uploads\/lab-reports/.test(e)), 'UPLOAD_DIR is checked too');
 });
 
 test('the server refuses to start on a bad configuration, lists every problem, and prints no values', () => {
