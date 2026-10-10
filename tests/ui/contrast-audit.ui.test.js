@@ -59,7 +59,7 @@ test('every page and dialog reachable by each role has readable buttons', async 
     }
     if (role === 'DOCTOR') {
       for (const tab of ['Overview', 'Visits', 'Vitals', 'Admissions', 'Lab Tests', 'Prescriptions', 'Surgery']) await scanAfter(page, '/patients/1', tab, `${role} /patients/1`);
-      for (const dialog of ['+ New Clinical Encounter', '+ Order Lab Tests', '+ Create Prescription', '+ Request Surgery', 'Admit Patient']) {
+      for (const dialog of ['+ Write note', '+ Order Lab Tests', '+ Create Prescription', '+ Request Surgery', 'Admit Patient']) {
         await scanAfter(page, '/patients/1', dialog, `${role} /patients/1`).catch(e => findings.push({ where: `${role} ${dialog}`, reason: `could not open: ${e.message}` }));
       }
       await open(page, '/patients/1'); await clickButton(page, 'Lab Tests'); await clickButton(page, 'View Result');

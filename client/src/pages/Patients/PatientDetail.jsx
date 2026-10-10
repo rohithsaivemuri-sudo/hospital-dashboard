@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import VitalsPanel from './VitalsPanel';
+import VisitsPanel from './VisitsPanel';
 import { getPatient, getPatientHistory, createLabOrder, getLabTests, createPrescription, getMedicines, createAdmission, getAvailableBeds, getLabResult, downloadLabResultReport, createConsultation, createSurgeryRequest, dischargePatient, encounterAction, getPatientAdmissions, getPatientAppointments, isForbidden, cancelPrescription } from '../../services/api';
 import AccessDenied from '../../components/AccessDenied';
 import { AuthContext } from '../../context/AuthContext';
@@ -157,7 +158,7 @@ export default function PatientDetail() {
         plan: encPlan,
         notes: encNotes
       });
-      toast.success('Encounter saved successfully');
+      toast.success('Note saved');
       setShowEncounterModal(false);
       setEncSymptoms(''); setEncDiagnosis(''); setEncAssessment(''); setEncPlan(''); setEncNotes(''); setActiveAppointmentId('');
       fetchPatientData();
@@ -345,6 +346,11 @@ export default function PatientDetail() {
   const openEncounter = (history.encounters || []).find(e => ['ARRIVED', 'TRIAGED', 'IN_PROGRESS'].includes(e.status));
   const isMyEncounter = user?.role === 'DOCTOR' && openEncounter && Number(openEncounter.doctor_id) === Number(user.doctor_id);
 
+  // The note is filed under the doctor's in-progress visit when there is one.
+  const noteVisit = isMyEncounter && openEncounter.status === 'IN_PROGRESS' ? openEncounter : null;
+  const noteLabel = noteVisit ? '+ Write note for current visit' : '+ Write note';
+  const noteButton = <button onClick={() => setShowEncounterModal(true)} style={{ padding: '8px 16px', background: 'var(--info)', color: 'white', border: 'none', borderRadius: '4px' }}>{noteLabel}</button>;
+
   const runEncounterAction = async (action) => {
     if (action === 'finish' && !window.confirm('Sign and close this visit? Its notes cannot be edited afterwards.')) return;
     try {
@@ -404,7 +410,7 @@ export default function PatientDetail() {
         <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)' }}>
           <h2>Quick Actions</h2>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            {user?.role === 'DOCTOR' && <button onClick={() => setShowEncounterModal(true)} style={{ padding: '8px 16px', background: 'var(--info)', color: 'white', border: 'none', borderRadius: '4px' }}>+ New Clinical Encounter</button>}
+            {user?.role === 'DOCTOR' && noteButton}
             {user?.role === 'DOCTOR' && <button onClick={() => setShowLabModal(true)} style={{ padding: '8px 16px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '4px' }}>+ Order Lab Tests</button>}
             {user?.role === 'DOCTOR' && <button onClick={() => setShowPrescriptionModal(true)} style={{ padding: '8px 16px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '4px' }}>+ Create Prescription</button>}
             {user?.role === 'DOCTOR' && <button onClick={() => setShowSurgeryModal(true)} style={{ padding: '8px 16px', background: 'var(--warning)', color: 'var(--text-primary)', border: 'none', borderRadius: '4px' }}>+ Request Surgery</button>}
@@ -414,23 +420,7 @@ export default function PatientDetail() {
         </div>
       )}
 
-      {activeTab === 'Visits' && (
-        <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)' }}>
-          <h2>Clinical Encounters & Visits</h2>
-          {history.consultations?.length > 0 ? (
-            history.consultations.map(c => (
-              <div key={c.consultation_id} style={{ background: '#f8fafc', padding: '16px', marginBottom: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '8px' }}>Date: {new Date(c.consultation_time).toLocaleString()}</div>
-                <div><strong>Reason/Symptoms:</strong> {c.symptoms}</div>
-                <div><strong>Diagnosis:</strong> {c.diagnosis}</div>
-                <div><strong>Assessment:</strong> {c.assessment}</div>
-                <div><strong>Plan:</strong> {c.plan}</div>
-                <div><strong>Notes:</strong> {c.notes}</div>
-              </div>
-            ))
-          ) : <p>No encounters found.</p>}
-        </div>
-      )}
+      {activeTab === 'Visits' && <VisitsPanel patientId={id} history={history} noteButton={noteButton} />}
 
       {activeTab === 'Admissions' && (
         <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)' }}>
@@ -586,7 +576,10 @@ export default function PatientDetail() {
       {showEncounterModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', padding: '24px', borderRadius: '8px', width: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2>New Clinical Encounter</h2>
+            <h2>{noteVisit ? 'Note for the current visit' : 'Clinical note'}</h2>
+            <p data-testid="note-target" style={{ marginTop: 0, color: 'var(--text-secondary)' }}>
+              {noteVisit ? `Filed under the visit with ${noteVisit.doctor_name}, started ${new Date(noteVisit.start_timestamp).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}.` : 'You have no visit in progress with this patient; the note is not linked to a visit.'}
+            </p>
             <form onSubmit={handleCreateEncounter}>
               <div style={{ marginBottom: '12px' }}><label>Reason / Symptoms</label><textarea required value={encSymptoms} onChange={e => setEncSymptoms(e.target.value)} style={{ width: '100%', padding: '8px' }} /></div>
               <div style={{ marginBottom: '12px' }}><label>Diagnosis</label><input required type="text" value={encDiagnosis} onChange={e => setEncDiagnosis(e.target.value)} style={{ width: '100%', padding: '8px' }} /></div>
@@ -595,7 +588,7 @@ export default function PatientDetail() {
               <div style={{ marginBottom: '12px' }}><label>Notes</label><textarea value={encNotes} onChange={e => setEncNotes(e.target.value)} style={{ width: '100%', padding: '8px' }} /></div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                 <button type="button" onClick={() => setShowEncounterModal(false)}>Cancel</button>
-                <button type="submit" style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px' }}>Save Encounter</button>
+                <button type="submit" style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px' }}>Save Note</button>
               </div>
             </form>
           </div>
