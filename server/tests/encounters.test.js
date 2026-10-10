@@ -403,3 +403,31 @@ test('two visits for the same doctor and patient started at the same moment: exa
   }
   assert.deepEqual(doubles, [], 'never two IN_PROGRESS visits for one doctor and patient');
 });
+
+test('a doctor\'s queue lists every open visit: appointments, walk-ins and emergency visits, not closed ones or other doctors\'', async () => {
+  const free = async () => (await db().query(`SELECT patient_id FROM patients WHERE patient_id NOT IN (SELECT patient_id FROM encounters WHERE status IN ('ARRIVED','TRIAGED','IN_PROGRESS'))
+    AND patient_id NOT IN (SELECT patient_id FROM admissions WHERE status = 'ACTIVE') ORDER BY patient_id DESC LIMIT 1`))[0][0].patient_id;
+  const walkInPatient = await free();
+  const walkIn = (await api('POST', '/encounters', { token: reception.token, body: { patient_id: walkInPatient, doctor_id: doctor.user.doctor_id } })).body.data.encounter_id;
+  // Nothing in the API creates EMERGENCY encounters yet; insert one as the schema allows.
+  const emergencyPatient = await free();
+  const [em] = await db().query("INSERT INTO encounters (patient_id, doctor_id, encounter_type, status, arrived_at) VALUES (?, ?, 'EMERGENCY', 'ARRIVED', NOW())", [emergencyPatient, doctor.user.doctor_id]);
+  const appointment = await checkIn(await book());
+  // Another doctor's visit. dr.joshi, not dr.patel: a visit puts the patient in that doctor's care set
+  // for good, and other files rely on dr.patel having no relationship with their patients.
+  const [[joshi]] = await db().query("SELECT d.doctor_id FROM doctors d JOIN users u ON u.user_id = d.user_id WHERE u.username = 'dr.joshi'");
+  const otherDoctors = (await api('POST', '/encounters', { token: reception.token, body: { patient_id: walkInPatient, doctor_id: joshi.doctor_id } })).body.data.encounter_id;
+  const closed = (await api('POST', '/encounters', { token: reception.token, body: { patient_id: emergencyPatient, doctor_id: doctor.user.doctor_id } })).body.data.encounter_id;
+  await act(closed, 'cancel', reception);
+
+  const queue = (await api('GET', '/encounters/queue', { token: doctor.token })).body.data;
+  const byId = new Map(queue.map(v => [v.encounter_id, v]));
+  assert.ok(byId.has(walkIn) && byId.get(walkIn).appointment_id === null, 'walk-in, no appointment');
+  assert.equal(byId.get(em.insertId)?.encounter_type, 'EMERGENCY');
+  assert.equal(byId.get(appointment.encounter_id)?.appointment_id, appointment.appointment_id);
+  assert.ok(!byId.has(otherDoctors), 'another doctor\'s visit');
+  assert.ok(!byId.has(closed), 'a cancelled visit');
+  assert.ok(queue.every(v => v.doctor_id === doctor.user.doctor_id && ['ARRIVED', 'TRIAGED', 'IN_PROGRESS'].includes(v.status)));
+  for (const id of [walkIn, em.insertId, appointment.encounter_id]) await act(id, 'entered-in-error', doctor);
+  await act(otherDoctors, 'cancel', reception);
+});
