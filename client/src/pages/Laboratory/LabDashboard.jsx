@@ -36,14 +36,20 @@ export default function LabDashboard() {
 
   const counts = s => orders.filter(o => o.status === s).length;
 
-  // Same rule as the server (utils/labRanges.js): a whole-number/decimal value against the bounds.
+  const sameUnit = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
+  // Same rule as the server (interpret() in utils/labRanges.js, addResult): a whole-number/decimal
+  // value against the reference bounds, and against the test's critical bounds when the result is in
+  // the test's unit (or no unit is given).
   const numericValue = /^\s*-?\d+(\.\d+)?\s*$/.test(result.result_value) ? Number(result.result_value) : null;
   const low = result.reference_low === '' ? null : Number(result.reference_low);
   const high = result.reference_high === '' ? null : Number(result.reference_high);
-  const autoFlag = numericValue == null || (low == null && high == null) ? null
+  const useCritical = Boolean(selected) && sameUnit(result.unit || selected.unit, selected.unit);
+  const critLow = useCritical && selected.critical_low != null ? Number(selected.critical_low) : null;
+  const critHigh = useCritical && selected.critical_high != null ? Number(selected.critical_high) : null;
+  const autoFlag = numericValue == null || (low == null && high == null && critLow == null && critHigh == null) ? null
+    : (critLow != null && numericValue < critLow) || (critHigh != null && numericValue > critHigh) ? 'CRITICAL'
     : low != null && numericValue < low ? 'LOW' : high != null && numericValue > high ? 'HIGH' : 'NORMAL';
   const flagColor = (f) => (f === 'CRITICAL' || f === 'HIGH' || f === 'LOW' ? 'var(--danger)' : f === 'NORMAL' ? 'var(--success)' : 'inherit');
-  const sameUnit = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
 
   const bound = v => (v == null ? '' : String(Number(v))); // DECIMAL comes back as "70.0000"
   const openEntry = (o) => {
@@ -272,7 +278,7 @@ export default function LabDashboard() {
                       <option value="CRITICAL">Critical</option>
                     </select>
                   )}
-                  {autoFlag && (
+                  {autoFlag && autoFlag !== 'CRITICAL' && (
                     <label style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4, fontSize: 13 }}>
                       <input type="checkbox" name="escalate" checked={result.escalate} onChange={e => setResult({...result, escalate: e.target.checked})} /> Escalate as CRITICAL
                     </label>
