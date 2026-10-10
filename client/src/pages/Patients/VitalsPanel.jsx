@@ -32,7 +32,7 @@ export function useVitals(patientId) {
 // Where the reading will be filed, in words.
 const contextLabel = (data) => (data.open_admission
   ? `Admission · ${data.open_admission.ward_name} bed ${data.open_admission.bed_number}`
-  : data.open_encounter ? `Visit with ${data.open_encounter.doctor_name} (${data.open_encounter.status.replace('_', ' ')})` : null);
+  : data.open_encounter ? `Visit with ${data.open_encounter.doctor_name} (${data.open_encounter.status.replaceAll('_', ' ')})` : null);
 
 export function VitalsEntryForm({ patientId, data, onSaved, encounterId }) {
   const blank = Object.fromEntries(data.definitions.map(d => [d.key, '']));
@@ -46,7 +46,7 @@ export function VitalsEntryForm({ patientId, data, onSaved, encounterId }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  const context = filedOnVisit && encounter ? `Visit with ${encounter.doctor_name} (${encounter.status.replace('_', ' ')})` : contextLabel(data);
+  const context = filedOnVisit && encounter ? `Visit with ${encounter.doctor_name} (${encounter.status.replaceAll('_', ' ')})` : contextLabel(data);
   if (!context) return <p style={{ color: 'var(--text-secondary)' }}>No open visit or admission: vitals can be recorded once the patient is checked in or admitted.</p>;
 
   const impossible = data.definitions.filter(d => isImpossible(d, values[d.key]));

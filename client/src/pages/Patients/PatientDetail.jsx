@@ -376,7 +376,7 @@ export default function PatientDetail() {
           {['ADMIN', 'RECEPTIONIST'].includes(user?.role) && <Link to={`/patients/${id}/edit`} data-testid="edit-patient">Edit details</Link>}
           {!CLINICAL_ROLES.includes(user?.role) ? null : openEncounter ? (
             <span data-testid="current-visit" style={{ color: 'var(--text-primary)' }}>
-              <strong>Current visit:</strong> {openEncounter.status.replace('_', ' ')} with {openEncounter.doctor_name}
+              <strong>Current visit:</strong> {openEncounter.status.replaceAll('_', ' ')} with {openEncounter.doctor_name}
               {isMyEncounter && ['ARRIVED', 'TRIAGED'].includes(openEncounter.status) && (
                 <button onClick={() => runEncounterAction('start')} style={{ marginLeft: '12px', padding: '4px 10px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Start Visit</button>
               )}

@@ -85,7 +85,7 @@ export default function AppointmentList() {
             </thead>
             <tbody>
               {appointments.map((apt) => (
-                <tr key={apt.appointment_id} style={{ borderBottom: '1px solid var(--border)' }}>
+                <tr key={apt.appointment_id} data-appointment={apt.appointment_id} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '12px' }}>
                     {apt.appointment_date ? new Date(apt.appointment_date).toLocaleDateString() : 'N/A'}
                   </td>
@@ -104,7 +104,7 @@ export default function AppointmentList() {
                       {apt.status || 'SCHEDULED'}
                     </span>
                   </td>
-                  <td style={{ padding: '12px', fontSize: '13px', color: 'var(--text-secondary)' }}>{apt.encounter_status ? apt.encounter_status.replace('_', ' ') : '—'}</td>
+                  <td style={{ padding: '12px', fontSize: '13px', color: 'var(--text-secondary)' }}>{apt.encounter_status ? apt.encounter_status.replaceAll('_', ' ') : '—'}</td>
                   {isFrontDesk && (
                     <td style={{ padding: '12px', whiteSpace: 'nowrap' }}>
                       {apt.status === 'BOOKED' && <>

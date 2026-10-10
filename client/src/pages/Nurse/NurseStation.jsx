@@ -121,7 +121,7 @@ export default function NurseStation() {
                 <tr key={v.encounter_id} data-testid="visit-row" data-encounter={v.encounter_id} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '8px' }}><Link to={`/patients/${v.patient_id}`}>{v.patient_name}</Link></td>
                   <td style={{ padding: '8px' }}>{v.doctor_name}</td>
-                  <td data-testid="visit-status" style={{ padding: '8px' }}>{VISIT_STATUS[v.status] || v.status.replace('_', ' ')}</td>
+                  <td data-testid="visit-status" style={{ padding: '8px' }}>{VISIT_STATUS[v.status] || v.status.replaceAll('_', ' ')}</td>
                   <td data-testid="visit-last-vitals" style={{ padding: '8px', color: v.last_vitals_at ? 'inherit' : 'var(--text-secondary)' }}>{v.last_vitals_at ? istTime(v.last_vitals_at) : 'Not taken'}</td>
                   <td style={{ padding: '8px' }}>
                     <button data-testid="record-vitals" onClick={() => setVitalsFor(v)} style={{ padding: '4px 10px', marginRight: '6px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>{v.last_vitals_at ? 'Retake vitals' : 'Record vitals'}</button>

@@ -98,7 +98,7 @@ export default function FrontDesk() {
                     <td style={cell}><Link to={`/patients/${apt.patient_id}`}>{apt.patient_name}</Link></td>
                     <td style={cell}>{apt.doctor_name}</td>
                     <td style={cell}>{apt.status}</td>
-                    <td style={cell}>{apt.encounter_status ? apt.encounter_status.replace('_', ' ') : '—'}</td>
+                    <td style={cell}>{apt.encounter_status ? apt.encounter_status.replaceAll('_', ' ') : '—'}</td>
                     <td style={{ ...cell, whiteSpace: 'nowrap' }}>
                       {apt.status === 'BOOKED' && <>
                         <button disabled={busyId === apt.appointment_id} style={btn('var(--primary)')} onClick={() => run(apt, 'Checked in', () => checkInAppointment(apt.appointment_id))}>Check In</button>
@@ -123,7 +123,7 @@ export default function FrontDesk() {
           {visits.length === 0 ? <p>No open visits.</p> : visits.map(v => (
             <div key={v.encounter_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
               <span>{v.patient_name} <span style={{ color: 'var(--text-secondary)' }}>· {v.doctor_name}</span></span>
-              <strong>{v.status.replace('_', ' ')}</strong>
+              <strong>{v.status.replaceAll('_', ' ')}</strong>
             </div>
           ))}
         </div>
