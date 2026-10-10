@@ -31,6 +31,10 @@ test('on the login page, before signing in', async () => {
   assert.deepEqual([l.target, l.rel], ['_blank', 'noopener noreferrer']);
   const p = params(l.href);
   assert.deepEqual([p.template, p.role, p.page], ['problem-report.yml', 'Not signed in', '/login']);
+  // Until the form is on the default branch GitHub opens a blank issue: the details are in title/body too.
+  assert.equal(p.title, 'Problem: /login');
+  assert.match(p.body, /\*\*Role:\*\* Not signed in\n\*\*Page:\*\* \/login\n\*\*When:\*\* \d{4}-/);
+  assert.match(p.body, /Do not include patient information/);
 });
 
 test('on signed-in pages: role and page, with record numbers replaced and no patient details', async () => {
@@ -42,6 +46,7 @@ test('on signed-in pages: role and page, with record numbers replaced and no pat
     const l = await link();
     const q = params(l.href);
     assert.deepEqual([q.role, q.page], ['DOCTOR', expected], p);
+    assert.match(q.body, new RegExp(`\\*\\*Page:\\*\\* ${expected.replace(/[/:]/g, '\\$&')}\\n`));
     assert.match(q.time, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2} \(UTC[+-]\d{2}:\d{2}\)$/);
     assert.ok(!l.href.includes('/patients/1') && !decodeURIComponent(l.href).includes(patient.name), l.href);
   }

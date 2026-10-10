@@ -17,7 +17,16 @@ function localTime(d = new Date()) {
 }
 
 export function reportProblemUrl({ role, pathname, now = new Date() }) {
-  const params = new URLSearchParams({ template: 'problem-report.yml', role: role || 'Not signed in', page: pagePattern(pathname), time: localTime(now) });
+  const values = { role: role || 'Not signed in', page: pagePattern(pathname), time: localTime(now) };
+  // GitHub uses the problem-report form only once it is on the default branch; until then it opens a
+  // blank issue, so the same details also go in a pre-filled title and body.
+  const body = [
+    '> **Do not include patient information** (names, MRNs, ABHA numbers, phone numbers, results or notes). Issues here are public.',
+    '', `**Role:** ${values.role}`, `**Page:** ${values.page}`, `**When:** ${values.time}`,
+    '', '**What happened?**', '', '', '**What did you expect?**', '', '', '**Steps to reproduce**', '1. ', '',
+    '**Request id** (if an error message showed one):', '',
+  ].join('\n');
+  const params = new URLSearchParams({ template: 'problem-report.yml', ...values, title: `Problem: ${values.page}`, body });
   return `${ISSUES_URL}?${params}`;
 }
 
