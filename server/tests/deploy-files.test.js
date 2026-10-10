@@ -37,3 +37,9 @@ test('entrypoint: app account, then migrations, then the server', () => {
   assert.match(ep, /set -eu/);
   assert.ok(fs.statSync(path.join(ROOT, 'docker', 'entrypoint.sh')).mode & 0o111, 'executable');
 });
+
+test('npm run start:prod sets CLIENT_URL to its own address (sockets check the Origin)', () => {
+  const script = JSON.parse(read('package.json')).scripts['start:prod'];
+  assert.match(script, /NODE_ENV=production/);
+  assert.match(script, /CLIENT_URL="\$\{CLIENT_URL_PROD:-http:\/\/localhost:5000\}"/);
+});

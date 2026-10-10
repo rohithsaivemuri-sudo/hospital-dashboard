@@ -7,7 +7,7 @@
     "start": "cd server && npm start & cd client && npm run dev",
     "test:ui": "node --test --test-concurrency=1 --test-global-setup=tests/ui/global-setup.js \"tests/ui/**/*.ui.test.js\"",
     "build": "npm --prefix client run build",
-    "start:prod": "npm run build && cd server && NODE_ENV=production node server.js"
+    "start:prod": "npm run build && cd server && NODE_ENV=production CLIENT_URL=\"${CLIENT_URL_PROD:-http://localhost:5000}\" node server.js"
   },
   "dependencies": {
     "puppeteer": "^25.13.0"
