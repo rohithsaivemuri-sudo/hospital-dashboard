@@ -147,13 +147,19 @@ exports.update = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+// A patient's admissions with the bed code, ward and admitting doctor named.
+const ADMISSIONS_SQL = `
+  SELECT a.*, b.bed_number, w.name AS ward_name, d.name AS doctor_name
+  FROM admissions a LEFT JOIN beds b ON b.bed_id = a.bed_id LEFT JOIN wards w ON w.ward_id = b.ward_id LEFT JOIN doctors d ON d.doctor_id = a.doctor_id
+  WHERE a.patient_id = ? ORDER BY a.admission_date DESC`;
+
 exports.getHistory = async (req, res) => {
   try {
     const patient_id = req.params.id;
     const auth = await allowed(req, patient_id, 'clinical');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
-    const [admissions] = await pool.execute('SELECT * FROM admissions WHERE patient_id = ? ORDER BY admission_date DESC', [patient_id]);
+    const [admissions] = await pool.execute(ADMISSIONS_SQL, [patient_id]);
     const [appointments] = await pool.execute('SELECT * FROM appointments WHERE patient_id = ? ORDER BY appointment_date DESC', [patient_id]);
     const [prescriptions] = await pool.execute(`
       SELECT p.*, 
@@ -185,7 +191,7 @@ exports.getAdmissions = async (req, res) => {
     const auth = await allowed(req, req.params.id, 'demographics');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
-    const [rows] = await pool.execute('SELECT * FROM admissions WHERE patient_id = ?', [req.params.id]);
+    const [rows] = await pool.execute(ADMISSIONS_SQL, [req.params.id]);
     res.json({ success: true, data: rows });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };

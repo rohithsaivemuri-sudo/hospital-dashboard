@@ -392,7 +392,7 @@ export default function PatientDetail() {
           <span data-testid="header-allergies" style={{ color: hasAllergies(patient.allergies) ? 'var(--danger)' : 'var(--text-secondary)', fontWeight: hasAllergies(patient.allergies) ? 'bold' : 'normal' }}>
             <strong>Allergies</strong> {allergyLabel(patient.allergies)}
           </span>
-          {currentAdmission && <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>ADMITTED · Bed #{currentAdmission.bed_id}</span>}
+          {currentAdmission && <span data-testid="header-admission" style={{ color: 'var(--danger)', fontWeight: 'bold' }}>ADMITTED · {currentAdmission.ward_name} · Bed {currentAdmission.bed_number} · under {currentAdmission.doctor_name}</span>}
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 16px', marginTop: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
           <span>DOB {patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString() : 'N/A'}</span>
