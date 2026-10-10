@@ -83,9 +83,11 @@ export default function PatientForm() {
     }
   };
 
+  // Also checked by the server; not every browser enforces the date input's max.
+  const dobInFuture = Boolean(form.date_of_birth) && form.date_of_birth > localDate(new Date());
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (abhaProblem) return;
+    if (abhaProblem || dobInFuture) return;
     if (editing || duplicates) return save(); // duplicates already shown: "Register anyway"
     setSaving(true);
     try {
@@ -118,7 +120,8 @@ export default function PatientForm() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
             <div>
               <label style={label}>Date of birth</label>
-              <input name="date_of_birth" type="date" required max={localDate(new Date())} value={form.date_of_birth} onChange={e => set('date_of_birth', e.target.value)} style={input} />
+              <input name="date_of_birth" type="date" required max={localDate(new Date())} value={form.date_of_birth} onChange={e => set('date_of_birth', e.target.value)} aria-invalid={dobInFuture} style={{ ...input, border: dobInFuture ? '1px solid var(--danger)' : input.border }} />
+              {dobInFuture && <div role="alert" data-testid="dob-error" style={{ color: 'var(--danger)', fontSize: '13px', marginTop: '4px' }}>Date of birth cannot be in the future</div>}
             </div>
             <div>
               <label style={label}>Gender</label>

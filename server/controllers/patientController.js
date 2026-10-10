@@ -8,6 +8,15 @@ const OPTIONAL_FIELDS = ['allergies', 'abha_number'];
 const { normalizeAbha, formatAbha } = require('../utils/abha');
 
 const textOrNull = (v) => (v == null || String(v).trim() === '' ? null : String(v).trim());
+// Date of birth: a real calendar date (YYYY-MM-DD), not after today in the hospital's time zone.
+const { istDate } = require('../utils/marTime');
+function dobError(value) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value ?? ''));
+  const d = m && new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  if (!m || d.getUTCFullYear() !== +m[1] || d.getUTCMonth() !== +m[2] - 1 || d.getUTCDate() !== +m[3]) return 'Date of birth must be a real date (YYYY-MM-DD)';
+  if (`${m[1]}-${m[2]}-${m[3]}` > istDate(new Date())) return 'Date of birth cannot be in the future';
+  return null;
+}
 const isAbhaDuplicate = (e) => e.code === 'ER_DUP_ENTRY' && /uq_patients_abha/.test(e.message);
 async function abhaConflict(res, abha, exceptId = null) {
   const [[other]] = await pool.execute('SELECT patient_id FROM patients WHERE abha_number = ? AND patient_id <> ?', [abha, exceptId ?? 0]);
@@ -82,6 +91,8 @@ exports.getById = async (req, res) => {
 };
 exports.create = async (req, res) => {
   const { name, date_of_birth, gender, blood_group, phone, address, emergency_contact } = req.body;
+  const badDob = dobError(date_of_birth);
+  if (badDob) return res.status(400).json({ success: false, message: badDob });
   const optional = optionalValues(req.body);
   if (optional.error) return res.status(400).json({ success: false, code: 'INVALID_ABHA', message: optional.error });
   const { allergies = null, abha_number = null } = optional.values;
@@ -129,6 +140,8 @@ exports.findDuplicates = async (req, res) => {
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.update = async (req, res) => {
+  const badDob = dobError(req.body?.date_of_birth);
+  if (badDob) return res.status(400).json({ success: false, message: badDob });
   const optional = optionalValues(req.body);
   if (optional.error) return res.status(400).json({ success: false, code: 'INVALID_ABHA', message: optional.error });
   const extra = Object.keys(optional.values).filter(f => OPTIONAL_FIELDS.includes(f));
