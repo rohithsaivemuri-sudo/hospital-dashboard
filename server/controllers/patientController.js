@@ -28,30 +28,46 @@ function optionalValues(body) {
 const { canAccessPatient, patientFilter } = require('../utils/patientAccess');
 const allowed = (req, patientId, scope) => canAccessPatient(req.user, patientId, scope);
 
+// GET /api/patients?q=&page=&limit= — newest first, with a total. q matches the name, the phone
+// number (digits), the MRN (MRN-000033 or 33) or the ABHA number (with or without dashes).
+// search= (name only), phone= and abha_number= are still accepted. Doctors see their care set,
+// nurses their assigned patients; front desk and admin see everyone.
 exports.list = async (req, res) => {
   try {
-    const { search = '', page = 1, limit = 10 } = req.query;
-    const offset = (page - 1) * limit;
-    
-    let query = `SELECT * FROM patients WHERE name LIKE ?`;
-    let queryParams = [`%${search}%`];
+    const { search = '', q = '' } = req.query;
+    const page = req.query.page === undefined ? 1 : Number(req.query.page);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 10));
+    if (!Number.isInteger(page) || page < 1) return res.status(400).json({ success: false, message: 'page must be a positive whole number' });
+
+    const where = ['name LIKE ?'];
+    const params = [`%${search}%`];
     // Optional exact lookups (additive): ?phone= (digits compared) and ?abha_number= (any separators).
-    if (req.query.phone) { query += ` AND REGEXP_REPLACE(phone, '[^0-9]', '') = ?`; queryParams.push(String(req.query.phone).replace(/\D/g, '')); }
+    if (req.query.phone) { where.push(`REGEXP_REPLACE(phone, '[^0-9]', '') = ?`); params.push(String(req.query.phone).replace(/\D/g, '')); }
     if (req.query.abha_number) {
       const abha = normalizeAbha(req.query.abha_number);
       if (abha.error) return res.status(400).json({ success: false, code: 'INVALID_ABHA', message: abha.error });
-      query += ` AND abha_number = ?`; queryParams.push(abha.value);
+      where.push('abha_number = ?'); params.push(abha.value);
     }
-    
-    // Doctors see their care set, nurses their assigned patients; front desk and admin see everyone.
+    const term = String(q).trim();
+    if (term) {
+      const any = ['name LIKE ?']; const anyParams = [`%${term}%`];
+      const digits = term.replace(/\D/g, '');
+      const mrn = term.match(/^(?:MRN-?)?0*(\d{1,10})$/i);
+      if (mrn) { any.push('patient_id = ?'); anyParams.push(Number(mrn[1])); }
+      if (digits.length >= 4) {
+        // Phone: compare the last digits so +91 / spaces / dashes do not matter.
+        any.push(`REGEXP_REPLACE(phone, '[^0-9]', '') LIKE ?`); anyParams.push(`%${digits.slice(-10)}%`);
+        any.push('abha_number LIKE ?'); anyParams.push(`%${digits}%`);
+      }
+      where.push(`(${any.join(' OR ')})`); params.push(...anyParams);
+    }
     const scope = patientFilter(req.user, 'demographics');
-    if (scope) { query += ` AND ${scope.sql}`; queryParams.push(...scope.params); }
-    
-    query += ` LIMIT ? OFFSET ?`;
-    queryParams.push(parseInt(limit), parseInt(offset));
-    
-    const [rows] = await pool.query(query, queryParams);
-    res.json({ success: true, data: rows });
+    if (scope) { where.push(scope.sql); params.push(...scope.params); }
+    const clause = `WHERE ${where.join(' AND ')}`;
+
+    const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM patients ${clause}`, params);
+    const [rows] = await pool.query(`SELECT * FROM patients ${clause} ORDER BY patient_id DESC LIMIT ? OFFSET ?`, [...params, limit, (page - 1) * limit]);
+    res.json({ success: true, data: rows, pagination: { page, limit, total: Number(total), pages: Math.max(1, Math.ceil(Number(total) / limit)) } });
   } catch (error) { res.status(error.status || 500).json({ success: false, message: error.message }); }
 };
 exports.getById = async (req, res) => {
