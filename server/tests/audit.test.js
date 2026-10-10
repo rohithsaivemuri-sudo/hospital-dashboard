@@ -109,7 +109,7 @@ test('prescription create, dispense and stock movements are audited with item id
   await setStock(17, 500);
   const created = await changeRows(() => api('POST', '/prescriptions', { token: doctor.token, body: {
     patient_id: patientId, doctor_id: doctor.user.doctor_id, notes: NOTE_MARKER,
-    items: [16, 17].map(m => ({ medicine_id: m, dosage: '1', frequency: 'Once daily', duration: '2 days', quantity: 2 })),
+    items: [16, 17].map(m => ({ medicine_id: m, dosage: '1 tablet', frequency: 'Once daily', duration: '2 days', quantity: 2 })),
   } }));
   assert.equal(created.rows.length, 1);
   assert.equal(created.rows[0].action, 'CREATE_PRESCRIPTION');
@@ -222,7 +222,7 @@ test('atomicity: if the audit row cannot be written, the data change is rolled b
 
   await setStock(15, 100);
   const rx = await api('POST', '/prescriptions', { token: doctor.token, body: {
-    patient_id: patientId, doctor_id: doctor.user.doctor_id, items: [{ medicine_id: 15, dosage: '1', frequency: 'x', duration: '1', quantity: 3 }],
+    patient_id: patientId, doctor_id: doctor.user.doctor_id, items: [{ medicine_id: 15, dosage: '1 tablet', frequency: 'x', duration: '1', quantity: 3 }],
   } });
   const dispense = await withFailingAuditInsert('DISPENSE_PRESCRIPTION', () => api('POST', `/prescriptions/${rx.body.data.id}/dispense`, { token: pharmacy.token }));
   assert.equal(dispense.status, 500);

@@ -20,6 +20,8 @@ const mrnOf = (id) => `MRN-${String(id).padStart(6, '0')}`;
 
 const CLINICAL_ROLES = ['DOCTOR', 'NURSE'];
 const FREQUENCY_TEXT = { OD: 'Once daily', BD: 'Twice daily', TDS: 'Three times daily', QID: 'Four times daily', Q6H: 'Every 6 hours', Q8H: 'Every 8 hours', STAT: 'Immediately, once', PRN: 'As needed' };
+// The dose is an amount and a unit, saved together ("250 mg") in the dosage field.
+const DOSE_UNITS = ['mg', 'g', 'mcg', 'ml', 'tablet', 'capsule', 'drop', 'puff', 'application', 'unit'];
 const ROUTES = ['ORAL', 'IV', 'IM', 'SC', 'SUBLINGUAL', 'INHALED', 'TOPICAL', 'RECTAL', 'OTHER'];
 // A labelled form field (the label wraps the control, so it is also its accessible name).
 const Field = ({ label, children }) => (
@@ -85,7 +87,8 @@ export default function PatientDetail() {
   const [prescriptionItems, setPrescriptionItems] = useState([]);
   const [prescNotes, setPrescNotes] = useState('');
   const [currentMed, setCurrentMed] = useState('');
-  const [currentDosage, setCurrentDosage] = useState('');
+  const [currentAmount, setCurrentAmount] = useState('');
+  const [currentUnit, setCurrentUnit] = useState('');
   const [currentFreq, setCurrentFreq] = useState('');
   const [currentDuration, setCurrentDuration] = useState('');
   const [currentQty, setCurrentQty] = useState('');
@@ -292,12 +295,13 @@ export default function PatientDetail() {
   // Presc Handlers
   // The medicine row being edited: null when untouched, { error } when incomplete, else { item }.
   const pendingMedItem = () => {
-    if (!currentMed && !currentDosage && !currentFreq && !currentDuration && !currentQty && !currentCode && !currentDays && !currentUnits) return null;
-    if (!currentMed || !currentDosage || !currentFreq || !currentDuration || !currentQty) return { error: "Fill all medicine fields" };
+    if (!currentMed && !currentAmount && !currentUnit && !currentFreq && !currentDuration && !currentQty && !currentCode && !currentDays && !currentUnits) return null;
+    if (!currentMed || !currentAmount || !currentUnit || !currentFreq || !currentDuration || !currentQty) return { error: "Fill all medicine fields" };
+    if (!(Number(currentAmount) > 0)) return { error: 'Enter the dose amount as a number greater than 0' };
     if (currentCode && !['STAT', 'PRN'].includes(currentCode) && !currentDays) return { error: 'Enter the number of days for a scheduled frequency' };
     const medObj = medicines.find(m => m.medicine_id == currentMed);
     return { item: {
-      medicine_id: currentMed, name: medObj?.name || 'Unknown', dosage: currentDosage, frequency: currentFreq, duration: currentDuration, quantity: parseInt(currentQty),
+      medicine_id: currentMed, name: medObj?.name || 'Unknown', dosage: `${currentAmount} ${currentUnit}`, frequency: currentFreq, duration: currentDuration, quantity: parseInt(currentQty),
       ...(currentCode ? { frequency_code: currentCode } : {}),
       ...(currentDays ? { duration_days: parseInt(currentDays) } : {}),
       ...(currentRoute ? { route: currentRoute } : {}),
@@ -305,7 +309,7 @@ export default function PatientDetail() {
     } };
   };
   const clearMedRow = () => {
-    setCurrentMed(''); setCurrentDosage(''); setCurrentFreq(''); setCurrentDuration(''); setCurrentQty('');
+    setCurrentMed(''); setCurrentAmount(''); setCurrentUnit(''); setCurrentFreq(''); setCurrentDuration(''); setCurrentQty('');
     setCurrentCode(''); setCurrentDays(''); setCurrentRoute('ORAL'); setCurrentUnits('');
   };
   const handleAddMedItem = () => {
@@ -719,7 +723,10 @@ export default function PatientDetail() {
             <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                 <Field label="Medicine"><select name="medicine_id" value={currentMed} onChange={e => setCurrentMed(e.target.value)} style={{ padding: '8px' }}><option value="">-- Select Medicine --</option>{medicines.map(m => (<option key={m.medicine_id} value={m.medicine_id}>{m.name} (Stock: {m.stock_quantity})</option>))}</select></Field>
-                <Field label="Dose"><input type="text" name="dosage" placeholder="e.g. 500mg" value={currentDosage} onChange={e => setCurrentDosage(e.target.value)} style={{ padding: '8px' }} /></Field>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <Field label="Dose amount"><input type="number" min="0" step="any" name="dose_amount" placeholder="e.g. 500" value={currentAmount} onChange={e => setCurrentAmount(e.target.value)} style={{ padding: '8px' }} /></Field>
+                  <Field label="Unit"><select name="dose_unit" value={currentUnit} onChange={e => setCurrentUnit(e.target.value)} style={{ padding: '8px' }}><option value="">Unit…</option>{DOSE_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select></Field>
+                </div>
                 <Field label="Frequency (as written)"><input type="text" name="frequency" placeholder="e.g. Twice daily" value={currentFreq} onChange={e => setCurrentFreq(e.target.value)} style={{ padding: '8px' }} /></Field>
                 <Field label="Duration (as written)"><input type="text" name="duration" placeholder="e.g. 5 days" value={currentDuration} onChange={e => setCurrentDuration(e.target.value)} style={{ padding: '8px' }} /></Field>
                 <Field label="Total quantity"><input type="number" min="1" name="quantity" placeholder="e.g. 10" value={currentQty} onChange={e => setCurrentQty(e.target.value)} style={{ padding: '8px' }} /></Field>
@@ -741,7 +748,7 @@ export default function PatientDetail() {
             </div>
             {prescriptionItems.length > 0 && (
               <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px', fontSize: '14px' }}>
-                <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}><th style={{ padding: '8px' }}>Medicine</th><th style={{ padding: '8px' }}>Dosage</th><th style={{ padding: '8px' }}>Freq</th><th style={{ padding: '8px' }}>Dur</th><th style={{ padding: '8px' }}>Qty</th><th style={{ padding: '8px' }}>Action</th></tr></thead>
+                <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}><th style={{ padding: '8px' }}>Medicine</th><th style={{ padding: '8px' }}>Dose</th><th style={{ padding: '8px' }}>Frequency</th><th style={{ padding: '8px' }}>Duration</th><th style={{ padding: '8px' }}>Quantity</th><th style={{ padding: '8px' }}>Action</th></tr></thead>
                 <tbody>
                   {prescriptionItems.map((item, idx) => (
                     <tr key={idx}>

@@ -337,8 +337,10 @@ export default function PharmacyDashboard() {
               <thead>
                 <tr style={{ background: 'var(--bg-primary)' }}>
                   <th style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>Medicine</th>
-                  <th style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>Dosage</th>
-                  <th style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>Req Qty</th>
+                  <th style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>Dose</th>
+                  <th style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>Frequency</th>
+                  <th style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>Duration</th>
+                  <th style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>Quantity</th>
                   <th style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>Stock</th>
                 </tr>
               </thead>
@@ -346,7 +348,9 @@ export default function PharmacyDashboard() {
                 {detail.items.map(item => (
                   <tr key={item.item_id}>
                     <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{item.medicine_name}</td>
-                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{item.dosage} {item.frequency}</td>
+                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{item.dosage}</td>
+                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{item.frequency}</td>
+                    <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{item.duration}</td>
                     <td style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>{item.quantity}</td>
                     <td style={{ padding: '8px', borderBottom: '1px solid var(--border)', color: item.stock_quantity < item.quantity ? 'var(--danger)' : 'var(--success)', fontWeight: 'bold' }}>
                       {item.stock_quantity}

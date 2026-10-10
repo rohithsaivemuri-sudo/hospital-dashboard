@@ -41,7 +41,7 @@ async function threeLots() {
 async function prescribe(items) {
   const res = await api('POST', '/prescriptions', { token: doctor.token, body: {
     patient_id: patientId, doctor_id: doctor.user.doctor_id,
-    items: items.map(([medicine_id, quantity]) => ({ medicine_id, dosage: '1', frequency: 'x', duration: '1', quantity })),
+    items: items.map(([medicine_id, quantity]) => ({ medicine_id, dosage: '1 tablet', frequency: 'x', duration: '1', quantity })),
   } });
   assert.equal(res.status, 201, JSON.stringify(res.body));
   return res.body.data.id;

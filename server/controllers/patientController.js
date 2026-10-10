@@ -163,7 +163,7 @@ exports.getHistory = async (req, res) => {
     const [appointments] = await pool.execute('SELECT * FROM appointments WHERE patient_id = ? ORDER BY appointment_date DESC', [patient_id]);
     const [prescriptions] = await pool.execute(`
       SELECT p.*, 
-        (SELECT GROUP_CONCAT(CONCAT(m.name, ' — ', pi.dosage, ' — ', pi.frequency, ' — ', pi.duration, ' — Qty ', pi.quantity) SEPARATOR '\n')
+        (SELECT GROUP_CONCAT(CONCAT(m.name, ' · Dose: ', pi.dosage, ' · Frequency: ', pi.frequency, ' · Duration: ', pi.duration, ' · Quantity: ', pi.quantity) SEPARATOR '\n')
          FROM prescription_items pi
          JOIN medicines m ON pi.medicine_id = m.medicine_id
          WHERE pi.prescription_id = p.prescription_id

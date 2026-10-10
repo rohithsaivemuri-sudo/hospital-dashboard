@@ -22,7 +22,11 @@ async function openDialog() {
 }
 async function fillRow({ medicine, dosage, frequency, duration, quantity }) {
   await selectOption(page, 'select[name="medicine_id"]', String(medicine));
-  if (dosage) await page.type('input[name="dosage"]', dosage);
+  if (dosage) { // "500 mg" -> amount and unit
+    const [amount, unit] = dosage.split(' ');
+    await page.type('input[name="dose_amount"]', amount);
+    if (unit) await page.select('select[name="dose_unit"]', unit);
+  }
   if (frequency) await page.type('input[name="frequency"]', frequency);
   if (duration) await page.type('input[name="duration"]', duration);
   if (quantity) await page.type('input[name="quantity"]', String(quantity));
@@ -36,19 +40,19 @@ test('"+ Add Medicine" is readable; an added row and a filled-in but not added r
   await openDialog();
   const add = await page.evaluate(() => window.__readability([...document.querySelectorAll('button')].find(b => b.innerText.trim() === '+ Add Medicine')));
   assert.ok(add.ok, `+ Add Medicine: ${add.reason}`);
-  await fillRow({ medicine: 18, dosage: '1 tab', frequency: 'Once daily', duration: '3 days', quantity: 3 });
+  await fillRow({ medicine: 18, dosage: '1 tablet', frequency: 'Once daily', duration: '3 days', quantity: 3 });
   await clickButton(page, '+ Add Medicine');
   await page.waitForFunction(() => [...document.querySelectorAll('td')].some(td => td.innerText === 'Once daily'));
   await fillRow({ medicine: 19, dosage: '500 mg', frequency: 'Twice daily', duration: '5 days', quantity: 10 });
   const [res] = await submit();
   assert.equal(res.status(), 201);
   const items = JSON.parse(res.request().postData()).items;
-  assert.deepEqual(items.map(i => [Number(i.medicine_id), i.dosage, i.quantity]), [[18, '1 tab', 3], [19, '500 mg', 10]]);
+  assert.deepEqual(items.map(i => [Number(i.medicine_id), i.dosage, i.quantity]), [[18, '1 tablet', 3], [19, '500 mg', 10]]);
 });
 
 test('a single filled-in row is prescribed without pressing "+ Add Medicine"', async () => {
   await openDialog();
-  await fillRow({ medicine: 18, dosage: '2 tab', frequency: 'At night', duration: '2 days', quantity: 4 });
+  await fillRow({ medicine: 18, dosage: '2 tablet', frequency: 'At night', duration: '2 days', quantity: 4 });
   const [res] = await submit();
   assert.equal(res.status(), 201);
   assert.equal(JSON.parse(res.request().postData()).items.length, 1);
@@ -57,7 +61,7 @@ test('a single filled-in row is prescribed without pressing "+ Add Medicine"', a
 
 test('a half-filled row is pointed out and nothing is sent', async () => {
   await openDialog();
-  await fillRow({ medicine: 18, dosage: '1 tab' });
+  await fillRow({ medicine: 18, dosage: '1 tablet' });
   let sent = false;
   const watch = (r) => { if (r.url().endsWith('/api/prescriptions') && r.method() === 'POST') sent = true; };
   page.on('request', watch);
@@ -80,9 +84,9 @@ test('every Create Prescription field is labelled', async () => {
       return { name: el.name, label: text, visible: !!r && r.width > 0 && r.height > 0 };
     });
   });
-  assert.deepEqual(fields.map(f => f.name), ['medicine_id', 'dosage', 'frequency', 'duration', 'quantity', 'frequency_code', 'duration_days', 'route', 'units_per_dose', 'prescription_notes']);
+  assert.deepEqual(fields.map(f => f.name), ['medicine_id', 'dose_amount', 'dose_unit', 'frequency', 'duration', 'quantity', 'frequency_code', 'duration_days', 'route', 'units_per_dose', 'prescription_notes']);
   for (const f of fields) assert.ok(f.label && f.visible, `${f.name} has no visible label`);
-  assert.deepEqual(fields.map(f => f.label), ['Medicine', 'Dose', 'Frequency (as written)', 'Duration (as written)', 'Total quantity',
+  assert.deepEqual(fields.map(f => f.label), ['Medicine', 'Dose amount', 'Unit', 'Frequency (as written)', 'Duration (as written)', 'Total quantity',
     'Frequency code (ward schedule, optional)', 'Days (ward schedule)', 'Route', 'Units per dose', 'Notes']);
 });
 

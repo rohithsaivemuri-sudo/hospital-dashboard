@@ -269,7 +269,7 @@ test('records made during an encounter are linked to it; notes are locked once i
 
   const consult = await api('POST', '/consultations', { token: doctor.token, body: { appointment_id: appointmentId, patient_id: 1, doctor_id: doctorId, symptoms: 's', diagnosis: 'd' } });
   const order = await api('POST', '/lab/orders', { token: doctor.token, body: { patient_id: 1, doctor_id: doctorId, tests: [{ test_id: 3 }], notes: '' } });
-  const rx = await api('POST', '/prescriptions', { token: doctor.token, body: { patient_id: 1, doctor_id: doctorId, items: [{ medicine_id: 2, dosage: '1', frequency: 'x', duration: '1', quantity: 1 }] } });
+  const rx = await api('POST', '/prescriptions', { token: doctor.token, body: { patient_id: 1, doctor_id: doctorId, items: [{ medicine_id: 2, dosage: '1 tablet', frequency: 'x', duration: '1', quantity: 1 }] } });
   const surg = await api('POST', '/surgery', { token: doctor.token, body: { patient_id: 1, doctor_id: doctorId, procedure_name: 'Biopsy', diagnosis: 'd', requested_date: '2032-07-01' } });
   for (const r of [consult, order, rx, surg]) assert.equal(r.status, 201, JSON.stringify(r.body));
 

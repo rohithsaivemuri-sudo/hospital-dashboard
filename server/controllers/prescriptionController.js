@@ -7,6 +7,8 @@ const { FREQUENCY_CODES, ROUTES } = require('../utils/marTime');
 // Optional structured order fields per item (free-text dosage/frequency/duration stay required).
 function structuredFields(item, index) {
   const bad = (msg) => Object.assign(new Error(`Item ${index + 1}: ${msg}`), { status: 400 });
+  // The dose is saved with its unit ("250 mg", "1 tablet"); a bare number is ambiguous.
+  if (/^\s*\d+(\.\d+)?\s*$/.test(String(item.dosage ?? ''))) throw bad(`the dose needs a unit, e.g. "${String(item.dosage).trim()} mg" or "${String(item.dosage).trim()} tablet"`);
   const code = item.frequency_code || null;
   if (code && !FREQUENCY_CODES.includes(code)) throw bad(`frequency_code must be one of ${FREQUENCY_CODES.join(', ')}`);
   const route = item.route || null;
