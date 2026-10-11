@@ -3,8 +3,13 @@
   "version": "1.0.0",
   "scripts": {
     "install:all": "cd server && npm install && cd ../client && npm install",
-    "db:init": "export MYSQL_PWD='MyNewPassword123!' && mysql -u root -e 'DROP DATABASE IF EXISTS hospital_db; CREATE DATABASE hospital_db;' && mysql -u root hospital_db < database/schema.sql && mysql -u root hospital_db < database/triggers.sql && mysql -u root hospital_db < database/seed.sql && mysql -u root hospital_db < database/views.sql && mysql -u root hospital_db < database/procedures.sql && mysql -u root hospital_db < database/indexes.sql",
-    "start": "cd server && npm start & cd client && npm run dev"
+    "start": "cd server && npm start & cd client && npm run dev",
+    "test:ui": "node --test --test-concurrency=1 --test-global-setup=tests/ui/global-setup.js \"tests/ui/**/*.ui.test.js\"",
+    "build": "npm --prefix client run build",
+    "start:prod": "npm run build && cd server && NODE_ENV=production CLIENT_URL=\"${CLIENT_URL_PROD:-http://localhost:5000}\" node server.js",
+    "demo:reset": "npm --prefix server run demo:reset",
+    "demo:start": "npm run build && cd server && NODE_ENV=production DB_NAME=\"${DEMO_DB_NAME:-hospital_demo}\" CLIENT_URL=\"${CLIENT_URL_PROD:-http://localhost:5000}\" node server.js",
+    "accounts": "npm --prefix server run accounts --"
   },
   "dependencies": {
     "puppeteer": "^25.13.0"

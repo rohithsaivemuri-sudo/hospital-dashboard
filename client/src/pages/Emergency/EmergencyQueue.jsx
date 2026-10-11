@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { getEmergencyQueue, allocateEmergency } from '../../services/api';
+import { Link } from 'react-router-dom';
+import { getEmergencyQueue, allocateEmergency, linkEmergencyPatient, getPatients } from '../../services/api';
+import { AuthContext } from '../../context/AuthContext';
 import { SocketContext } from '../../context/SocketContext';
 import toast from 'react-hot-toast';
 
@@ -9,6 +11,11 @@ export default function EmergencyQueue() {
   const [error, setError] = useState(null);
   const [processingId, setProcessingId] = useState(null);
   const socket = useContext(SocketContext);
+  const { user } = useContext(AuthContext);
+  // Linking a registered patient to a case that arrived without one (allocation needs a patient).
+  const [linking, setLinking] = useState(null); // emergency_id being linked
+  const [search, setSearch] = useState('');
+  const [matches, setMatches] = useState(null);
 
   const fetchQueue = async () => {
     try {
@@ -35,15 +42,18 @@ export default function EmergencyQueue() {
       fetchQueue();
     };
 
-    socket.on('emergency:queue_updated', handleQueueUpdate);
-    socket.on('emergency:new', () => {
+    const handleNew = () => {
       toast.error('New Emergency Patient Arrived!', { icon: '🚨' });
       fetchQueue();
-    });
+    };
+    const QUEUE_EVENTS = ['emergency:allocated', 'emergency:no-bed', 'emergency:no-doctor', 'emergency:queue_updated'];
+
+    socket.on('emergency:new', handleNew);
+    QUEUE_EVENTS.forEach(e => socket.on(e, handleQueueUpdate));
 
     return () => {
-      socket.off('emergency:queue_updated', handleQueueUpdate);
-      socket.off('emergency:new');
+      socket.off('emergency:new', handleNew);
+      QUEUE_EVENTS.forEach(e => socket.off(e, handleQueueUpdate));
     };
   }, [socket]);
 
@@ -58,6 +68,22 @@ export default function EmergencyQueue() {
     } finally {
       setProcessingId(null);
     }
+  };
+
+  const findPatients = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await getPatients({ search, limit: 10 });
+      setMatches(res.data.data || []);
+    } catch (err) { toast.error(err.response?.data?.message || 'Search failed'); }
+  };
+  const link = async (emergencyId, patient) => {
+    try {
+      await linkEmergencyPatient(emergencyId, patient.patient_id);
+      toast.success(`${patient.name} linked to the case`);
+      setLinking(null); setMatches(null); setSearch('');
+      fetchQueue();
+    } catch (err) { toast.error(err.response?.data?.message || 'Could not link the patient'); }
   };
 
   const getSeverityBadge = (level) => {
@@ -109,7 +135,34 @@ export default function EmergencyQueue() {
             ) : (
               queue.map((patient) => (
                 <tr key={patient.emergency_id} style={{ borderBottom: '1px solid var(--border)' }}>
-                  <td style={{ padding: '16px 24px', fontWeight: 500 }}>{patient.patient_name || 'Unknown Patient'}</td>
+                  <td data-testid="emergency-patient" style={{ padding: '16px 24px', fontWeight: 500 }}>
+                    {patient.patient_id ? patient.patient_name : (
+                      <div>
+                        <span style={{ color: 'var(--danger)' }}>Not registered</span>
+                        {linking === patient.emergency_id ? (
+                          <div style={{ marginTop: '8px', fontWeight: 'normal' }}>
+                            <form onSubmit={findPatients} style={{ display: 'flex', gap: '6px' }}>
+                              <input name="link-search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Patient name" style={{ padding: '6px', border: '1px solid var(--border)', borderRadius: '4px' }} />
+                              <button type="submit" style={{ padding: '6px 10px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Find</button>
+                            </form>
+                            {matches && (matches.length === 0 ? <div style={{ fontSize: '13px', marginTop: '6px' }}>No matching patients.</div> : (
+                              <ul style={{ listStyle: 'none', padding: 0, margin: '6px 0 0' }}>
+                                {matches.map(m => (
+                                  <li key={m.patient_id} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '13px', padding: '2px 0' }}>
+                                    {m.name} · {m.gender} · {m.date_of_birth ? new Date(m.date_of_birth).toLocaleDateString() : '—'}
+                                    <button type="button" onClick={() => link(patient.emergency_id, m)} style={{ padding: '2px 8px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Link</button>
+                                  </li>
+                                ))}
+                              </ul>
+                            ))}
+                            {['ADMIN', 'RECEPTIONIST'].includes(user?.role) && <Link to="/patients/new" style={{ fontSize: '13px' }}>Register a new patient</Link>}
+                          </div>
+                        ) : (
+                          <button type="button" onClick={() => { setLinking(patient.emergency_id); setMatches(null); setSearch(''); }} style={{ marginLeft: '8px', padding: '4px 10px', background: 'var(--secondary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Link patient</button>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{patient.symptoms || 'None specified'}</td>
                   <td style={{ padding: '16px 24px' }}>{getSeverityBadge(patient.severity)}</td>
                   <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>
@@ -118,7 +171,8 @@ export default function EmergencyQueue() {
                   <td style={{ padding: '16px 24px' }}>
                     <button
                       onClick={() => handleAllocate(patient.emergency_id)}
-                      disabled={processingId === patient.emergency_id}
+                      disabled={processingId === patient.emergency_id || !patient.patient_id}
+                      title={patient.patient_id ? undefined : 'Link a registered patient first'}
                       style={{
                         padding: '8px 16px',
                         backgroundColor: 'var(--primary)',

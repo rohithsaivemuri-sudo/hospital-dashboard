@@ -68,11 +68,17 @@ We have unified the startup process for convenience. From the root directory:
 npm run install:all
 ```
 
-### 2. Database Initialization
-This will automatically rebuild the entire schema, triggers, seed data, views, and procedures. (Ensure your local MySQL `root` password matches the script or update `package.json` accordingly).
+### 2. Database
+Settings live in `server/.env` (copy `server/.env.example`). The app runs as a restricted MySQL
+account; migrations and backups use a separate admin account. To set up a new, empty database:
 ```bash
-npm run db:init
+mysql -u root -p -e "CREATE DATABASE hospital_db"
+mysql -u root -p < docs/mysql-app-user.sql     # prints the app account's password once
+npm --prefix server run db:migrate              # builds the schema from database/migrations
+npm run accounts -- create staff.csv            # first accounts, random passwords printed once
 ```
+For a database full of sample data to explore every role, use the demo instead: `npm run demo:reset`
+(it only ever touches a database whose name ends in `_demo`). Full details: [docs/deploy.md](docs/deploy.md).
 
 ### 3. Start the Application
 This will concurrently start both the Node.js backend (port 5000) and the Vite frontend (port 5173).
@@ -81,11 +87,10 @@ npm run start
 ```
 
 ## 🔒 Demo Credentials
-The application is pre-seeded with the following roles. (All passwords are `password123`).
-- **Admin**: `admin`
-- **Doctor**: `dr.smith`
-- **Receptionist**: `reception1`
-- **Nurse**: `nurse1`
+`npm run demo:reset` rebuilds the `hospital_demo` database and prints a new random password for every
+demo account (`admin`, `dr.smith`, `nurse1`, `reception1`, `lab_staff`, `pharmacy_staff`, ...) once;
+start it with `npm run demo:start`. The old shared password `password123` exists only in a local
+development database; the app refuses to start in production or demo mode while any account has it.
 
 ## 🚦 Concurrency Demo (The "Last ICU Bed" Test)
 To prove the MySQL concurrency logic, we have a specialized test script that simultaneously fires two identical `CRITICAL` emergency API requests fighting for a single available ICU bed.

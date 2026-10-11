@@ -1,50 +1,103 @@
 const pool = require('../config/db');
+const { withTransaction, changedFields, logAccess } = require('../utils/audit');
 
-const checkDoctorAuth = async (req, patient_id) => {
-  if (req.user.role !== 'DOCTOR') return true;
-  const doctorId = req.user.doctor_id;
-  const [rows] = await pool.execute(`
-    SELECT 1 FROM (
-      SELECT patient_id FROM appointments WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM admissions WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM consultations WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM lab_orders WHERE doctor_id = ? AND patient_id = ?
-      UNION SELECT patient_id FROM prescriptions WHERE doctor_id = ? AND patient_id = ?
-    ) as auth LIMIT 1
-  `, [doctorId, patient_id, doctorId, patient_id, doctorId, patient_id, doctorId, patient_id, doctorId, patient_id]);
-  return rows.length > 0;
-};
+const PATIENT_FIELDS = ['name', 'date_of_birth', 'gender', 'blood_group', 'phone', 'address', 'emergency_contact'];
+// Optional fields added later (ABHA, allergies): only written when the request includes them, so older
+// callers that send the original seven fields never clear them.
+const OPTIONAL_FIELDS = ['allergies', 'abha_number'];
+const { normalizeAbha, formatAbha } = require('../utils/abha');
 
+const textOrNull = (v) => (v == null || String(v).trim() === '' ? null : String(v).trim());
+// Date of birth: a real calendar date (YYYY-MM-DD), not after today in the hospital's time zone.
+const { istDate } = require('../utils/marTime');
+function dobError(value) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value ?? ''));
+  const d = m && new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  if (!m || d.getUTCFullYear() !== +m[1] || d.getUTCMonth() !== +m[2] - 1 || d.getUTCDate() !== +m[3]) return 'Date of birth must be a real date (YYYY-MM-DD)';
+  if (`${m[1]}-${m[2]}-${m[3]}` > istDate(new Date())) return 'Date of birth cannot be in the future';
+  return null;
+}
+// The birth date to store: the date given (dob_estimated as sent, default not estimated), or for a
+// patient who does not know it, an age in years -> today (IST) that many years back, estimated.
+function birthFrom(body = {}) {
+  if (body.age_years !== undefined && body.age_years !== null && body.age_years !== '') {
+    const n = Number(body.age_years);
+    if (!Number.isInteger(n) || n < 1 || n > 130) return { error: 'Age in years must be a whole number from 1 to 130' };
+    const [y, m, d] = istDate(new Date()).split('-').map(Number);
+    const t = new Date(Date.UTC(y - n, m - 1, d));
+    if (t.getUTCMonth() !== m - 1) t.setUTCDate(0); // 29 Feb -> 28 Feb
+    return { date_of_birth: t.toISOString().slice(0, 10), dob_estimated: 1 };
+  }
+  if (body.date_of_birth === undefined || body.date_of_birth === null || body.date_of_birth === '') return { error: 'Enter a date of birth or an age in years' };
+  const error = dobError(body.date_of_birth);
+  if (error) return { error };
+  return { date_of_birth: String(body.date_of_birth).slice(0, 10), dob_estimated: [true, 1, '1', 'true'].includes(body.dob_estimated) ? 1 : 0 };
+}
+const isAbhaDuplicate = (e) => e.code === 'ER_DUP_ENTRY' && /uq_patients_abha/.test(e.message);
+async function abhaConflict(res, abha, exceptId = null) {
+  const [[other]] = await pool.execute('SELECT patient_id FROM patients WHERE abha_number = ? AND patient_id <> ?', [abha, exceptId ?? 0]);
+  return res.status(409).json({ success: false, code: 'DUPLICATE_ABHA', message: `ABHA number ${formatAbha(abha)} is already registered to another patient`, existing_patient_id: other?.patient_id ?? null });
+}
+// Optional fields present in the body, validated: { values: {field: value}, error }.
+function optionalValues(body) {
+  const values = {};
+  if ('allergies' in body) values.allergies = textOrNull(body.allergies);
+  if ('abha_number' in body) {
+    const abha = normalizeAbha(body.abha_number);
+    if (abha.error) return { error: abha.error };
+    values.abha_number = abha.value;
+  }
+  return { values };
+}
+
+const { canAccessPatient, patientFilter } = require('../utils/patientAccess');
+const allowed = (req, patientId, scope) => canAccessPatient(req.user, patientId, scope);
+
+// GET /api/patients?q=&page=&limit= — newest first, with a total. q matches the name, the phone
+// number (digits), the MRN (MRN-000033 or 33) or the ABHA number (with or without dashes).
+// search= (name only), phone= and abha_number= are still accepted. Doctors see their care set,
+// nurses their assigned patients; front desk and admin see everyone.
 exports.list = async (req, res) => {
   try {
-    const { search = '', page = 1, limit = 10 } = req.query;
-    const offset = (page - 1) * limit;
-    
-    let query = `SELECT * FROM patients WHERE name LIKE ?`;
-    let queryParams = [`%${search}%`];
-    
-    if (req.user.role === 'DOCTOR') {
-      const doctorId = req.user.doctor_id;
-      query += ` AND patient_id IN (
-        SELECT patient_id FROM appointments WHERE doctor_id = ?
-        UNION SELECT patient_id FROM admissions WHERE doctor_id = ?
-        UNION SELECT patient_id FROM consultations WHERE doctor_id = ?
-        UNION SELECT patient_id FROM lab_orders WHERE doctor_id = ?
-        UNION SELECT patient_id FROM prescriptions WHERE doctor_id = ?
-      )`;
-      queryParams.push(doctorId, doctorId, doctorId, doctorId, doctorId);
+    const { search = '', q = '' } = req.query;
+    const page = req.query.page === undefined ? 1 : Number(req.query.page);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 10));
+    if (!Number.isInteger(page) || page < 1) return res.status(400).json({ success: false, message: 'page must be a positive whole number' });
+
+    const where = ['name LIKE ?'];
+    const params = [`%${search}%`];
+    // Optional exact lookups (additive): ?phone= (digits compared) and ?abha_number= (any separators).
+    if (req.query.phone) { where.push(`REGEXP_REPLACE(phone, '[^0-9]', '') = ?`); params.push(String(req.query.phone).replace(/\D/g, '')); }
+    if (req.query.abha_number) {
+      const abha = normalizeAbha(req.query.abha_number);
+      if (abha.error) return res.status(400).json({ success: false, code: 'INVALID_ABHA', message: abha.error });
+      where.push('abha_number = ?'); params.push(abha.value);
     }
-    
-    query += ` LIMIT ? OFFSET ?`;
-    queryParams.push(parseInt(limit), parseInt(offset));
-    
-    const [rows] = await pool.execute(query, queryParams);
-    res.json({ success: true, data: rows });
-  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+    const term = String(q).trim();
+    if (term) {
+      const any = ['name LIKE ?']; const anyParams = [`%${term}%`];
+      const digits = term.replace(/\D/g, '');
+      const mrn = term.match(/^(?:MRN-?)?0*(\d{1,10})$/i);
+      if (mrn) { any.push('patient_id = ?'); anyParams.push(Number(mrn[1])); }
+      if (digits.length >= 4) {
+        // Phone: compare the last digits so +91 / spaces / dashes do not matter.
+        any.push(`REGEXP_REPLACE(phone, '[^0-9]', '') LIKE ?`); anyParams.push(`%${digits.slice(-10)}%`);
+        any.push('abha_number LIKE ?'); anyParams.push(`%${digits}%`);
+      }
+      where.push(`(${any.join(' OR ')})`); params.push(...anyParams);
+    }
+    const scope = patientFilter(req.user, 'demographics');
+    if (scope) { where.push(scope.sql); params.push(...scope.params); }
+    const clause = `WHERE ${where.join(' AND ')}`;
+
+    const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM patients ${clause}`, params);
+    const [rows] = await pool.query(`SELECT * FROM patients ${clause} ORDER BY patient_id DESC LIMIT ? OFFSET ?`, [...params, limit, (page - 1) * limit]);
+    res.json({ success: true, data: rows, pagination: { page, limit, total: Number(total), pages: Math.max(1, Math.ceil(Number(total) / limit)) } });
+  } catch (error) { res.status(error.status || 500).json({ success: false, message: error.message }); }
 };
 exports.getById = async (req, res) => {
   try {
-    const auth = await checkDoctorAuth(req, req.params.id);
+    const auth = await allowed(req, req.params.id, 'demographics');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
     const [rows] = await pool.execute('SELECT * FROM patients WHERE patient_id = ?', [req.params.id]);
@@ -53,30 +106,95 @@ exports.getById = async (req, res) => {
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.create = async (req, res) => {
+  const { name, gender, blood_group, phone, address, emergency_contact } = req.body;
+  const birth = birthFrom(req.body);
+  if (birth.error) return res.status(400).json({ success: false, message: birth.error });
+  const { date_of_birth, dob_estimated } = birth;
+  const optional = optionalValues(req.body);
+  if (optional.error) return res.status(400).json({ success: false, code: 'INVALID_ABHA', message: optional.error });
+  const { allergies = null, abha_number = null } = optional.values;
   try {
-    const { name, date_of_birth, gender, blood_group, phone, address, emergency_contact } = req.body;
-    const [result] = await pool.execute('INSERT INTO patients (name, date_of_birth, gender, blood_group, phone, address, emergency_contact) VALUES (?, ?, ?, ?, ?, ?, ?)', [name, date_of_birth, gender, blood_group, phone, address, emergency_contact]);
-    res.status(201).json({ success: true, data: { id: result.insertId } });
+    const id = await withTransaction(req, async (connection, audit) => {
+      const [result] = await connection.execute('INSERT INTO patients (name, date_of_birth, dob_estimated, gender, blood_group, phone, address, emergency_contact, allergies, abha_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [name, date_of_birth, dob_estimated, gender, blood_group, phone, address, emergency_contact, allergies, abha_number]);
+      // Flags only: never the allergy text or the ABHA number itself.
+      await audit({ action: 'CREATE_PATIENT', entityType: 'patient', entityId: result.insertId, patientId: result.insertId, details: { abha_recorded: !!abha_number, allergies_recorded: !!allergies } });
+      return result.insertId;
+    });
+    res.status(201).json({ success: true, data: { id } });
+  } catch (error) {
+    if (isAbhaDuplicate(error)) return abhaConflict(res, abha_number);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Registration duplicate check (POST so names and phone numbers stay out of URLs and proxy logs).
+// Matches on the same ABHA, the same phone (digits compared), or the same name and date of birth.
+exports.findDuplicates = async (req, res) => {
+  try {
+    const { name, date_of_birth, phone } = req.body || {};
+    const abha = normalizeAbha(req.body?.abha_number);
+    if (abha.error) return res.status(400).json({ success: false, code: 'INVALID_ABHA', message: abha.error });
+    const phoneDigits = String(phone ?? '').replace(/\D/g, '');
+    const clauses = []; const params = [];
+    if (abha.value) { clauses.push('abha_number = ?'); params.push(abha.value); }
+    if (phoneDigits) { clauses.push(`REGEXP_REPLACE(phone, '[^0-9]', '') = ?`); params.push(phoneDigits); }
+    if (textOrNull(name) && date_of_birth) { clauses.push('(name = ? AND date_of_birth = ?)'); params.push(textOrNull(name), date_of_birth); }
+    if (!clauses.length) return res.json({ success: true, data: [] });
+    const [rows] = await pool.execute(
+      `SELECT patient_id, name, date_of_birth, gender, phone, abha_number FROM patients WHERE ${clauses.join(' OR ')} ORDER BY patient_id LIMIT 20`, params);
+    const data = rows.map(r => {
+      const matched_on = [
+        abha.value && r.abha_number === abha.value && 'abha_number',
+        phoneDigits && String(r.phone ?? '').replace(/\D/g, '') === phoneDigits && 'phone',
+      ].filter(Boolean);
+      // Anything else matched the name clause (SQL compares case- and accent-insensitively).
+      const dob = r.date_of_birth instanceof Date ? `${r.date_of_birth.getFullYear()}-${String(r.date_of_birth.getMonth() + 1).padStart(2, '0')}-${String(r.date_of_birth.getDate()).padStart(2, '0')}` : String(r.date_of_birth);
+      if (!matched_on.length || (textOrNull(name) && dob === String(date_of_birth).slice(0, 10) && r.name.toLowerCase() === textOrNull(name).toLowerCase())) matched_on.push('name_and_date_of_birth');
+      return { ...r, matched_on: [...new Set(matched_on)] };
+    });
+    logAccess(req, { action: 'CHECK_DUPLICATE_PATIENT', statusCode: 200, entityType: 'patients', details: { matches: data.length } });
+    res.json({ success: true, data });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.update = async (req, res) => {
+  const birth = birthFrom(req.body);
+  if (birth.error) return res.status(400).json({ success: false, message: birth.error });
+  const optional = optionalValues(req.body);
+  if (optional.error) return res.status(400).json({ success: false, code: 'INVALID_ABHA', message: optional.error });
+  const extra = Object.keys(optional.values).filter(f => OPTIONAL_FIELDS.includes(f));
   try {
-    const { name, date_of_birth, gender, blood_group, phone, address, emergency_contact } = req.body;
-    await pool.execute('UPDATE patients SET name = ?, date_of_birth = ?, gender = ?, blood_group = ?, phone = ?, address = ?, emergency_contact = ? WHERE patient_id = ?', [name, date_of_birth, gender, blood_group, phone, address, emergency_contact, req.params.id]);
+    const { name, gender, blood_group, phone, address, emergency_contact } = req.body;
+    const { date_of_birth, dob_estimated } = birth;
+    await withTransaction(req, async (connection, audit) => {
+      const [[before]] = await connection.execute('SELECT * FROM patients WHERE patient_id = ? FOR UPDATE', [req.params.id]);
+      await connection.execute(`UPDATE patients SET name = ?, date_of_birth = ?, dob_estimated = ?, gender = ?, blood_group = ?, phone = ?, address = ?, emergency_contact = ?${extra.map(f => `, ${f} = ?`).join('')} WHERE patient_id = ?`,
+        [name, date_of_birth, dob_estimated, gender, blood_group, phone, address, emergency_contact, ...extra.map(f => optional.values[f]), req.params.id]);
+      const changed = before ? changedFields(before, { ...req.body, date_of_birth, dob_estimated, ...optional.values }, [...PATIENT_FIELDS, 'dob_estimated', ...extra]) : [];
+      if (changed.length) await audit({ action: 'UPDATE_PATIENT', entityType: 'patient', entityId: before.patient_id, patientId: before.patient_id, details: { changed_fields: changed } });
+    });
     res.json({ success: true, message: 'Updated successfully' });
-  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+  } catch (error) {
+    if (isAbhaDuplicate(error)) return abhaConflict(res, optional.values.abha_number, Number(req.params.id));
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
+// A patient's admissions with the bed code, ward and admitting doctor named.
+const ADMISSIONS_SQL = `
+  SELECT a.*, b.bed_number, w.name AS ward_name, d.name AS doctor_name
+  FROM admissions a LEFT JOIN beds b ON b.bed_id = a.bed_id LEFT JOIN wards w ON w.ward_id = b.ward_id LEFT JOIN doctors d ON d.doctor_id = a.doctor_id
+  WHERE a.patient_id = ? ORDER BY a.admission_date DESC`;
+
 exports.getHistory = async (req, res) => {
   try {
     const patient_id = req.params.id;
-    const auth = await checkDoctorAuth(req, patient_id);
+    const auth = await allowed(req, patient_id, 'clinical');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
-    const [admissions] = await pool.execute('SELECT * FROM admissions WHERE patient_id = ? ORDER BY admission_date DESC', [patient_id]);
+    const [admissions] = await pool.execute(ADMISSIONS_SQL, [patient_id]);
     const [appointments] = await pool.execute('SELECT * FROM appointments WHERE patient_id = ? ORDER BY appointment_date DESC', [patient_id]);
     const [prescriptions] = await pool.execute(`
       SELECT p.*, 
-        (SELECT GROUP_CONCAT(CONCAT(m.name, ' — ', pi.dosage, ' — ', pi.frequency, ' — ', pi.duration, ' — Qty ', pi.quantity) SEPARATOR '\n')
+        (SELECT GROUP_CONCAT(CONCAT(m.name, ' · Dose: ', pi.dosage, ' · Frequency: ', pi.frequency, ' · Duration: ', pi.duration, ' · Quantity: ', pi.quantity) SEPARATOR '\n')
          FROM prescription_items pi
          JOIN medicines m ON pi.medicine_id = m.medicine_id
          WHERE pi.prescription_id = p.prescription_id
@@ -88,22 +206,29 @@ exports.getHistory = async (req, res) => {
     const [labs] = await pool.execute('SELECT lo.*, lt.name as test_name FROM lab_orders lo JOIN lab_tests lt ON lo.test_id = lt.test_id WHERE lo.patient_id = ? ORDER BY lo.order_date DESC', [patient_id]);
     const [consultations] = await pool.execute('SELECT * FROM consultations WHERE patient_id = ? ORDER BY consultation_time DESC', [patient_id]);
     const [surgeries] = await pool.execute('SELECT * FROM surgery_requests WHERE patient_id = ? ORDER BY requested_date DESC', [patient_id]);
+    const [encounters] = await pool.execute(`
+      SELECT e.encounter_id, e.doctor_id, d.name AS doctor_name, e.appointment_id, e.admission_id, e.encounter_type, e.status,
+             e.arrived_at, e.triaged_at, e.start_timestamp, e.end_timestamp
+      FROM encounters e JOIN doctors d ON d.doctor_id = e.doctor_id
+      WHERE e.patient_id = ? ORDER BY COALESCE(e.arrived_at, e.created_at) DESC`, [patient_id]);
 
-    res.json({ success: true, data: { admissions, appointments, prescriptions, labs, consultations, surgeries } });
+    // Nurses get the same shape without consultation notes or surgery requests.
+    const isNurse = req.user.role === 'NURSE';
+    res.json({ success: true, data: { admissions, appointments, prescriptions, labs, consultations: isNurse ? [] : consultations, surgeries: isNurse ? [] : surgeries, encounters } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.getAdmissions = async (req, res) => {
   try {
-    const auth = await checkDoctorAuth(req, req.params.id);
+    const auth = await allowed(req, req.params.id, 'demographics');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
-    const [rows] = await pool.execute('SELECT * FROM admissions WHERE patient_id = ?', [req.params.id]);
+    const [rows] = await pool.execute(ADMISSIONS_SQL, [req.params.id]);
     res.json({ success: true, data: rows });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.getAppointments = async (req, res) => {
   try {
-    const auth = await checkDoctorAuth(req, req.params.id);
+    const auth = await allowed(req, req.params.id, 'demographics');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
     const [rows] = await pool.execute('SELECT * FROM appointments WHERE patient_id = ?', [req.params.id]);
@@ -112,7 +237,7 @@ exports.getAppointments = async (req, res) => {
 };
 exports.getPrescriptions = async (req, res) => {
   try {
-    const auth = await checkDoctorAuth(req, req.params.id);
+    const auth = await allowed(req, req.params.id, 'prescriptions');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
     const [rows] = await pool.execute('SELECT * FROM prescriptions WHERE patient_id = ?', [req.params.id]);
@@ -121,7 +246,7 @@ exports.getPrescriptions = async (req, res) => {
 };
 exports.getLabResults = async (req, res) => {
   try {
-    const auth = await checkDoctorAuth(req, req.params.id);
+    const auth = await allowed(req, req.params.id, 'lab');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
     const [rows] = await pool.execute('SELECT l.*, r.* FROM lab_orders l LEFT JOIN lab_results r ON l.order_id = r.order_id WHERE l.patient_id = ?', [req.params.id]);

@@ -3,6 +3,7 @@ import { getBeds, getBedSummary } from '../../services/api';
 import { SocketContext } from '../../context/SocketContext';
 import { FaBed } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { tint } from '../../utils/colors';
 
 export default function BedDashboard() {
   const [beds, setBeds] = useState([]);
@@ -50,19 +51,17 @@ export default function BedDashboard() {
   useEffect(() => {
     if (!socket) return;
     
-    const handleBedUpdate = (data) => {
-      toast.success(`Bed ${data?.bedNumber || ''} status updated`);
+    // The server sends bed:updated { bedId, status } for status changes, admissions, discharges and
+    // emergency allocations; the board refetches through the API.
+    const handleBedUpdate = () => {
+      toast.success('Bed status updated');
       fetchData();
     };
 
-    socket.on('bed:status_changed', handleBedUpdate);
-    socket.on('bed:allocated', handleBedUpdate);
-    socket.on('bed:discharged', handleBedUpdate);
+    socket.on('bed:updated', handleBedUpdate);
 
     return () => {
-      socket.off('bed:status_changed', handleBedUpdate);
-      socket.off('bed:allocated', handleBedUpdate);
-      socket.off('bed:discharged', handleBedUpdate);
+      socket.off('bed:updated', handleBedUpdate);
     };
   }, [socket]);
 
@@ -70,7 +69,7 @@ export default function BedDashboard() {
     switch (status?.toUpperCase()) {
       case 'AVAILABLE': return 'var(--success)';
       case 'OCCUPIED': return 'var(--danger)';
-      case 'MAINTENANCE': return 'var(--warning)';
+      case 'MAINTENANCE': return '#b45309'; // amber dark enough to read as text on white (the yellow was 1.7:1)
       case 'CLEANING': return '#0ea5e9'; // light blue
       default: return 'var(--text-secondary)';
     }
@@ -135,9 +134,9 @@ export default function BedDashboard() {
           {beds.map((bed) => {
             const color = getStatusColor(bed.status);
             return (
-              <div key={bed.bed_id} style={{
-                border: `1px solid ${color}40`,
-                backgroundColor: `${color}10`,
+              <div key={bed.bed_id} data-testid="bed-tile" data-status={bed.status} style={{
+                border: `1px solid ${tint(color, 25)}`,
+                backgroundColor: tint(color, 6),
                 padding: '16px 8px',
                 borderRadius: 'var(--radius)',
                 display: 'flex',
@@ -157,7 +156,7 @@ export default function BedDashboard() {
                   fontSize: '11px', 
                   fontWeight: 600,
                   color: color,
-                  backgroundColor: `${color}20`,
+                  backgroundColor: tint(color, 12.5),
                   padding: '2px 6px',
                   borderRadius: '10px'
                 }}>

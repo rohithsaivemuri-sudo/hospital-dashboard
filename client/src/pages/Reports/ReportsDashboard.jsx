@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaChartBar, FaUsers, FaBed, FaStethoscope } from 'react-icons/fa';
 import api from '../../services/api';
+import { tint } from '../../utils/colors';
 
 export default function ReportsDashboard() {
   const [loading, setLoading] = useState(true);
@@ -61,7 +62,7 @@ export default function ReportsDashboard() {
             gap: '16px'
           }}>
             <div style={{ 
-              backgroundColor: `${stat.color}20`, 
+              backgroundColor: tint(stat.color, 12.5), 
               color: stat.color, 
               padding: '16px', 
               borderRadius: '50%',

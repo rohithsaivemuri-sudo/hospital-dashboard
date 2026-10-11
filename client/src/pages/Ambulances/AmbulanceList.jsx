@@ -69,7 +69,7 @@ export default function AmbulanceList() {
                       fontSize: '12px', 
                       fontWeight: 600,
                       backgroundColor: amb.status === 'AVAILABLE' ? 'var(--success)' : 'var(--warning)',
-                      color: 'white'
+                      color: amb.status === 'AVAILABLE' ? 'white' : 'var(--text-primary)'
                     }}>
                       {amb.status}
                     </span>

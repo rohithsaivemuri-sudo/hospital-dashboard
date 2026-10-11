@@ -1,6 +1,7 @@
 :root {
   --primary: #1a73e8;
   --primary-dark: #1557b0;
+  --secondary: #475569; /* slate: secondary actions (was used but never defined, so those buttons were white on white) */
   --success: #34a853;
   --warning: #fbbc04;
   --danger: #ea4335;
