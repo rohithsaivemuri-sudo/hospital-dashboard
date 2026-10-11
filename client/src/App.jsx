@@ -31,6 +31,7 @@ import NurseAssignments from './pages/Admin/NurseAssignments';
 import AuditLog from './pages/Admin/AuditLog';
 import AccessDenied from './components/AccessDenied';
 import { Toaster } from 'react-hot-toast';
+import UpdateBanner from './components/UpdateBanner';
 
 function RoleBasedDashboard() {
   const { user } = useContext(AuthContext);
@@ -74,6 +75,7 @@ function App() {
       <SocketProvider>
         <BrowserRouter>
           <Toaster position="top-right" />
+          <UpdateBanner />
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
