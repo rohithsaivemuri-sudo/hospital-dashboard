@@ -1,0 +1,18 @@
+[Unit]
+Description=Hospital demo (docker compose: MySQL, app, Caddy)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+RequiresMountsFor=/srv/hms
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=hms
+Group=hms
+ExecStart=/srv/hms/hms-compose up -d --remove-orphans
+ExecStop=/srv/hms/hms-compose stop
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

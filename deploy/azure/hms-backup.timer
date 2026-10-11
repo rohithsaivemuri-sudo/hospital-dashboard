@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly hospital demo database backup at 02:15 IST
+
+[Timer]
+OnCalendar=*-*-* 02:15:00 Asia/Kolkata
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,6 @@
+# HTTPS for the demo: Caddy obtains and renews a Let's Encrypt certificate for SITE_ADDRESS and
+# redirects HTTP to HTTPS. WebSockets (Socket.IO) pass through reverse_proxy.
+{$SITE_ADDRESS} {
+	encode zstd gzip
+	reverse_proxy app:5000
+}
