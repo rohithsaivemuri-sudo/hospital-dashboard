@@ -1,0 +1,10 @@
+[Unit]
+Description=Hospital demo nightly database backup (keeps 7)
+Requires=hms.service
+After=hms.service
+
+[Service]
+Type=oneshot
+User=hms
+Group=hms
+ExecStart=/srv/hms/backup-nightly

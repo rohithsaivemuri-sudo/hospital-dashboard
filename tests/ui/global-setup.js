@@ -28,6 +28,7 @@ async function waitFor(url, timeoutMs = 30000) {
 }
 
 async function globalSetup() {
+  if (process.env.UI_LIVE_URL) { await waitFor(`${process.env.UI_LIVE_URL.replace(/\/+$/, '')}/health`); return; } // live mode: nothing to start
   for (const port of [API_PORT, APP_PORT]) {
     if (await portInUse(port)) throw new Error(`Port ${port} is in use. Stop the development servers before running the browser tests (they must run against ${TEST_DB}).`);
   }

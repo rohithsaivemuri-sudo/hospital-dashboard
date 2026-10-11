@@ -1,0 +1,4 @@
+#!/bin/sh
+# docker compose for the demo, with its env file and server-only override. Run as hms:
+#   sudo -u hms /srv/hms/hms-compose ps | logs -f app | up -d ...
+cd /srv/hms/app && exec docker compose --project-name hospital --env-file /srv/hms/config/hms.env -f docker-compose.yml -f /srv/hms/config/docker-compose.override.yml "$@"

@@ -1,0 +1,5 @@
+#!/bin/sh
+# Nightly database backup into /srv/hms/backups/nightly (persistent disk), keeping the newest 7.
+set -eu
+/srv/hms/hms-compose exec -T -e BACKUP_DIR=/data/backups/nightly app node server/scripts/backup-db.js --db hospital_demo
+/srv/hms/hms-compose exec -T app sh -c "ls -1t /data/backups/nightly/hospital_demo_*.sql | tail -n +8 | xargs -r rm -f"

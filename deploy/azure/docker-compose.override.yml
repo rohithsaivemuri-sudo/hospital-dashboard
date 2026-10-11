@@ -1,0 +1,39 @@
+# Server-only additions to the repository docker-compose.yml (not in the repo):
+# the demo database, data on the persistent disk (/srv/hms), an HTTPS reverse proxy (Caddy, free
+# Let's Encrypt certificate), and a web server process that does not get the admin credentials.
+services:
+  db:
+    environment:
+      MYSQL_DATABASE: hospital_demo
+  app:
+    environment:
+      DB_NAME: hospital_demo
+      DEMO_DB_NAME: hospital_demo
+    # Same steps as docker/entrypoint.sh; the admin credentials are for the account and migration
+    # steps only and are removed from the web server's environment.
+    entrypoint: ["tini", "--", "sh", "-c", "cd /app/server && node scripts/ensure-app-user.js && node scripts/migrate.js --db \"$$DB_NAME\" && exec env -u DB_ADMIN_USER -u DB_ADMIN_PASSWORD node server.js"]
+  caddy:
+    image: caddy:2.8.4
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?Set SITE_ADDRESS in hms.env}
+    volumes:
+      - /srv/hms/config/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /srv/hms/caddy/data:/data
+      - /srv/hms/caddy/config:/config
+
+volumes:
+  db-data:
+    driver: local
+    driver_opts: { type: none, o: bind, device: /srv/hms/mysql }
+  uploads:
+    driver: local
+    driver_opts: { type: none, o: bind, device: /srv/hms/uploads }
+  backups:
+    driver: local
+    driver_opts: { type: none, o: bind, device: /srv/hms/backups }
