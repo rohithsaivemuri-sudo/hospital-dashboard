@@ -34,7 +34,7 @@ exports.list = async (req, res) => {
   try {
     let query = `
       SELECT p.*, pat.name as patientName,
-        TIMESTAMPDIFF(YEAR, pat.date_of_birth, CURDATE()) as patient_age, pat.allergies as patient_allergies,
+        TIMESTAMPDIFF(YEAR, pat.date_of_birth, CURDATE()) as patient_age, pat.date_of_birth AS patient_dob, pat.dob_estimated AS patient_dob_estimated, pat.allergies as patient_allergies,
         (SELECT GROUP_CONCAT(m.name SEPARATOR ', ')
          FROM prescription_items pi
          JOIN medicines m ON pi.medicine_id = m.medicine_id
@@ -109,7 +109,7 @@ exports.create = async (req, res) => {
 exports.getById = async (req, res) => {
   try {
     const [rows] = await pool.execute(`
-      SELECT p.*, pat.name AS patient_name, TIMESTAMPDIFF(YEAR, pat.date_of_birth, CURDATE()) AS patient_age, pat.allergies AS patient_allergies
+      SELECT p.*, pat.name AS patient_name, TIMESTAMPDIFF(YEAR, pat.date_of_birth, CURDATE()) AS patient_age, pat.date_of_birth AS patient_dob, pat.dob_estimated AS patient_dob_estimated, pat.allergies AS patient_allergies
       FROM prescriptions p JOIN patients pat ON pat.patient_id = p.patient_id
       WHERE p.prescription_id = ?`, [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Not found' });

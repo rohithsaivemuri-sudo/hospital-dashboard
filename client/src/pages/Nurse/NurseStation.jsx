@@ -7,6 +7,7 @@ import { getNurseStation, encounterAction, isForbidden } from '../../services/ap
 import AccessDenied from '../../components/AccessDenied';
 import { useVitals, VitalsEntryForm } from '../Patients/VitalsPanel';
 import { hasAllergies } from '../../utils/patientIds';
+import { ageText } from '../../utils/age';
 
 const card = { background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)' };
 // Visit status in the words the triage desk uses.
@@ -99,7 +100,7 @@ export default function NurseStation() {
                         <Link to={`/patients/${b.patient_id}`} style={{ display: 'block', marginTop: '4px' }}>{b.patient_name}</Link>
                         <Link to={`/mar/${b.patient_id}`} data-testid="bed-mar-link" style={{ fontSize: '12px' }}>Medication record</Link>
                         {' · '}<Link to={`/patients/${b.patient_id}?tab=Vitals&for=admission`} data-testid="bed-vitals-link" style={{ fontSize: '12px' }}>Vitals</Link>
-                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{b.age} yrs · {b.gender} · {b.doctor_name}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{ageText(b.date_of_birth, b.dob_estimated)} · {b.gender} · {b.doctor_name}</div>
                         {hasAllergies(b.allergies) && <div style={{ fontSize: '12px', color: 'var(--danger)', fontWeight: 'bold' }}>Allergies: {b.allergies}</div>}
                       </>
                     ) : <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>{b.bed_status === 'AVAILABLE' ? 'Empty' : b.bed_status}</div>}

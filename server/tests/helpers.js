@@ -92,7 +92,7 @@ async function stockMismatches() {
 // Orders need a visit in progress (or an admission). Starts one for the doctor with the patient
 // unless it already exists; close() finishes only a visit started here.
 async function visitInProgress(doctor, patientId) {
-  const open = async () => (await db().query("SELECT encounter_id, status FROM encounters WHERE patient_id = ? AND doctor_id = ? AND status IN ('ARRIVED','TRIAGED','IN_PROGRESS') ORDER BY encounter_id DESC LIMIT 1", [patientId, doctor.user.doctor_id]))[0][0];
+  const open = async () => (await db().query("SELECT encounter_id, status FROM encounters WHERE patient_id = ? AND doctor_id = ? AND status IN ('ARRIVED','TRIAGED','IN_PROGRESS') ORDER BY status = 'IN_PROGRESS' DESC, encounter_id DESC LIMIT 1", [patientId, doctor.user.doctor_id]))[0][0];
   let visit = await open(); const existed = visit?.status === 'IN_PROGRESS';
   if (!visit) {
     const reception = await login(USERS.RECEPTIONIST);

@@ -99,7 +99,7 @@ exports.station = async (req, res) => {
     const [beds] = await pool.execute(`
       SELECT b.bed_id, b.bed_number, b.bed_type, b.status AS bed_status, b.ward_id, w.name AS ward_name,
              a.admission_id, a.admission_date, p.patient_id, p.name AS patient_name, p.gender, p.allergies,
-             TIMESTAMPDIFF(YEAR, p.date_of_birth, CURDATE()) AS age, d.name AS doctor_name
+             TIMESTAMPDIFF(YEAR, p.date_of_birth, CURDATE()) AS age, p.date_of_birth, p.dob_estimated, d.name AS doctor_name
       FROM beds b
       JOIN wards w ON w.ward_id = b.ward_id
       LEFT JOIN admissions a ON a.bed_id = b.bed_id AND a.status = 'ACTIVE'

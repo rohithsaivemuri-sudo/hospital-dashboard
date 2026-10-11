@@ -37,7 +37,7 @@ async function db() {
 async function visitInProgress(patientId, username = 'dr.smith') {
   const doc = await tokenOf(username);
   const [[{ doctor_id: doctorId }]] = await (await db()).query('SELECT d.doctor_id FROM doctors d JOIN users u ON u.user_id = d.user_id WHERE u.username = ?', [username]);
-  const [[visit]] = await (await db()).query("SELECT encounter_id, status FROM encounters WHERE patient_id = ? AND doctor_id = ? AND status IN ('ARRIVED','TRIAGED','IN_PROGRESS') ORDER BY encounter_id DESC LIMIT 1", [patientId, doctorId]);
+  const [[visit]] = await (await db()).query("SELECT encounter_id, status FROM encounters WHERE patient_id = ? AND doctor_id = ? AND status IN ('ARRIVED','TRIAGED','IN_PROGRESS') ORDER BY status = 'IN_PROGRESS' DESC, encounter_id DESC LIMIT 1", [patientId, doctorId]);
   if (visit?.status === 'IN_PROGRESS') return { encounterId: visit.encounter_id, close: async () => {} };
   const id = visit?.encounter_id ?? (await call('POST', '/encounters', await tokenOf('reception1'), { patient_id: patientId, doctor_id: doctorId })).body.data.encounter_id;
   const started = await call('POST', `/encounters/${id}/start`, doc);

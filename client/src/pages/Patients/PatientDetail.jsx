@@ -7,14 +7,8 @@ import AccessDenied from '../../components/AccessDenied';
 import { AuthContext } from '../../context/AuthContext';
 import { formatAbha, hasAllergies, allergyLabel } from '../../utils/patientIds';
 import toast from 'react-hot-toast';
+import { ageText } from '../../utils/age';
 
-const ageOf = (dob) => {
-  if (!dob) return '—';
-  const d = new Date(dob), now = new Date();
-  let age = now.getFullYear() - d.getFullYear();
-  if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) age -= 1;
-  return age;
-};
 // Display MRN derived from the patient id (no separate MRN column yet).
 const mrnOf = (id) => `MRN-${String(id).padStart(6, '0')}`;
 
@@ -390,7 +384,7 @@ export default function PatientDetail() {
       <div data-testid="patient-context" style={{ position: 'sticky', top: 0, zIndex: 20, background: 'var(--bg-card)', padding: '16px 24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', marginBottom: '24px', borderLeft: '4px solid var(--primary)' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '8px 24px' }}>
           <h1 style={{ margin: 0, fontSize: '1.5rem' }}>{patient.name}</h1>
-          <span><strong>{ageOf(patient.date_of_birth)}</strong> yrs · {patient.gender}</span>
+          <span data-testid="header-age"><strong>{ageText(patient.date_of_birth, patient.dob_estimated)}</strong> · {patient.gender}</span>
           <span><strong>{mrnOf(patient.patient_id)}</strong></span>
           <span><strong>Blood</strong> {patient.blood_group || '—'}</span>
           <span data-testid="header-allergies" style={{ color: hasAllergies(patient.allergies) ? 'var(--danger)' : 'var(--text-secondary)', fontWeight: hasAllergies(patient.allergies) ? 'bold' : 'normal' }}>
@@ -399,7 +393,7 @@ export default function PatientDetail() {
           {currentAdmission && <span data-testid="header-admission" style={{ color: 'var(--danger)', fontWeight: 'bold' }}>ADMITTED · {currentAdmission.ward_name} · Bed {currentAdmission.bed_number} · under {currentAdmission.doctor_name}</span>}
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 16px', marginTop: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-          <span>DOB {patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString() : 'N/A'}</span>
+          <span>DOB {patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString() : 'N/A'}{patient.dob_estimated ? ' (estimated)' : ''}</span>
           <span>Contact {patient.phone || '—'}</span>
           <span data-testid="header-abha">ABHA {patient.abha_number ? formatAbha(patient.abha_number) : '—'}</span>
           {['ADMIN', 'RECEPTIONIST'].includes(user?.role) && <Link to={`/patients/${id}/edit`} data-testid="edit-patient">Edit details</Link>}

@@ -17,6 +17,22 @@ function dobError(value) {
   if (`${m[1]}-${m[2]}-${m[3]}` > istDate(new Date())) return 'Date of birth cannot be in the future';
   return null;
 }
+// The birth date to store: the date given (dob_estimated as sent, default not estimated), or for a
+// patient who does not know it, an age in years -> today (IST) that many years back, estimated.
+function birthFrom(body = {}) {
+  if (body.age_years !== undefined && body.age_years !== null && body.age_years !== '') {
+    const n = Number(body.age_years);
+    if (!Number.isInteger(n) || n < 1 || n > 130) return { error: 'Age in years must be a whole number from 1 to 130' };
+    const [y, m, d] = istDate(new Date()).split('-').map(Number);
+    const t = new Date(Date.UTC(y - n, m - 1, d));
+    if (t.getUTCMonth() !== m - 1) t.setUTCDate(0); // 29 Feb -> 28 Feb
+    return { date_of_birth: t.toISOString().slice(0, 10), dob_estimated: 1 };
+  }
+  if (body.date_of_birth === undefined || body.date_of_birth === null || body.date_of_birth === '') return { error: 'Enter a date of birth or an age in years' };
+  const error = dobError(body.date_of_birth);
+  if (error) return { error };
+  return { date_of_birth: String(body.date_of_birth).slice(0, 10), dob_estimated: [true, 1, '1', 'true'].includes(body.dob_estimated) ? 1 : 0 };
+}
 const isAbhaDuplicate = (e) => e.code === 'ER_DUP_ENTRY' && /uq_patients_abha/.test(e.message);
 async function abhaConflict(res, abha, exceptId = null) {
   const [[other]] = await pool.execute('SELECT patient_id FROM patients WHERE abha_number = ? AND patient_id <> ?', [abha, exceptId ?? 0]);
@@ -90,15 +106,16 @@ exports.getById = async (req, res) => {
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.create = async (req, res) => {
-  const { name, date_of_birth, gender, blood_group, phone, address, emergency_contact } = req.body;
-  const badDob = dobError(date_of_birth);
-  if (badDob) return res.status(400).json({ success: false, message: badDob });
+  const { name, gender, blood_group, phone, address, emergency_contact } = req.body;
+  const birth = birthFrom(req.body);
+  if (birth.error) return res.status(400).json({ success: false, message: birth.error });
+  const { date_of_birth, dob_estimated } = birth;
   const optional = optionalValues(req.body);
   if (optional.error) return res.status(400).json({ success: false, code: 'INVALID_ABHA', message: optional.error });
   const { allergies = null, abha_number = null } = optional.values;
   try {
     const id = await withTransaction(req, async (connection, audit) => {
-      const [result] = await connection.execute('INSERT INTO patients (name, date_of_birth, gender, blood_group, phone, address, emergency_contact, allergies, abha_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [name, date_of_birth, gender, blood_group, phone, address, emergency_contact, allergies, abha_number]);
+      const [result] = await connection.execute('INSERT INTO patients (name, date_of_birth, dob_estimated, gender, blood_group, phone, address, emergency_contact, allergies, abha_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [name, date_of_birth, dob_estimated, gender, blood_group, phone, address, emergency_contact, allergies, abha_number]);
       // Flags only: never the allergy text or the ABHA number itself.
       await audit({ action: 'CREATE_PATIENT', entityType: 'patient', entityId: result.insertId, patientId: result.insertId, details: { abha_recorded: !!abha_number, allergies_recorded: !!allergies } });
       return result.insertId;
@@ -140,18 +157,19 @@ exports.findDuplicates = async (req, res) => {
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 exports.update = async (req, res) => {
-  const badDob = dobError(req.body?.date_of_birth);
-  if (badDob) return res.status(400).json({ success: false, message: badDob });
+  const birth = birthFrom(req.body);
+  if (birth.error) return res.status(400).json({ success: false, message: birth.error });
   const optional = optionalValues(req.body);
   if (optional.error) return res.status(400).json({ success: false, code: 'INVALID_ABHA', message: optional.error });
   const extra = Object.keys(optional.values).filter(f => OPTIONAL_FIELDS.includes(f));
   try {
-    const { name, date_of_birth, gender, blood_group, phone, address, emergency_contact } = req.body;
+    const { name, gender, blood_group, phone, address, emergency_contact } = req.body;
+    const { date_of_birth, dob_estimated } = birth;
     await withTransaction(req, async (connection, audit) => {
       const [[before]] = await connection.execute('SELECT * FROM patients WHERE patient_id = ? FOR UPDATE', [req.params.id]);
-      await connection.execute(`UPDATE patients SET name = ?, date_of_birth = ?, gender = ?, blood_group = ?, phone = ?, address = ?, emergency_contact = ?${extra.map(f => `, ${f} = ?`).join('')} WHERE patient_id = ?`,
-        [name, date_of_birth, gender, blood_group, phone, address, emergency_contact, ...extra.map(f => optional.values[f]), req.params.id]);
-      const changed = before ? changedFields(before, { ...req.body, ...optional.values }, [...PATIENT_FIELDS, ...extra]) : [];
+      await connection.execute(`UPDATE patients SET name = ?, date_of_birth = ?, dob_estimated = ?, gender = ?, blood_group = ?, phone = ?, address = ?, emergency_contact = ?${extra.map(f => `, ${f} = ?`).join('')} WHERE patient_id = ?`,
+        [name, date_of_birth, dob_estimated, gender, blood_group, phone, address, emergency_contact, ...extra.map(f => optional.values[f]), req.params.id]);
+      const changed = before ? changedFields(before, { ...req.body, date_of_birth, dob_estimated, ...optional.values }, [...PATIENT_FIELDS, 'dob_estimated', ...extra]) : [];
       if (changed.length) await audit({ action: 'UPDATE_PATIENT', entityType: 'patient', entityId: before.patient_id, patientId: before.patient_id, details: { changed_fields: changed } });
     });
     res.json({ success: true, message: 'Updated successfully' });

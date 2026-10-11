@@ -55,9 +55,12 @@ test('reception registers the patient: a future date of birth is refused [14]; t
   await as('reception1');
   await go('/patients/new');
   await page.type('input[name="name"]', NAME);
+  assert.deepEqual(await page.$eval('input[name="date_of_birth"]', el => [el.value, el.required]), ['', true], '[age] starts empty and required');
   await setValue('input[name="date_of_birth"]', iso(new Date(Date.now() + 3 * 864e5)));
   await waitForText(page, 'Date of birth cannot be in the future');
   await setValue('input[name="date_of_birth"]', '1984-04-14');
+  const age = now.getFullYear() - 1984 - (TODAY.slice(5) < '04-14' ? 1 : 0);
+  assert.equal(await text('[data-testid="age-preview"]'), `Age: ${age} yrs`, '[age] shown as soon as the date is entered');
   await page.select('select[name="gender"]', 'FEMALE');
   await Promise.all([page.waitForNavigation(), page.click('form button[type="submit"]')]);
   [[{ patient_id: j.patient }]] = await (await db()).query('SELECT patient_id FROM patients WHERE name = ?', [NAME]);
@@ -239,6 +242,22 @@ test('the administrator sees staff as "Full name (username)" [7]', async () => {
   const [[nurse]] = await (await db()).query("SELECT full_name FROM users WHERE username = 'nurse1'");
   await waitForText(page, `${nurse.full_name} (nurse1)`);
   await go('/staff');
+});
+
+test('reception changes the date of birth to an age in years on Edit details; it shows "approx." on the chart and the bed card [age]', async () => {
+  await as('reception1');
+  await go(`/patients/${j.patient}/edit`);
+  await page.waitForFunction(() => document.querySelector('input[name="date_of_birth"]')?.value === '1984-04-14');
+  await page.click('input[name="dob-mode"][value="age"]');
+  await page.type('input[name="age_years"]', '45');
+  assert.match(await text('[data-testid="age-preview"]'), /^Age: approx\. 45 yrs/);
+  await Promise.all([page.waitForNavigation(), page.click('form button[type="submit"]')]);
+  await page.waitForSelector('[data-testid="header-age"]');
+  assert.match(await text('[data-testid="header-age"]'), /^approx\. 45 yrs/);
+  await as('nurse1');
+  await go('/');
+  const card = await page.waitForFunction((name) => [...document.querySelectorAll('[data-testid="bed-card"]')].find(c => c.innerText.includes(name))?.innerText, { timeout: 10000 }, NAME);
+  assert.match(await card.jsonValue(), /approx\. 45 yrs/);
 });
 
 test('no unreadable button was clicked', () => assert.deepEqual(violations, []));

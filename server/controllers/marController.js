@@ -32,7 +32,7 @@ exports.patientMar = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Forbidden: this patient is not under your care' });
     }
     const [[patient]] = await pool.execute(
-      'SELECT patient_id, name, gender, allergies, TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) AS age FROM patients WHERE patient_id = ?', [req.params.patientId]
+      'SELECT patient_id, name, gender, allergies, TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) AS age, date_of_birth, dob_estimated FROM patients WHERE patient_id = ?', [req.params.patientId]
     );
     if (!patient) return res.status(404).json({ success: false, message: 'Patient not found' });
     const [[admission]] = await pool.execute(`

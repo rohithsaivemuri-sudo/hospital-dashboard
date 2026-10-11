@@ -3,6 +3,7 @@ import { getPrescriptions, dispensePrescription, getPrescription, getMedicines, 
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { hasAllergies, allergyLabel } from '../../utils/patientIds';
+import { ageText } from '../../utils/age';
 
 export default function PharmacyDashboard() {
   const { user } = useContext(AuthContext);
@@ -193,7 +194,7 @@ export default function PharmacyDashboard() {
                 <tr key={p.prescription_id} data-testid="rx-row" data-prescription={p.prescription_id} data-status={p.status} data-date={p.prescription_date}>
                   <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>#{p.prescription_id}</td>
                   <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
-                    {p.patientName} <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{p.patient_age != null ? `${p.patient_age} yrs` : ''}</span>
+                    {p.patientName} <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{p.patient_dob ? ageText(p.patient_dob, p.patient_dob_estimated) : ''}</span>
                     {hasAllergies(p.patient_allergies) && <div style={{ color: 'var(--danger)', fontSize: '12px', fontWeight: 'bold' }}>Allergies: {p.patient_allergies}</div>}
                   </td>
                   <td style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>{p.medication}</td>
@@ -324,7 +325,7 @@ export default function PharmacyDashboard() {
             </div>
             
             <div data-testid="rx-patient" style={{ padding: '12px 16px', marginBottom: '16px', background: 'var(--bg-primary)', borderRadius: '6px', borderLeft: '4px solid var(--primary)' }}>
-              <strong>{detail.patient_name}</strong> · {detail.patient_age ?? '—'} yrs
+              <strong>{detail.patient_name}</strong> · {ageText(detail.patient_dob, detail.patient_dob_estimated)}
               <span data-testid="rx-allergies" style={{ marginLeft: '16px', color: hasAllergies(detail.patient_allergies) ? 'var(--danger)' : 'var(--text-secondary)', fontWeight: hasAllergies(detail.patient_allergies) ? 'bold' : 'normal' }}>
                 Allergies: {allergyLabel(detail.patient_allergies)}
               </span>
