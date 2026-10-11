@@ -79,6 +79,29 @@ On start, the app backs up the database into `/srv/hms/backups` and applies any 
 site is unavailable for about 10 seconds while the app restarts. Open tabs on the old build then show
 "A new version is available", and the sign-in page reloads by itself.
 
+## Stop and start the server
+
+```bash
+npm run azure:stop     # deallocate the VM: the site goes offline and the VM charge stops
+npm run azure:start    # start it again; waits until the site and its database answer
+```
+
+These run `deploy/azure/stop.sh` and `deploy/azure/start.sh` with the Azure CLI on your laptop.
+
+- **Stopping keeps everything:** the disks (database, uploads, backups), the static IP and the DNS
+  name stay, so the address does not change. Disks and the IP are still charged, about US$8.45 a
+  month; the VM (about US$1 a day) is not.
+- **Starting needs nothing else.** On boot, Docker and `hms.service` start MySQL, the app and Caddy
+  by themselves, with the same certificate.
+- **A nightly backup missed while stopped** runs shortly after the next start.
+
+**Tested (2026-10-11):**
+- **Stop:** the site stopped answering.
+- **Start:** `/health` reported the database ok within seconds of the VM booting, with no manual steps.
+- **After the start:** Docker, `hms.service` and the backup timer were active; db and app healthy,
+  Caddy running, the data disk mounted, the certificate valid.
+- **Unchanged:** the same data (patient count) and the same IP address.
+
 ## Reset the demo data
 
 ```bash
@@ -146,9 +169,8 @@ To see it:
 - **The real safeguard:** the subscription has a **spending limit**. When the credit runs out, Azure
   stops the resources; it does not charge a card.
 
-Stopping the VM (`az vm deallocate -g hms-demo-rg -n hms-demo`) stops the VM charge, about
-US$1 a day, but the site goes offline. Disks and the IP are still charged. `az vm start` brings it
-back with everything in place.
+To save credit while nobody is using the demo, stop it with `npm run azure:stop` and start it
+again with `npm run azure:start` (see "Stop and start the server").
 
 ## Delete everything
 
