@@ -245,3 +245,25 @@ test('doctors.user_id is unique: a second doctor profile for the same user is re
   const [[{ unique }]] = await db().query("SELECT COUNT(*) `unique` FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'doctors' AND CONSTRAINT_NAME = 'uq_doctors_user_id' AND CONSTRAINT_TYPE = 'UNIQUE'");
   assert.equal(unique, 1);
 });
+
+// Final step (migration 022): the redundant columns are gone and bill_items.total_price is generated.
+test('022: beds.floor, appointments.department_id and medication_administrations.patient_id are dropped; bill_items.total_price is generated', async () => {
+  const [cols] = await db().query(`SELECT TABLE_NAME t, COLUMN_NAME c, EXTRA extra, GENERATION_EXPRESSION expr FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND ((TABLE_NAME = 'beds' AND COLUMN_NAME = 'floor') OR (TABLE_NAME = 'appointments' AND COLUMN_NAME = 'department_id')
+      OR (TABLE_NAME = 'medication_administrations' AND COLUMN_NAME = 'patient_id') OR (TABLE_NAME = 'bill_items' AND COLUMN_NAME = 'total_price'))`);
+  assert.deepEqual(cols.map(c => `${c.t}.${c.c}`), ['bill_items.total_price']);
+  assert.match(cols[0].extra, /VIRTUAL GENERATED/);
+  assert.match(cols[0].expr.replace(/`/g, ''), /quantity \* unit_price/);
+});
+
+test('022: a bill item\'s total follows its quantity and unit price, whatever writes the row', async () => {
+  const [[item]] = await db().query('SELECT item_id, unit_price FROM bill_items ORDER BY item_id LIMIT 1');
+  const conn = await db().getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query('UPDATE bill_items SET quantity = 3 WHERE item_id = ?', [item.item_id]);
+    const [[row]] = await conn.query('SELECT total_price FROM bill_items WHERE item_id = ?', [item.item_id]);
+    assert.equal(Number(row.total_price), Number(item.unit_price) * 3);
+    await assert.rejects(conn.query('UPDATE bill_items SET total_price = 1 WHERE item_id = ?', [item.item_id]), /generated column/);
+  } finally { await conn.rollback(); conn.release(); }
+});
