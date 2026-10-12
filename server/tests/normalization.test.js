@@ -267,3 +267,17 @@ test('022: a bill item\'s total follows its quantity and unit price, whatever wr
     await assert.rejects(conn.query('UPDATE bill_items SET total_price = 1 WHERE item_id = ?', [item.item_id]), /generated column/);
   } finally { await conn.rollback(); conn.release(); }
 });
+
+// A6: prescription_items keeps both columns, and the database enforces dispensed_at -> dispensed (migration 023).
+test('023: a prescription item with a dispense time must be marked dispensed', async () => {
+  const [[item]] = await db().query('SELECT item_id FROM prescription_items WHERE dispensed = 0 ORDER BY item_id LIMIT 1');
+  const conn = await db().getConnection();
+  try {
+    await conn.beginTransaction();
+    await assert.rejects(conn.query('UPDATE prescription_items SET dispensed_at = NOW() WHERE item_id = ?', [item.item_id]),
+      e => e.errno === 3819 && /chk_prescription_items_dispensed/.test(e.message));
+    // Both together (what dispenseService does), or the flag alone (the seed's untimed dispenses), are accepted.
+    await conn.query('UPDATE prescription_items SET dispensed = 1 WHERE item_id = ?', [item.item_id]);
+    await conn.query('UPDATE prescription_items SET dispensed_at = NOW() WHERE item_id = ?', [item.item_id]);
+  } finally { await conn.rollback(); conn.release(); }
+});
