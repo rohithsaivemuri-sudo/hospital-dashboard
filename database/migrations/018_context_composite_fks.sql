@@ -91,8 +91,29 @@ BEGIN
   CALL mig018_add_key('encounters', 'fk_ctx_encounters_admission', 'ADD CONSTRAINT fk_ctx_encounters_admission FOREIGN KEY (admission_id, patient_id) REFERENCES admissions (admission_id, patient_id) ON DELETE RESTRICT');
   CALL mig018_add_key('pharmacy_stock_movements', 'fk_ctx_stock_movements_batch', 'ADD CONSTRAINT fk_ctx_stock_movements_batch FOREIGN KEY (batch_id, medicine_id) REFERENCES medicine_batches (batch_id, medicine_id) ON DELETE RESTRICT');
   CALL mig018_add_key('bills', 'fk_ctx_bills_admission', 'ADD CONSTRAINT fk_ctx_bills_admission FOREIGN KEY (admission_id, patient_id) REFERENCES admissions (admission_id, patient_id) ON DELETE RESTRICT');
+
+  -- Five single-column indexes are now left prefixes of a composite key's index, which also serves their
+  -- single-column foreign key. Where MySQL created them for that foreign key it has already dropped them;
+  -- where a schema dump declared them explicitly they are dropped here, so every database ends up alike.
+  CALL mig018_drop_index('bills', 'admission_id');
+  CALL mig018_drop_index('consultations', 'admission_id');
+  CALL mig018_drop_index('consultations', 'appointment_id');
+  CALL mig018_drop_index('lab_orders', 'consultation_id');
+  CALL mig018_drop_index('prescriptions', 'consultation_id');
+END //
+
+DROP PROCEDURE IF EXISTS mig018_drop_index //
+CREATE PROCEDURE mig018_drop_index(IN p_table VARCHAR(64), IN p_index VARCHAR(64))
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = p_table AND INDEX_NAME = p_index) THEN
+    SET @mig018_sql = CONCAT('ALTER TABLE ', p_table, ' DROP INDEX ', p_index);
+    PREPARE stmt FROM @mig018_sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+  END IF;
 END //
 DELIMITER ;
 CALL mig018_context_fks();
 DROP PROCEDURE mig018_context_fks;
 DROP PROCEDURE mig018_add_key;
+DROP PROCEDURE mig018_drop_index;
