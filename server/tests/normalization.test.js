@@ -204,3 +204,29 @@ test('A5: a bill item\'s total is computed from quantity and unit price, and the
   const [[{ inconsistent }]] = await db().query('SELECT COUNT(*) inconsistent FROM bill_items WHERE total_price <> quantity * unit_price');
   assert.equal(inconsistent, 0);
 });
+
+// Workload: doctors.current_workload counts ACTIVE admissions only (migration 020).
+test('workload: every doctor\'s workload equals their ACTIVE admissions (the seed\'s discharged admissions no longer count)', async () => {
+  const [rows] = await db().query(`SELECT d.doctor_id, d.current_workload,
+    (SELECT COUNT(*) FROM admissions a WHERE a.doctor_id = d.doctor_id AND a.status = 'ACTIVE') AS active FROM doctors d`);
+  for (const r of rows) assert.equal(r.current_workload, Number(r.active), `doctor ${r.doctor_id}`);
+});
+
+test('workload: inserting an already discharged admission leaves the doctor\'s workload unchanged; an ACTIVE one adds 1', async () => {
+  const [[doctor]] = await db().query('SELECT doctor_id, current_workload FROM doctors WHERE current_workload + 1 < max_workload ORDER BY doctor_id DESC LIMIT 1');
+  const [[bed]] = await db().query("SELECT bed_id FROM beds WHERE status = 'AVAILABLE' ORDER BY bed_id DESC LIMIT 1");
+  const workload = async () => (await db().query('SELECT current_workload FROM doctors WHERE doctor_id = ?', [doctor.doctor_id]))[0][0].current_workload;
+  const conn = await db().getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query(`INSERT INTO admissions (patient_id, doctor_id, bed_id, department_id, admission_date, discharge_date, status, diagnosis)
+      VALUES (1, ?, ?, 1, NOW() - INTERVAL 3 DAY, NOW() - INTERVAL 1 DAY, 'DISCHARGED', 'Past stay')`, [doctor.doctor_id, bed.bed_id]);
+    const [[{ afterDischarged }]] = await conn.query('SELECT current_workload AS afterDischarged FROM doctors WHERE doctor_id = ?', [doctor.doctor_id]);
+    assert.equal(afterDischarged, doctor.current_workload, 'a discharged admission does not count');
+    await conn.query(`INSERT INTO admissions (patient_id, doctor_id, bed_id, department_id, admission_date, status, diagnosis)
+      VALUES (1, ?, ?, 1, NOW(), 'ACTIVE', 'Current stay')`, [doctor.doctor_id, bed.bed_id]);
+    const [[{ afterActive }]] = await conn.query('SELECT current_workload AS afterActive FROM doctors WHERE doctor_id = ?', [doctor.doctor_id]);
+    assert.equal(afterActive, doctor.current_workload + 1, 'an ACTIVE admission counts');
+  } finally { await conn.rollback(); conn.release(); }
+  assert.equal(await workload(), doctor.current_workload, 'rolled back');
+});
