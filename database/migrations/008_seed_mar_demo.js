@@ -37,6 +37,13 @@ exports.up = async (connection) => {
   const missing = ORDERS.filter(o => !idOf[o[0]]).map(o => o[0]);
   if (missing.length) throw new Error(`008: medicines not found: ${missing.join(', ')}`);
 
+  // This runs today's dispense code against the schema as it was at 008. Since BCNF step A3
+  // (migration 017) that code no longer writes medication_administrations.patient_id, so on a fresh
+  // build the column is made nullable here, as 017 does later. (DDL commits, so before the transaction.)
+  const [[patientColumn]] = await connection.execute(`SELECT IS_NULLABLE AS nullable FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'medication_administrations' AND COLUMN_NAME = 'patient_id'`);
+  if (patientColumn && patientColumn.nullable === 'NO') await connection.query('ALTER TABLE medication_administrations MODIFY patient_id INT NULL');
+
   // Audit rows say who did it: the migration (role MIGRATION); stock movements need a real user,
   // so they are recorded against the first pharmacy account.
   const req = { user: { user_id: pharmacist.user_id, role: 'MIGRATION' }, method: 'MIGRATION', ip: null, originalUrl: '008_seed_mar_demo.js' };

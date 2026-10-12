@@ -84,3 +84,23 @@ test('A2: seed.sql books every appointment under its doctor\'s department', asyn
   const departmentOf = new Map(doctors.map(d => [d.doctor_id, d.department_id]));
   for (const r of rows) assert.equal(r.department, departmentOf.get(r.doctor), `doctor ${r.doctor}`);
 });
+
+// A3: a dose's patient is its prescription's patient.
+test('A3: the MAR lists each order\'s doses, found through the prescription\'s patient', async () => {
+  const nurse = await login(USERS.NURSE);
+  const [[seed]] = await db().query("SELECT patient_id FROM prescriptions WHERE notes = 'Demo MAR seed (migration 008)'");
+  const mar = await api('GET', `/mar/patients/${seed.patient_id}`, { token: nurse.token });
+  assert.equal(mar.status, 200, JSON.stringify(mar.body));
+  const items = mar.body.data.items;
+  assert.ok(items.some(i => i.doses.length > 0), 'the demo MAR has doses');
+  for (const item of items) {
+    const [[{ n }]] = await db().query(`SELECT COUNT(*) n FROM medication_administrations ma
+      JOIN prescription_items pi ON pi.item_id = ma.prescription_item_id JOIN prescriptions p ON p.prescription_id = pi.prescription_id
+      WHERE ma.prescription_item_id = ? AND p.patient_id = ?`, [item.item_id, seed.patient_id]);
+    assert.equal(item.doses.length, Number(n), `item ${item.item_id}`);
+  }
+  const [orphans] = await db().query(`SELECT ma.administration_id FROM medication_administrations ma
+    LEFT JOIN prescription_items pi ON pi.item_id = ma.prescription_item_id LEFT JOIN prescriptions p ON p.prescription_id = pi.prescription_id
+    WHERE p.patient_id IS NULL`);
+  assert.deepEqual(orphans, [], 'every dose reaches a patient');
+});
