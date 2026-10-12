@@ -1,6 +1,15 @@
 # BCNF analysis of hospital_db
 
-Phase 1 of the normalisation work: analysis only. Nothing in the code, schema or data has been changed. Phase 2 starts only for the items you approve (section 6).
+Phase 1 of the normalisation work: analysis only. When it was written, nothing in the code, schema or data had been changed.
+
+**Phase 2 result (2026-10-13).** Approved and done, one commit each:
+- A1, A2 (option 1), A3, A5 converted: migrations 015, 016, 017 and 019, then 022 dropped the old columns.
+- A4 enforced with 15 composite foreign keys: migration 018.
+- A6 left as is.
+- Workload drift fixed: migration 020.
+- `doctors.user_id` made UNIQUE: migration 021.
+
+24 of the 33 tables are now in BCNF. The other 9 (the 8 A4 tables and `prescription_items`) are explained in section 6.4 of `docs/database-report.pdf`.
 
 **Sources**
 - **Live schema:** `hospital_db`, read on 2026-10-13 through information_schema and `SHOW CREATE` in a read-only transaction. It is at migration 014 and has 33 tables, 9 views, 7 triggers, 5 procedures and no events.
