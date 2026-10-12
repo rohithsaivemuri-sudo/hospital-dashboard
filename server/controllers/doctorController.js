@@ -31,7 +31,13 @@ exports.create = async (req, res) => {
       return result.insertId;
     });
     res.status(201).json({ success: true, data: { id } });
-  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+  } catch (error) {
+    // doctors.user_id is unique (migration 021): one doctor profile per user account.
+    if (error.code === 'ER_DUP_ENTRY' && /uq_doctors_user_id/.test(error.message)) {
+      return res.status(409).json({ success: false, message: 'This user already has a doctor profile' });
+    }
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 exports.update = async (req, res) => {
   try {

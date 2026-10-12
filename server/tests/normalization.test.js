@@ -230,3 +230,18 @@ test('workload: inserting an already discharged admission leaves the doctor\'s w
   } finally { await conn.rollback(); conn.release(); }
   assert.equal(await workload(), doctor.current_workload, 'rolled back');
 });
+
+// One doctor profile per user account (migration 021).
+test('doctors.user_id is unique: a second doctor profile for the same user is refused with 409', async () => {
+  const admin = await login(USERS.ADMIN);
+  const [[doc]] = await db().query('SELECT user_id, department_id FROM doctors ORDER BY doctor_id LIMIT 1');
+  const [[{ n_before }]] = await db().query('SELECT COUNT(*) n_before FROM doctors');
+  const res = await api('POST', '/doctors', { token: admin.token, body: {
+    user_id: doc.user_id, name: 'Duplicate profile', specialization: 'Cardiology', department_id: doc.department_id, phone: '9000000099', shift: 'MORNING', max_workload: 5 } });
+  assert.equal(res.status, 409, JSON.stringify(res.body));
+  assert.deepEqual(res.body, { success: false, message: 'This user already has a doctor profile' });
+  const [[{ n_after }]] = await db().query('SELECT COUNT(*) n_after FROM doctors');
+  assert.equal(n_after, n_before);
+  const [[{ unique }]] = await db().query("SELECT COUNT(*) `unique` FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'doctors' AND CONSTRAINT_NAME = 'uq_doctors_user_id' AND CONSTRAINT_TYPE = 'UNIQUE'");
+  assert.equal(unique, 1);
+});
