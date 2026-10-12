@@ -6,6 +6,7 @@ const { CLOSED, EncounterError, resolveEncounterForRecord } = require('../utils/
 const NOTE_FIELDS = ['symptoms', 'diagnosis', 'assessment', 'plan', 'notes'];
 
 const { canAccessPatient } = require('../utils/patientAccess');
+const { CONTEXT_MISMATCH, isContextMismatch } = require('../utils/contextMismatch');
 const checkDoctorAuth = (req, patientId) => canAccessPatient(req.user, patientId, 'clinical');
 
 exports.create = async (req, res) => {
@@ -25,6 +26,12 @@ exports.create = async (req, res) => {
       if (encounter_id || !appointment_id) {
         encounterId = await resolveEncounterForRecord(connection, { encounterId: encounter_id, patientId: patient_id, doctorId: doctor_id });
       } else {
+        // The note copies the appointment's patient and doctor (enforced by fk_ctx_consultations_appointment).
+        const [[appointment]] = await connection.execute('SELECT patient_id, doctor_id FROM appointments WHERE appointment_id = ?', [appointment_id]);
+        if (!appointment) throw new EncounterError(400, 'Appointment not found');
+        if (Number(appointment.patient_id) !== Number(patient_id) || Number(appointment.doctor_id) !== Number(doctor_id)) {
+          throw new EncounterError(400, 'Appointment belongs to a different patient or doctor');
+        }
         const [[enc]] = await connection.execute('SELECT encounter_id, status FROM encounters WHERE appointment_id = ? FOR UPDATE', [appointment_id]);
         if (enc && CLOSED.includes(enc.status)) throw new EncounterError(409, `This visit's encounter is ${enc.status}; its notes are signed and closed`);
         encounterId = enc ? enc.encounter_id : null;
@@ -36,7 +43,10 @@ exports.create = async (req, res) => {
       return result.insertId;
     });
     res.status(201).json({ success: true, data: { id } });
-  } catch (error) { res.status(error.status || 500).json({ success: false, message: error.message }); }
+  } catch (error) {
+    if (isContextMismatch(error)) return res.status(400).json({ success: false, message: CONTEXT_MISMATCH });
+    res.status(error.status || 500).json({ success: false, message: error.message });
+  }
 };
 exports.getById = async (req, res) => {
   try {

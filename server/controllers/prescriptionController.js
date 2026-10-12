@@ -28,6 +28,7 @@ const { writeAudit } = require('../utils/audit');
 const { resolveOrderContext } = require('../utils/encounters');
 
 const { canAccessPatient, patientFilter } = require('../utils/patientAccess');
+const { CONTEXT_MISMATCH, isContextMismatch } = require('../utils/contextMismatch');
 const checkDoctorAuth = (req, patientId, scope = 'prescriptions') => canAccessPatient(req.user, patientId, scope);
 
 exports.list = async (req, res) => {
@@ -100,6 +101,7 @@ exports.create = async (req, res) => {
     res.status(201).json({ success: true, data: { id: prescription_id } });
   } catch (error) { 
     await connection.rollback();
+    if (isContextMismatch(error)) return res.status(400).json({ success: false, message: CONTEXT_MISMATCH });
     res.status(error.status || 500).json({ success: false, message: error.message }); 
   } finally {
     connection.release();

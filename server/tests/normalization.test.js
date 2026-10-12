@@ -2,7 +2,7 @@
 // table that owns them, with API responses unchanged.
 const { test, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { USERS, api, login, db, closeDb } = require('./helpers');
+const { USERS, api, login, db, closeDb, visitInProgress } = require('./helpers');
 
 after(closeDb);
 
@@ -103,4 +103,89 @@ test('A3: the MAR lists each order\'s doses, found through the prescription\'s p
     LEFT JOIN prescription_items pi ON pi.item_id = ma.prescription_item_id LEFT JOIN prescriptions p ON p.prescription_id = pi.prescription_id
     WHERE p.patient_id IS NULL`);
   assert.deepEqual(orphans, [], 'every dose reaches a patient');
+});
+
+// A4: copies of a patient, doctor or medicine must agree with the visit, admission, appointment,
+// note or batch they are filed under (composite foreign keys fk_ctx_*, plus API checks).
+test('A4: the database has a composite foreign key for every copied link', async () => {
+  const [rows] = await db().query(`SELECT TABLE_NAME t, CONSTRAINT_NAME n FROM information_schema.REFERENTIAL_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = DATABASE() AND CONSTRAINT_NAME LIKE 'fk\\_ctx\\_%' ORDER BY t, n`);
+  assert.deepEqual(rows.map(r => `${r.t}.${r.n}`), [
+    'bills.fk_ctx_bills_admission',
+    'consultations.fk_ctx_consultations_admission', 'consultations.fk_ctx_consultations_appointment', 'consultations.fk_ctx_consultations_encounter',
+    'encounters.fk_ctx_encounters_admission',
+    'lab_orders.fk_ctx_lab_orders_admission', 'lab_orders.fk_ctx_lab_orders_consultation', 'lab_orders.fk_ctx_lab_orders_encounter',
+    'pharmacy_stock_movements.fk_ctx_stock_movements_batch',
+    'prescriptions.fk_ctx_prescriptions_admission', 'prescriptions.fk_ctx_prescriptions_consultation', 'prescriptions.fk_ctx_prescriptions_encounter',
+    'surgery_requests.fk_ctx_surgery_requests_encounter',
+    'vital_signs.fk_ctx_vital_signs_admission', 'vital_signs.fk_ctx_vital_signs_encounter',
+  ]);
+});
+
+test('A4: the database refuses a row whose patient or medicine disagrees with its link, and accepts one without a link', async () => {
+  const [[enc]] = await db().query('SELECT encounter_id, patient_id, doctor_id FROM encounters ORDER BY encounter_id LIMIT 1');
+  const [[other]] = await db().query('SELECT patient_id FROM patients WHERE patient_id <> ? ORDER BY patient_id LIMIT 1', [enc.patient_id]);
+  const [[{ test_id }]] = await db().query('SELECT test_id FROM lab_tests ORDER BY test_id LIMIT 1');
+  await assert.rejects(
+    db().query("INSERT INTO lab_orders (patient_id, doctor_id, test_id, order_date, encounter_id) VALUES (?, ?, ?, NOW(), ?)", [other.patient_id, enc.doctor_id, test_id, enc.encounter_id]),
+    e => e.errno === 1452 && /fk_ctx_lab_orders_encounter/.test(e.message));
+  const [[batch]] = await db().query('SELECT batch_id, medicine_id FROM medicine_batches ORDER BY batch_id LIMIT 1');
+  const [[{ user_id }]] = await db().query("SELECT user_id FROM users WHERE username = 'pharmacy_staff'");
+  await assert.rejects(
+    db().query("INSERT INTO pharmacy_stock_movements (medicine_id, movement_type, quantity, performed_by, batch_id) VALUES (?, 'ADJUSTMENT', -1, ?, ?)", [batch.medicine_id + 1, user_id, batch.batch_id]),
+    e => e.errno === 1452 && /fk_ctx_stock_movements_batch/.test(e.message));
+  // No link: nothing to agree with, so the row is accepted as before.
+  const conn = await db().getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query("INSERT INTO lab_orders (patient_id, doctor_id, test_id, order_date) VALUES (?, ?, ?, NOW())", [other.patient_id, enc.doctor_id, test_id]);
+  } finally { await conn.rollback(); conn.release(); }
+});
+
+test('A4: a consultation filed under another patient\'s appointment is refused with 400, and nothing is saved', async () => {
+  const doctor = await login(USERS.DOCTOR);
+  const [[appt]] = await db().query('SELECT appointment_id, patient_id FROM appointments WHERE doctor_id = ? ORDER BY appointment_id LIMIT 1', [doctor.user.doctor_id]);
+  const [[other]] = await db().query('SELECT patient_id FROM appointments WHERE doctor_id = ? AND patient_id <> ? ORDER BY appointment_id LIMIT 1', [doctor.user.doctor_id, appt.patient_id]);
+  const [[{ n_before }]] = await db().query('SELECT COUNT(*) n_before FROM consultations');
+  const res = await api('POST', '/consultations', { token: doctor.token, body: {
+    appointment_id: appt.appointment_id, patient_id: other.patient_id, doctor_id: doctor.user.doctor_id, symptoms: 's', diagnosis: 'd' } });
+  assert.equal(res.status, 400, JSON.stringify(res.body));
+  assert.deepEqual(res.body, { success: false, message: 'Appointment belongs to a different patient or doctor' });
+  const [[{ n_after }]] = await db().query('SELECT COUNT(*) n_after FROM consultations');
+  assert.equal(n_after, n_before);
+});
+
+test('A4: a prescription filed under another patient\'s consultation is refused with 400, and nothing is saved', async () => {
+  const doctor = await login(USERS.DOCTOR);
+  const [patients] = await db().query('SELECT DISTINCT patient_id FROM appointments WHERE doctor_id = ? ORDER BY patient_id LIMIT 2', [doctor.user.doctor_id]);
+  const [a, b] = patients.map(p => p.patient_id);
+  const visit = await visitInProgress(doctor, a);
+  let consultationId;
+  try {
+    const note = await api('POST', '/consultations', { token: doctor.token, body: { patient_id: a, doctor_id: doctor.user.doctor_id, encounter_id: visit.encounterId, symptoms: 's', diagnosis: 'd' } });
+    assert.equal(note.status, 201, JSON.stringify(note.body));
+    consultationId = note.body.data.id;
+  } finally { await visit.close(); }
+  const [[{ n_before }]] = await db().query('SELECT COUNT(*) n_before FROM prescriptions');
+  const res = await api('POST', '/prescriptions', { token: doctor.token, body: {
+    consultation_id: consultationId, patient_id: b, doctor_id: doctor.user.doctor_id,
+    items: [{ medicine_id: 1, dosage: '1 tablet', frequency: 'once', duration: '1 day', quantity: 1 }] } });
+  assert.equal(res.status, 400, JSON.stringify(res.body));
+  assert.deepEqual(res.body, { success: false, message: 'Consultation belongs to a different patient or doctor' });
+  const [[{ n_after }]] = await db().query('SELECT COUNT(*) n_after FROM prescriptions');
+  assert.equal(n_after, n_before);
+});
+
+test('A4: a bill for another patient\'s admission is refused with 400; the admission\'s own patient is billed as before', async () => {
+  const reception = await login(USERS.RECEPTIONIST);
+  const [[adm]] = await db().query('SELECT admission_id, patient_id FROM admissions ORDER BY admission_id LIMIT 1');
+  const [[other]] = await db().query('SELECT patient_id FROM patients WHERE patient_id <> ? ORDER BY patient_id LIMIT 1', [adm.patient_id]);
+  const wrong = await api('POST', '/bills', { token: reception.token, body: { patient_id: other.patient_id, admission_id: adm.admission_id, total_amount: 100 } });
+  assert.equal(wrong.status, 400, JSON.stringify(wrong.body));
+  assert.deepEqual(wrong.body, { success: false, message: 'That admission belongs to a different patient' });
+  const missing = await api('POST', '/bills', { token: reception.token, body: { patient_id: adm.patient_id, admission_id: 999999, total_amount: 100 } });
+  assert.deepEqual([missing.status, missing.body], [400, { success: false, message: 'Admission not found' }]);
+  const right = await api('POST', '/bills', { token: reception.token, body: { patient_id: adm.patient_id, admission_id: adm.admission_id, total_amount: 100 } });
+  assert.equal(right.status, 201, JSON.stringify(right.body));
+  assert.equal(right.body.success, true);
 });

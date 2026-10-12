@@ -1,16 +1,26 @@
 const pool = require('../config/db');
 const { withTransaction } = require('../utils/audit');
+const { CONTEXT_MISMATCH, isContextMismatch } = require('../utils/contextMismatch');
 const BILL_ITEM_CATEGORIES = ['CONSULTATION', 'BED', 'ICU', 'LABORATORY', 'MEDICINE', 'PROCEDURE', 'AMBULANCE', 'OTHER'];
 exports.create = async (req, res) => {
   try {
     const { patient_id, admission_id, total_amount } = req.body;
+    // A bill for an admission is that admission's patient's bill (enforced by fk_ctx_bills_admission).
+    if (admission_id) {
+      const [[admission]] = await pool.execute('SELECT patient_id FROM admissions WHERE admission_id = ?', [admission_id]);
+      if (!admission) return res.status(400).json({ success: false, message: 'Admission not found' });
+      if (Number(admission.patient_id) !== Number(patient_id)) return res.status(400).json({ success: false, message: 'That admission belongs to a different patient' });
+    }
     const id = await withTransaction(req, async (connection, audit) => {
       const [result] = await connection.execute('INSERT INTO bills (patient_id, admission_id, total_amount, paid_amount, status, bill_date) VALUES (?, ?, ?, 0, "PENDING", NOW())', [patient_id, admission_id || null, total_amount]);
       await audit({ action: 'CREATE_BILL', entityType: 'bill', entityId: result.insertId, patientId: patient_id, details: { admission_id: admission_id ? Number(admission_id) : null, total_amount: Number(total_amount) } });
       return result.insertId;
     });
     res.status(201).json({ success: true, data: { id } });
-  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+  } catch (error) {
+    if (isContextMismatch(error)) return res.status(400).json({ success: false, message: CONTEXT_MISMATCH });
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 exports.list = async (req, res) => {
   try {
