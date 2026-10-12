@@ -17,11 +17,25 @@ const isLiteral = (v) => {
   return !bare.startsWith('$') && !bare.startsWith('<') && !PLACEHOLDER.test(bare);
 };
 
+// Exact lines that match a rule but contain no password. Each entry is one file and the whole line,
+// so nothing else in that file (or the same text in another file) is exempt.
+const ALLOWLIST = [
+  {
+    // docs/azure.md, running the browser tests against the live demo: the password is read on the server
+    // from /srv/hms/config/hms.env into an environment variable and never written down. The rule matches
+    // the sed expression "s/^DB_PASSWORD=//p" (the text after "DB_PASSWORD=" is part of the regex, not a value).
+    file: 'docs/azure.md',
+    line: `UI_DB_PASSWORD="$(ssh hms-azure 'sudo -u hms sed -n "s/^DB_PASSWORD=//p" /srv/hms/config/hms.env')" \\`,
+  },
+];
+const isAllowed = (file, line) => ALLOWLIST.some(a => a.file === file && a.line === line);
+
 // Returns "line: rule" findings for one file's text.
 function scan(text, file = '') {
   const found = [];
   const lines = text.split('\n');
   lines.forEach((line, i) => {
+    if (isAllowed(file, line)) return;
     const at = (rule) => found.push(`${file}:${i + 1} ${rule}`);
     let m;
     if ((m = line.match(/MYSQL_PWD\s*=\s*("[^"]*"|'[^']*'|[^\s;&]+)/)) && isLiteral(m[1])) at('MYSQL_PWD set to a literal');
@@ -70,6 +84,20 @@ test('the scanner catches each kind of literal (and allows env references and pl
     'mysql -u root -p < docs/mysql-app-user.sql',
   ];
   for (const sample of fine) assert.deepEqual(scan(sample), [], sample);
+});
+
+test('the allowlist exempts only its exact line in its own file; real passwords are still caught there and elsewhere', () => {
+  const pw = ['Hunter', '2', 'Secret!'].join('');
+  const allowed = ALLOWLIST[0].line;
+  assert.deepEqual(scan(allowed, 'docs/azure.md'), [], 'the documented line is exempt in docs/azure.md');
+  assert.equal(scan(allowed, 'docs/deploy.md').length, 1, 'the same line in another file is still flagged');
+  assert.equal(scan(allowed.replace('hms.env', 'other.env'), 'docs/azure.md').length, 1, 'a changed line is not exempt');
+  const azureWithLiteral = `${allowed}\nDB_PASSWORD=${pw}\n`;
+  assert.deepEqual(scan(azureWithLiteral, 'docs/azure.md'), [`docs/azure.md:2 DB_PASSWORD set to a literal`], 'a real literal in the same file is caught');
+  assert.equal(scan(`export MYSQL_PWD='${pw}'`, 'server/scripts/x.sh').length, 1, 'a real literal elsewhere is caught');
+  // And the allowlisted line is really the one in docs/azure.md (the entry is not stale).
+  const doc = fs.readFileSync(path.join(ROOT, ALLOWLIST[0].file), 'utf8').split('\n');
+  assert.ok(doc.includes(allowed), 'docs/azure.md still contains the allowlisted line');
 });
 
 module.exports = { scan };
