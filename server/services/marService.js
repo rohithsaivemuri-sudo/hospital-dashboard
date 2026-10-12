@@ -18,8 +18,8 @@ async function scheduleDispensedItems(connection, { patientId, items, now }) {
     }, now);
     for (const at of times) {
       await connection.execute(
-        'INSERT INTO medication_administrations (prescription_item_id, patient_id, admission_id, scheduled_at_utc, status) VALUES (?, ?, ?, ?, "PENDING")',
-        [item.item_id, patientId, admission.admission_id, toSqlUtc(at)]
+        'INSERT INTO medication_administrations (prescription_item_id, admission_id, scheduled_at_utc, status) VALUES (?, ?, ?, "PENDING")',
+        [item.item_id, admission.admission_id, toSqlUtc(at)]
       );
       doses += 1;
     }
@@ -54,14 +54,17 @@ async function loadMar(connection, patientId, now = new Date()) {
     WHERE p.patient_id = ? AND pi.dispensed = TRUE
     ORDER BY pi.dispensed_at DESC, pi.item_id`, [patientId]);
   const [doses] = await connection.execute(`
-    SELECT administration_id, prescription_item_id, admission_id, status, dose_given, route_given, reason,
-           DATE_FORMAT(scheduled_at_utc, '%Y-%m-%d %H:%i:%s') AS scheduled_at_utc,
-           DATE_FORMAT(administered_at_utc, '%Y-%m-%d %H:%i:%s') AS administered_at_utc,
-           DATE_FORMAT(recorded_at_utc, '%Y-%m-%d %H:%i:%s') AS recorded_at_utc,
+    SELECT ma.administration_id, ma.prescription_item_id, ma.admission_id, ma.status, ma.dose_given, ma.route_given, ma.reason,
+           DATE_FORMAT(ma.scheduled_at_utc, '%Y-%m-%d %H:%i:%s') AS scheduled_at_utc,
+           DATE_FORMAT(ma.administered_at_utc, '%Y-%m-%d %H:%i:%s') AS administered_at_utc,
+           DATE_FORMAT(ma.recorded_at_utc, '%Y-%m-%d %H:%i:%s') AS recorded_at_utc,
            u.full_name AS recorded_by_name
-    FROM medication_administrations ma LEFT JOIN users u ON u.user_id = ma.recorded_by
-    WHERE ma.patient_id = ?
-    ORDER BY COALESCE(scheduled_at_utc, administered_at_utc), administration_id`, [patientId]);
+    FROM medication_administrations ma
+    JOIN prescription_items pi ON pi.item_id = ma.prescription_item_id
+    JOIN prescriptions p ON p.prescription_id = pi.prescription_id
+    LEFT JOIN users u ON u.user_id = ma.recorded_by
+    WHERE p.patient_id = ?
+    ORDER BY COALESCE(ma.scheduled_at_utc, ma.administered_at_utc), ma.administration_id`, [patientId]);
 
   const byItem = new Map(items.map(i => [i.item_id, { ...i, schedule_type: i.frequency_code === 'PRN' ? 'PRN' : i.frequency_code ? 'SCHEDULED' : 'UNSCHEDULED', doses: [] }]));
   for (const d of doses) {

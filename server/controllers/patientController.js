@@ -191,7 +191,7 @@ exports.getHistory = async (req, res) => {
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
     const [admissions] = await pool.execute(ADMISSIONS_SQL, [patient_id]);
-    const [appointments] = await pool.execute('SELECT * FROM appointments WHERE patient_id = ? ORDER BY appointment_date DESC', [patient_id]);
+    const [appointments] = await pool.execute('SELECT * FROM v_appointments WHERE patient_id = ? ORDER BY appointment_date DESC', [patient_id]);
     const [prescriptions] = await pool.execute(`
       SELECT p.*, 
         (SELECT GROUP_CONCAT(CONCAT(m.name, ' · Dose: ', pi.dosage, ' · Frequency: ', pi.frequency, ' · Duration: ', pi.duration, ' · Quantity: ', pi.quantity) SEPARATOR '\n')
@@ -231,7 +231,7 @@ exports.getAppointments = async (req, res) => {
     const auth = await allowed(req, req.params.id, 'demographics');
     if (!auth) return res.status(403).json({ success: false, message: 'Forbidden' });
     
-    const [rows] = await pool.execute('SELECT * FROM appointments WHERE patient_id = ?', [req.params.id]);
+    const [rows] = await pool.execute('SELECT * FROM v_appointments WHERE patient_id = ?', [req.params.id]);
     res.json({ success: true, data: rows });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };

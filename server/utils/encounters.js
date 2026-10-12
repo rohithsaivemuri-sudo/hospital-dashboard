@@ -189,8 +189,14 @@ async function resolveEncounterForRecord(connection, { encounterId, patientId, d
     return e.encounter_id;
   }
   if (consultationId) {
-    const [[c]] = await connection.execute('SELECT encounter_id FROM consultations WHERE consultation_id = ?', [consultationId]);
-    if (c && c.encounter_id) return c.encounter_id;
+    // An order filed under a note is for the note's patient, and takes the note's visit, which must be
+    // this doctor's (enforced by fk_ctx_*_consultation and fk_ctx_*_encounter).
+    const [[c]] = await connection.execute('SELECT encounter_id, patient_id, doctor_id FROM consultations WHERE consultation_id = ?', [consultationId]);
+    if (!c) throw new EncounterError(400, 'Consultation not found');
+    if (Number(c.patient_id) !== Number(patientId) || (c.encounter_id && Number(c.doctor_id) !== Number(doctorId))) {
+      throw new EncounterError(400, 'Consultation belongs to a different patient or doctor');
+    }
+    if (c.encounter_id) return c.encounter_id;
   }
   const [open] = await connection.execute(
     'SELECT encounter_id FROM encounters WHERE patient_id = ? AND doctor_id = ? AND status = "IN_PROGRESS" FOR SHARE', [patientId ?? null, doctorId ?? null]

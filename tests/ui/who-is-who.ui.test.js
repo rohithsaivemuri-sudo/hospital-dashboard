@@ -15,7 +15,7 @@ before(async () => {
   // A ward with beds and no patients (the seed has none): two isolation beds no other test uses.
   const conn = await db();
   const [w] = await conn.query("INSERT INTO wards (name, department_id, floor, capacity, ward_type) VALUES (?, 1, 9, 2, 'ISOLATION')", [`Quiet Ward ${stamp}`]);
-  await conn.query("INSERT INTO beds (ward_id, bed_number, floor, bed_type, status) VALUES (?, ?, 9, 'ISOLATION', 'AVAILABLE'), (?, ?, 9, 'ISOLATION', 'AVAILABLE')", [w.insertId, `Q-${stamp}-1`, w.insertId, `Q-${stamp}-2`]);
+  await conn.query("INSERT INTO beds (ward_id, bed_number, bed_type, status) VALUES (?, ?, 'ISOLATION', 'AVAILABLE'), (?, ?, 'ISOLATION', 'AVAILABLE')", [w.insertId, `Q-${stamp}-1`, w.insertId, `Q-${stamp}-2`]);
   emptyWard = { ward_id: w.insertId, name: `Quiet Ward ${stamp}`, beds: 2 };
   browser = await launch();
   page = await browser.newPage();

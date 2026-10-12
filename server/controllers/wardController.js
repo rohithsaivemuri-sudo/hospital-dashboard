@@ -21,7 +21,8 @@ exports.getById = async (req, res) => {
   try {
     const [rows] = await pool.execute('SELECT * FROM wards WHERE ward_id = ?', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Not found' });
-    const [beds] = await pool.execute('SELECT * FROM beds WHERE ward_id = ?', [req.params.id]);
+    const [beds] = await pool.execute(`SELECT b.bed_id, b.ward_id, b.bed_number, w.floor, b.bed_type, b.status, b.has_ventilator
+      FROM beds b JOIN wards w ON w.ward_id = b.ward_id WHERE b.ward_id = ?`, [req.params.id]);
     res.json({ success: true, data: { ...rows[0], beds } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };

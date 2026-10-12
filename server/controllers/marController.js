@@ -47,7 +47,7 @@ exports.patientMar = async (req, res) => {
 async function lockDose(connection, req) {
   if (!isId(req.params.id)) throw fail(400, 'Invalid dose id');
   const [[dose]] = await connection.execute(`
-    SELECT ma.administration_id, ma.status, ma.patient_id, ma.prescription_item_id,
+    SELECT ma.administration_id, ma.status, p.patient_id, ma.prescription_item_id,
            DATE_FORMAT(ma.scheduled_at_utc, '%Y-%m-%d %H:%i:%s') AS scheduled_at_utc,
            pi.medicine_id, pi.dosage, pi.route, pi.dispensed, p.status AS prescription_status, m.name AS medicine_name
     FROM medication_administrations ma
@@ -148,9 +148,9 @@ exports.givenAsNeeded = async (req, res) => {
       );
       if ((Number(given) + 1) * item.units_per_dose > item.quantity) throw fail(409, 'All of the dispensed quantity has already been given');
       const [ins] = await connection.execute(
-        `INSERT INTO medication_administrations (prescription_item_id, patient_id, admission_id, status, administered_at_utc, dose_given, route_given, reason, recorded_by, recorded_at_utc)
-         VALUES (?, ?, ?, 'ADMINISTERED', ?, ?, ?, ?, ?, ?)`,
-        [item.item_id, item.patient_id, admission.admission_id, toSqlUtc(now), String(req.body.dose_given).trim(), req.body.route_given, reason, req.user.user_id, toSqlUtc(now)]
+        `INSERT INTO medication_administrations (prescription_item_id, admission_id, status, administered_at_utc, dose_given, route_given, reason, recorded_by, recorded_at_utc)
+         VALUES (?, ?, 'ADMINISTERED', ?, ?, ?, ?, ?, ?)`,
+        [item.item_id, admission.admission_id, toSqlUtc(now), String(req.body.dose_given).trim(), req.body.route_given, reason, req.user.user_id, toSqlUtc(now)]
       );
       await audit({ action: 'MAR_PRN_GIVEN', entityType: 'medication_administration', entityId: ins.insertId, patientId: item.patient_id,
         details: { item_id: item.item_id, medicine_id: item.medicine_id, administered_at: now.toISOString(), reason_recorded: true } });
