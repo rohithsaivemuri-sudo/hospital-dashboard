@@ -37,7 +37,7 @@ async function allocateEmergencyResources(emergencyId, io, audit, options = {}) 
 
     // 2. Find available bed matching requirements WITH ROW LOCK
     let bedQuery = `
-      SELECT b.* FROM beds b
+      SELECT b.*, w.floor FROM beds b JOIN wards w ON w.ward_id = b.ward_id
       WHERE b.status = 'AVAILABLE'
       AND b.bed_type = ?
     `;
@@ -47,7 +47,7 @@ async function allocateEmergencyResources(emergencyId, io, audit, options = {}) 
       bedQuery += ' AND b.has_ventilator = TRUE';
     }
     
-    bedQuery += ' ORDER BY b.bed_id ASC LIMIT 1 FOR UPDATE';
+    bedQuery += ' ORDER BY b.bed_id ASC LIMIT 1 FOR UPDATE OF b';
     
     const [beds] = await connection.execute(bedQuery, bedParams);
     
