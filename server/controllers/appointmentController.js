@@ -11,13 +11,13 @@ exports.create = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Forbidden: Cannot create appointment for another doctor' });
     }
 
-    // appointments.department_id is NOT NULL: take it from the doctor being booked.
-    const [[doctor]] = await pool.execute('SELECT department_id FROM doctors WHERE doctor_id = ?', [doctor_id ?? null]);
+    // The appointment's department is the doctor's (read through v_appointments), so it is not stored.
+    const [[doctor]] = await pool.execute('SELECT doctor_id FROM doctors WHERE doctor_id = ?', [doctor_id ?? null]);
     if (!doctor) return res.status(400).json({ success: false, message: 'Doctor not found' });
 
     try {
       const id = await withTransaction(req, async (connection, audit) => {
-        const [result] = await connection.execute('INSERT INTO appointments (patient_id, doctor_id, department_id, appointment_date, appointment_time, reason, status) VALUES (?, ?, ?, ?, ?, ?, "BOOKED")', [patient_id, doctor_id, doctor.department_id, appointment_date, appointment_time, reason ?? null]);
+        const [result] = await connection.execute('INSERT INTO appointments (patient_id, doctor_id, appointment_date, appointment_time, reason, status) VALUES (?, ?, ?, ?, ?, "BOOKED")', [patient_id, doctor_id, appointment_date, appointment_time, reason ?? null]);
         await audit({ action: 'CREATE_APPOINTMENT', entityType: 'appointment', entityId: result.insertId, patientId: patient_id, details: { doctor_id: Number(doctor_id) } });
         return result.insertId;
       });
@@ -33,7 +33,7 @@ exports.list = async (req, res) => {
     const { date, doctor_id, status } = req.query;
     let query = `
       SELECT a.*, p.name as patient_name, d.name as doctor_name, e.encounter_id, e.status as encounter_status
-      FROM appointments a
+      FROM v_appointments a
       LEFT JOIN patients p ON a.patient_id = p.patient_id
       LEFT JOIN doctors d ON a.doctor_id = d.doctor_id
       LEFT JOIN encounters e ON e.appointment_id = a.appointment_id
@@ -70,7 +70,7 @@ exports.list = async (req, res) => {
 };
 exports.getById = async (req, res) => {
   try {
-    let query = 'SELECT * FROM appointments WHERE appointment_id = ?';
+    let query = 'SELECT * FROM v_appointments WHERE appointment_id = ?';
     let params = [req.params.id];
     
     if (req.user.role === 'DOCTOR') {
@@ -114,7 +114,7 @@ exports.getByDoctor = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
-    let sql = 'SELECT * FROM appointments WHERE doctor_id = ?';
+    let sql = 'SELECT * FROM v_appointments WHERE doctor_id = ?';
     const params = [targetDoctorId];
     if (req.user.role === 'NURSE') {
       const scope = patientFilter(req.user, 'demographics', 'patient_id');

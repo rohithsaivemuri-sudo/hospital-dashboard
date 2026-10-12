@@ -18,7 +18,8 @@ test('receptionist books an appointment: stored as BOOKED with the doctor\'s dep
   assert.equal(res.status, 201, JSON.stringify(res.body));
   assert.equal(res.body.success, true);
 
-  const [[row]] = await db().query('SELECT * FROM appointments WHERE appointment_id = ?', [res.body.data.id]);
+  // The department is the doctor's (BCNF A2): read through v_appointments, not stored on the row.
+  const [[row]] = await db().query('SELECT * FROM v_appointments WHERE appointment_id = ?', [res.body.data.id]);
   assert.equal(row.status, 'BOOKED');
   assert.equal(row.department_id, doctor.department_id);
   assert.equal(row.patient_id, 1);

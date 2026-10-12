@@ -44,3 +44,43 @@ test('A1: a bed stored without a floor of its own shows its ward\'s floor everyw
     await db().query("UPDATE beds SET status = 'MAINTENANCE' WHERE bed_id = ?", [bed.insertId]);
   }
 });
+
+// A2: an appointment's department is its doctor's department.
+const APPOINTMENT_FIELDS = ['appointment_id', 'patient_id', 'doctor_id', 'department_id', 'appointment_date', 'appointment_time', 'status', 'reason', 'notes', 'created_at', 'updated_at'];
+
+test('A2: a new booking reports its doctor\'s department on every appointment endpoint, with the same fields as before', async () => {
+  const reception = await login(USERS.RECEPTIONIST);
+  const admin = await login(USERS.ADMIN);
+  const [[doctor]] = await db().query('SELECT doctor_id, department_id FROM doctors ORDER BY doctor_id DESC LIMIT 1');
+  const booked = await api('POST', '/appointments', { token: reception.token, body: {
+    patient_id: 3, doctor_id: doctor.doctor_id, appointment_date: '2031-02-03', appointment_time: '09:15:00', reason: 'Department check' } });
+  assert.equal(booked.status, 201, JSON.stringify(booked.body));
+  const id = booked.body.data.id;
+
+  const one = await api('GET', `/appointments/${id}`, { token: reception.token });
+  assert.equal(one.status, 200);
+  assert.deepEqual(Object.keys(one.body.data), APPOINTMENT_FIELDS);
+  assert.equal(one.body.data.department_id, doctor.department_id);
+
+  const list = await api('GET', `/appointments?doctor_id=${doctor.doctor_id}`, { token: reception.token });
+  const listed = list.body.data.find(a => a.appointment_id === id);
+  assert.deepEqual(Object.keys(listed).slice(0, APPOINTMENT_FIELDS.length), APPOINTMENT_FIELDS);
+  assert.equal(listed.department_id, doctor.department_id);
+
+  const byDoctor = await api('GET', `/appointments/doctor/${doctor.doctor_id}`, { token: reception.token });
+  assert.equal(byDoctor.body.data.find(a => a.appointment_id === id)?.department_id, doctor.department_id);
+
+  const forPatient = await api('GET', '/patients/3/appointments', { token: admin.token });
+  assert.equal(forPatient.status, 200);
+  assert.equal(forPatient.body.data.find(a => a.appointment_id === id)?.department_id, doctor.department_id);
+});
+
+test('A2: seed.sql books every appointment under its doctor\'s department', async () => {
+  const seed = require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'database', 'seed.sql'), 'utf8');
+  const block = seed.slice(seed.indexOf('INSERT INTO appointments'), seed.indexOf(';', seed.indexOf('INSERT INTO appointments')));
+  const rows = [...block.matchAll(/^\((\d+),\s*(\d+),\s*(\d+),/gm)].map(m => ({ doctor: Number(m[2]), department: Number(m[3]) }));
+  assert.equal(rows.length, 9);
+  const [doctors] = await db().query('SELECT doctor_id, department_id FROM doctors WHERE doctor_id <= 12');
+  const departmentOf = new Map(doctors.map(d => [d.doctor_id, d.department_id]));
+  for (const r of rows) assert.equal(r.department, departmentOf.get(r.doctor), `doctor ${r.doctor}`);
+});
