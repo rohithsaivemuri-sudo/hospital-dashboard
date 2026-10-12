@@ -55,13 +55,19 @@ Host hms-azure
   IdentitiesOnly yes
 ```
 
-SSH is only open to the IP address the VM was created from. When yours changes (you get a timeout
-on `ssh hms-azure`), allow the new one:
+SSH is only open to one IP address, the owner's. When yours changes (`ssh hms-azure` times out),
+allow the new one in the Azure portal. The Azure CLI cannot do it on this account: its sign-in is
+blocked by the tenant's security defaults (error AADSTS530035).
 
-```bash
-az network nsg rule update -g hms-demo-rg --nsg-name hms-demo-nsg -n allow-ssh-from-owner \
-  --source-address-prefixes "$(curl -s https://api.ipify.org)/32"
-```
+1. Find your current public address: `curl -s https://api.ipify.org`.
+2. In the [Azure portal](https://portal.azure.com), open **Resource groups → hms-demo-rg →
+   hms-demo-nsg** (the network security group).
+3. Under **Settings → Inbound security rules**, open **allow-ssh-from-owner**.
+4. Leave **Source** as **IP Addresses**, and set **Source IP addresses/CIDR ranges** to your address
+   followed by `/32` (for example `203.0.113.7/32`). Replace the old address; do not add a range.
+5. **Save**, wait for the rule to update (a few seconds), then check: `ssh hms-azure 'echo ok'`.
+
+Only port 22 is affected; the website (ports 80 and 443) stays open to everyone throughout.
 
 ## Redeploy the latest main
 
