@@ -189,3 +189,18 @@ test('A4: a bill for another patient\'s admission is refused with 400; the admis
   assert.equal(right.status, 201, JSON.stringify(right.body));
   assert.equal(right.body.success, true);
 });
+
+// A5: a bill item's total is quantity * unit_price, computed by the database.
+test('A5: a bill item\'s total is computed from quantity and unit price, and the API shows it as before', async () => {
+  const reception = await login(USERS.RECEPTIONIST);
+  const bill = await api('POST', '/bills', { token: reception.token, body: { patient_id: 4, total_amount: 0 } });
+  assert.equal(bill.status, 201, JSON.stringify(bill.body));
+  const add = await api('POST', `/bills/${bill.body.data.id}/items`, { token: reception.token, body: { description: 'Dressing', amount: 125.5, category: 'PROCEDURE' } });
+  assert.equal(add.status, 200, JSON.stringify(add.body));
+  const got = await api('GET', `/bills/${bill.body.data.id}`, { token: reception.token });
+  const [item] = got.body.data.items;
+  assert.deepEqual(Object.keys(item), ['item_id', 'bill_id', 'description', 'category', 'quantity', 'unit_price', 'total_price', 'created_at']);
+  assert.equal(Number(item.total_price), 125.5);
+  const [[{ inconsistent }]] = await db().query('SELECT COUNT(*) inconsistent FROM bill_items WHERE total_price <> quantity * unit_price');
+  assert.equal(inconsistent, 0);
+});

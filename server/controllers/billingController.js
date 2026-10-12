@@ -47,7 +47,8 @@ exports.addItem = async (req, res) => {
     // bill_items has no amount column: a single line item of `amount`, categorised OTHER unless a valid category is sent.
     const category = BILL_ITEM_CATEGORIES.includes(req.body.category) ? req.body.category : 'OTHER';
     await withTransaction(req, async (connection, audit) => {
-      const [item] = await connection.execute('INSERT INTO bill_items (bill_id, description, category, quantity, unit_price, total_price) VALUES (?, ?, ?, 1, ?, ?)', [req.params.id, description, category, amount, amount]);
+      // total_price is quantity * unit_price, computed by the database (BCNF A5).
+      const [item] = await connection.execute('INSERT INTO bill_items (bill_id, description, category, quantity, unit_price) VALUES (?, ?, ?, 1, ?)', [req.params.id, description, category, amount]);
       await connection.execute('UPDATE bills SET total_amount = total_amount + ? WHERE bill_id = ?', [amount, req.params.id]);
       const [[bill]] = await connection.execute('SELECT patient_id FROM bills WHERE bill_id = ?', [req.params.id]);
       await audit({ action: 'ADD_BILL_ITEM', entityType: 'bill', entityId: Number(req.params.id), patientId: bill?.patient_id, details: { item_id: item.insertId, category, amount: Number(amount) } });
