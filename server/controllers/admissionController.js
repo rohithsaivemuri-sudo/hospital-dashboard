@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 const { writeAudit } = require('../utils/audit');
-const { NURSE_WARDS_SQL } = require('../utils/patientAccess');
+const { NURSE_WARDS_SQL, nurseWardsParams } = require('../utils/patientAccess');
 const { cancelPendingDoses } = require('../services/marService');
 const realtime = require('../utils/realtime');
 
@@ -21,7 +21,7 @@ exports.list = async (req, res) => {
     } else if (req.user.role === 'NURSE') {
       // Nurses see admissions in the wards they are currently assigned to.
       query += ` WHERE b.ward_id IN (${NURSE_WARDS_SQL})`;
-      params.push(req.user.user_id);
+      params.push(...nurseWardsParams(req.user.user_id));
     }
     
     query += ` ORDER BY a.admission_date DESC`;
@@ -45,7 +45,7 @@ exports.getCurrent = async (req, res) => {
       params.push(req.user.doctor_id);
     } else if (req.user.role === 'NURSE') {
       query += ` AND b.ward_id IN (${NURSE_WARDS_SQL})`;
-      params.push(req.user.user_id);
+      params.push(...nurseWardsParams(req.user.user_id));
     }
     const [rows] = await pool.execute(query, params);
     res.json({ success: true, data: rows });
@@ -60,7 +60,7 @@ exports.getById = async (req, res) => {
       params.push(req.user.doctor_id);
     } else if (req.user.role === 'NURSE') {
       query += ` AND b.ward_id IN (${NURSE_WARDS_SQL})`;
-      params.push(req.user.user_id);
+      params.push(...nurseWardsParams(req.user.user_id));
     }
     const [rows] = await pool.execute(query, params);
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Not found' });

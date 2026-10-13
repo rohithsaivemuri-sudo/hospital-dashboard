@@ -24,11 +24,11 @@ const USERS = {
   PHARMACY: 'pharmacy_staff',
 };
 
-async function api(method, urlPath, { token, body } = {}) {
+async function api(method, urlPath, { token, body, base = BASE } = {}) {
   const headers = {};
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  const res = await fetch(BASE + urlPath, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
+  const res = await fetch(base + urlPath, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
   const text = await res.text();
   let data;
   try { data = JSON.parse(text); } catch { data = text; }
@@ -107,8 +107,31 @@ async function visitInProgress(doctor, patientId) {
   return { encounterId: visit.encounter_id, close: existed ? async () => {} : () => api('POST', `/encounters/${visit.encounter_id}/finish`, { token: doctor.token }) };
 }
 
+// Another API server on the test database whose clock starts at `instant` (HMS_FAKE_NOW,
+// utils/clock.js) and runs in TZ=UTC, so nothing can lean on the process time zone. Logins from
+// the main test server work here too. Returns { api, stop }; api() is the helper above, aimed here.
+async function serverAt(instant, port) {
+  const { spawn } = require('child_process');
+  const child = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
+    cwd: path.join(__dirname, '..'),
+    env: { ...process.env, DB_NAME: TEST_DB, PORT: String(port), LAB_REPORT_DIR, LOGIN_MAX_PER_IP: '1000000', LOGIN_MAX_FAILURES: '1000000', TZ: 'UTC', HMS_FAKE_NOW: instant },
+    stdio: ['ignore', 'ignore', 'inherit'],
+  });
+  const base = `http://localhost:${port}/api`;
+  const exited = new Promise(resolve => child.once('exit', resolve));
+  for (let started = Date.now(); ; await new Promise(r => setTimeout(r, 100))) {
+    if (child.exitCode !== null) throw new Error(`server at ${instant} exited with ${child.exitCode}`);
+    if (Date.now() - started > 15000) { child.kill(); throw new Error(`server at ${instant} did not start on port ${port}`); }
+    try { await fetch(`${base}/auth/me`); break; } catch { /* not up yet */ }
+  }
+  return {
+    api: (method, urlPath, opts = {}) => api(method, urlPath, { ...opts, base }),
+    stop: async () => { child.kill(); await exited; },
+  };
+}
+
 async function closeDb() {
   if (pool) { await pool.end(); pool = undefined; }
 }
 
-module.exports = { TEST_PORT, BASE, TEST_DB, LAB_REPORT_DIR, SERVER_STDERR, PASSWORD, USERS, api, rawRequest, login, db, closeDb, setStock, stockMismatches, visitInProgress };
+module.exports = { TEST_PORT, BASE, TEST_DB, LAB_REPORT_DIR, SERVER_STDERR, PASSWORD, USERS, api, rawRequest, login, db, closeDb, setStock, stockMismatches, visitInProgress, serverAt };

@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 const { withTransaction } = require('../utils/audit');
-const { canAccessPatient, isNurseAssignedPatient, NURSE_WARDS_SQL } = require('../utils/patientAccess');
+const { canAccessPatient, isNurseAssignedPatient, NURSE_WARDS_SQL, nurseWardsParams } = require('../utils/patientAccess');
 const { EncounterError, transitionEncounter } = require('../utils/encounters');
 const { VITALS, KEYS, parseVitals, abnormalKeys } = require('../utils/vitals');
 const { toSqlUtc, fromSqlUtc, formatIst } = require('../utils/marTime');
@@ -37,7 +37,7 @@ async function openContexts(connection, user, patientId) {
     SELECT a.admission_id, a.admission_date, b.bed_number, w.name AS ward_name,
            (b.ward_id IN (${NURSE_WARDS_SQL})) AS in_my_ward
     FROM admissions a JOIN beds b ON b.bed_id = a.bed_id JOIN wards w ON w.ward_id = b.ward_id
-    WHERE a.patient_id = ? AND a.status = 'ACTIVE' ORDER BY a.admission_id DESC LIMIT 1`, [user.user_id, patientId]);
+    WHERE a.patient_id = ? AND a.status = 'ACTIVE' ORDER BY a.admission_id DESC LIMIT 1`, [...nurseWardsParams(user.user_id), patientId]);
   const [[encounter]] = await connection.execute(`
     SELECT e.encounter_id, e.encounter_type, e.status, e.doctor_id, d.name AS doctor_name
     FROM encounters e JOIN doctors d ON d.doctor_id = e.doctor_id
@@ -58,7 +58,7 @@ async function resolveContext(connection, user, patientId, { encounter_id, admis
   if (admission_id != null) {
     [[admission]] = await connection.execute(`
       SELECT a.admission_id, a.patient_id, a.status, (b.ward_id IN (${NURSE_WARDS_SQL})) AS in_my_ward
-      FROM admissions a JOIN beds b ON b.bed_id = a.bed_id WHERE a.admission_id = ?`, [user.user_id, admission_id]);
+      FROM admissions a JOIN beds b ON b.bed_id = a.bed_id WHERE a.admission_id = ?`, [...nurseWardsParams(user.user_id), admission_id]);
     if (!admission || admission.patient_id !== patientId) throw httpError(400, 'That admission does not belong to this patient');
     if (admission.status !== 'ACTIVE') throw httpError(409, 'Cannot record vitals on a discharged admission');
     if (!Number(admission.in_my_ward)) throw httpError(403, 'Forbidden: this patient is not in one of your wards');

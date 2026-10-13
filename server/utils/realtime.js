@@ -6,6 +6,7 @@
 //   - events for data changed inside a transaction are sent only after it commits
 //     (afterCommit + withTransaction in utils/audit.js).
 const pool = require('../config/db');
+const { todayIst } = require('./clock');
 
 let io = null;
 const setIo = (server) => { io = server; };
@@ -31,11 +32,11 @@ const doctorUpdated = ({ doctorId }) => send(roleRooms(ALL_ROLES), 'doctor:updat
 // Hospital dashboard statistics: administrators.
 const dashboardRefresh = () => send(roleRooms(['ADMIN']), 'dashboard:refresh', {});
 
-// Nurses assigned today to a ward (their admissions list covers only those wards).
+// Nurses assigned today (IST) to a ward (their admissions list covers only those wards).
 async function nurseRoomsForWard(wardId) {
   const [rows] = await pool.execute(
     `SELECT DISTINCT nurse_user_id FROM nurse_ward_assignments
-     WHERE ward_id = ? AND start_date <= CURDATE() AND (end_date IS NULL OR end_date >= CURDATE())`, [wardId]);
+     WHERE ward_id = ? AND ? BETWEEN start_date AND COALESCE(end_date, '9999-12-31')`, [wardId, todayIst()]);
   return rows.map(r => `user:${r.nurse_user_id}`);
 }
 

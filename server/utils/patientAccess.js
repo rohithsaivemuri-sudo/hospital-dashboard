@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { todayIst } = require('./clock');
 
 // Patient-level access rules (report Section E, "Assigned Only"). Role gates live on the routes
 // (middleware/auth.js authorize); these functions decide which patients a permitted role may see.
@@ -17,16 +18,18 @@ const DOCTOR_CARE_SET_SQL = `
   UNION SELECT patient_id FROM encounters WHERE doctor_id = ?`;
 const doctorCareSetParams = (doctorId) => Array(6).fill(doctorId);
 
-// Wards with an assignment active today.
+// Wards with an assignment active today (IST; start and end dates inclusive).
+// Parameters: nurseWardsParams(nurseUserId).
 const NURSE_WARDS_SQL = `
   SELECT ward_id FROM nurse_ward_assignments
-  WHERE nurse_user_id = ? AND start_date <= CURDATE() AND (end_date IS NULL OR end_date >= CURDATE())`;
+  WHERE nurse_user_id = ? AND ? BETWEEN start_date AND COALESCE(end_date, '9999-12-31')`;
+const nurseWardsParams = (nurseUserId) => [nurseUserId, todayIst()];
 
 const NURSE_PATIENTS_SQL = `
   SELECT a.patient_id FROM admissions a JOIN beds b ON b.bed_id = a.bed_id
   WHERE a.status = 'ACTIVE' AND b.ward_id IN (${NURSE_WARDS_SQL})
   UNION SELECT patient_id FROM encounters
-  WHERE encounter_type = 'OUTPATIENT' AND status IN ('ARRIVED', 'TRIAGED', 'IN_PROGRESS')`;
+  WHERE encounter_type = 'OUTPATIENT' AND status IN ('ARRIVED', 'TRIAGED', 'IN_PROGRESS')`; // params: nurseWardsParams
 
 async function isInDoctorCareSet(doctorId, patientId, connection = pool) {
   const [rows] = await connection.execute(
@@ -38,7 +41,7 @@ async function isInDoctorCareSet(doctorId, patientId, connection = pool) {
 
 async function isNurseAssignedPatient(nurseUserId, patientId, connection = pool) {
   const [rows] = await connection.execute(
-    `SELECT 1 FROM (${NURSE_PATIENTS_SQL}) AS assigned WHERE patient_id = ? LIMIT 1`, [nurseUserId, patientId]
+    `SELECT 1 FROM (${NURSE_PATIENTS_SQL}) AS assigned WHERE patient_id = ? LIMIT 1`, [...nurseWardsParams(nurseUserId), patientId]
   );
   return rows.length > 0;
 }
@@ -68,7 +71,7 @@ function patientFilter(user, scope, column = 'patient_id') {
   if (!rule) throw Object.assign(new Error('Forbidden'), { status: 403 });
   if (rule === 'all') return null;
   if (user.role === 'DOCTOR') return { sql: `${column} IN (${DOCTOR_CARE_SET_SQL})`, params: doctorCareSetParams(user.doctor_id) };
-  return { sql: `${column} IN (${NURSE_PATIENTS_SQL})`, params: [user.user_id] };
+  return { sql: `${column} IN (${NURSE_PATIENTS_SQL})`, params: nurseWardsParams(user.user_id) };
 }
 
 // Lab results and report files: Laboratory all, Doctor/Nurse assigned only.
@@ -76,5 +79,5 @@ const canAccessLabReports = (user, patientId) => canAccessPatient(user, patientI
 
 module.exports = {
   isInDoctorCareSet, isNurseAssignedPatient, canAccessPatient, canAccessLabReports, patientFilter,
-  NURSE_WARDS_SQL, NURSE_PATIENTS_SQL,
+  NURSE_WARDS_SQL, NURSE_PATIENTS_SQL, nurseWardsParams,
 };

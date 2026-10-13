@@ -6,6 +6,7 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const { USERS, LAB_REPORT_DIR, api, rawRequest, login, db, closeDb } = require('./helpers');
+const { todayIst, addDays } = require('../utils/clock');
 
 after(closeDb);
 
@@ -152,8 +153,8 @@ test('every denial is a 403 with a readable reason', async () => {
 test('ending an assignment never reopens or extends it', async () => {
   const admin = await login(USERS.ADMIN);
   const [[ward]] = await db().query("SELECT ward_id FROM wards WHERE name = 'Pediatric Ward'");
-  const day = async (expr) => (await db().query(`SELECT DATE_FORMAT(${expr}, '%Y-%m-%d') d`))[0][0].d;
-  const [yesterday, lastWeek, longAgo, today] = [await day('CURDATE() - INTERVAL 1 DAY'), await day('CURDATE() - INTERVAL 7 DAY'), await day('CURDATE() - INTERVAL 30 DAY'), await day('CURDATE()')];
+  const today = todayIst();
+  const [yesterday, lastWeek, longAgo] = [addDays(today, -1), addDays(today, -7), addDays(today, -30)];
   const created = [];
   const insert = async (end) => { const id = (await db().query('INSERT INTO nurse_ward_assignments (nurse_user_id, ward_id, start_date, end_date) VALUES (?, ?, ?, ?)', [nurse.user.user_id, ward.ward_id, longAgo, end]))[0].insertId; created.push(id); return id; };
   const endOf = async (id) => (await db().query("SELECT DATE_FORMAT(end_date, '%Y-%m-%d') e FROM nurse_ward_assignments WHERE assignment_id = ?", [id]))[0][0].e;
@@ -167,12 +168,12 @@ test('ending an assignment never reopens or extends it', async () => {
   assert.equal((await end(ended, { end_date: today })).status, 409, 'nor extended');
   assert.equal(await endOf(ended), lastWeek);
   assert.equal((await end(ended, { end_date: yesterday })).status, 409, 'nor moved later by a day');
-  assert.equal((await end(ended, { end_date: await day('CURDATE() - INTERVAL 10 DAY') })).status, 200, 'shortening is allowed');
+  assert.equal((await end(ended, { end_date: addDays(today, -10) })).status, 200, 'shortening is allowed');
 
   const open = await insert(null);
   assert.equal((await end(open)).status, 200, 'an open assignment ends today');
   assert.equal(await endOf(open), today);
-  const futureEnd = await insert(await day('CURDATE() + INTERVAL 5 DAY'));
+  const futureEnd = await insert(addDays(today, 5));
   assert.equal((await end(futureEnd)).status, 200, 'a future end date can be brought forward to today');
   assert.equal(await endOf(futureEnd), today);
   } finally {
@@ -185,8 +186,8 @@ test('ending an assignment never reopens or extends it', async () => {
 async function nurseScope() {
   const [rows] = await db().query(`
     SELECT a.patient_id FROM admissions a JOIN beds b ON b.bed_id = a.bed_id JOIN nurse_ward_assignments n ON n.ward_id = b.ward_id
-    WHERE a.status = 'ACTIVE' AND n.nurse_user_id = ? AND n.start_date <= CURDATE() AND (n.end_date IS NULL OR n.end_date >= CURDATE())
-    UNION SELECT patient_id FROM encounters WHERE encounter_type = 'OUTPATIENT' AND status IN ('ARRIVED','TRIAGED','IN_PROGRESS')`, [nurse.user.user_id]);
+    WHERE a.status = 'ACTIVE' AND n.nurse_user_id = ? AND ? BETWEEN n.start_date AND COALESCE(n.end_date, '9999-12-31')
+    UNION SELECT patient_id FROM encounters WHERE encounter_type = 'OUTPATIENT' AND status IN ('ARRIVED','TRIAGED','IN_PROGRESS')`, [nurse.user.user_id, todayIst()]);
   return new Set(rows.map(r => r.patient_id));
 }
 
@@ -422,8 +423,7 @@ test('nurse assignments: admin creates and ends standing assignments; access fol
   assert.equal(await see(), 403);
 
   // A future assignment grants nothing yet.
-  const d = new Date(Date.now() + 86400000);
-  const tomorrow = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const tomorrow = addDays(todayIst(), 1);
   const future = await api('POST', '/nurse-assignments', { token: tokens.ADMIN, body: { nurse_user_id: nurse.user.user_id, ward_id: cardiac.ward_id, start_date: tomorrow, end_date: tomorrow } });
   assert.equal(future.status, 201, JSON.stringify(future.body));
   assert.equal(future.body.data.is_current, false);
@@ -431,7 +431,7 @@ test('nurse assignments: admin creates and ends standing assignments; access fol
 
   const overlap = await api('POST', '/nurse-assignments', { token: tokens.ADMIN, body: { nurse_user_id: nurse.user.user_id, ward_id: cardiac.ward_id } });
   assert.equal(overlap.status, 409, 'an open-ended assignment from today overlaps tomorrow\'s');
-  await db().query('UPDATE nurse_ward_assignments SET start_date = CURDATE(), end_date = NULL WHERE assignment_id = ?', [future.body.data.assignment_id]);
+  await db().query('UPDATE nurse_ward_assignments SET start_date = ?, end_date = NULL WHERE assignment_id = ?', [todayIst(), future.body.data.assignment_id]);
   assert.equal(await see(), 200, 'a current assignment grants access immediately');
   const station = (await api('GET', '/nurse/station', { token: nurse.token })).body.data;
   assert.ok(station.wards.some(w => w.ward_id === cardiac.ward_id));
@@ -443,7 +443,7 @@ test('nurse assignments: admin creates and ends standing assignments; access fol
   assert.ok(ended.body.data.end_date);
   const tooEarly = await api('PUT', `/nurse-assignments/${future.body.data.assignment_id}`, { token: tokens.ADMIN, body: { end_date: '2000-01-01' } });
   assert.equal(tooEarly.status, 400);
-  await db().query('UPDATE nurse_ward_assignments SET start_date = CURDATE() - INTERVAL 2 DAY, end_date = CURDATE() - INTERVAL 1 DAY WHERE assignment_id = ?', [future.body.data.assignment_id]);
+  await db().query('UPDATE nurse_ward_assignments SET start_date = ?, end_date = ? WHERE assignment_id = ?', [addDays(todayIst(), -2), addDays(todayIst(), -1), future.body.data.assignment_id]);
   assert.equal(await see(), 403, 'access ends with the assignment');
 
   const mine = (await api('GET', '/nurse-assignments', { token: nurse.token })).body.data;

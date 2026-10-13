@@ -8,7 +8,8 @@ import { staffName } from '../../utils/staff';
 const card = { background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)' };
 const input = { padding: '8px', border: '1px solid var(--border)', borderRadius: '6px' };
 const cell = { padding: '10px 12px', borderBottom: '1px solid var(--border)' };
-const day = (v) => (v ? new Date(v).toLocaleDateString() : '—');
+// Assignment dates arrive as IST calendar dates 'YYYY-MM-DD'; shown as DD/MM/YYYY without any time-zone shift.
+const day = (v) => (v ? String(v).slice(0, 10).split('-').reverse().join('/') : '—');
 
 // Admin: standing nurse-to-ward assignments. A nurse sees the patients in the wards they are
 // currently assigned to.
@@ -45,7 +46,7 @@ export default function NurseAssignments() {
   };
 
   const end = async (row) => {
-    if (!window.confirm(`End ${staffName(row.nurse_name, row.nurse_username)}'s assignment to ${row.ward_name} today?`)) return;
+    if (!window.confirm(`End ${staffName(row.nurse_name, row.nurse_username)}'s assignment to ${row.ward_name} today (India time)? They keep access until the end of today.`)) return;
     try {
       await endNurseAssignment(row.assignment_id);
       toast.success('Assignment ended');
@@ -71,7 +72,7 @@ export default function NurseAssignments() {
             <option value="">Select…</option>{wards.map(w => <option key={w.ward_id} value={w.ward_id}>{w.name}</option>)}
           </select>
         </label>
-        <label style={{ display: 'grid' }}>Starts (default today)
+        <label style={{ display: 'grid' }}>Starts (default today, India time)
           <input type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} style={input} />
         </label>
         <button type="submit" style={{ padding: '9px 16px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Assign</button>
