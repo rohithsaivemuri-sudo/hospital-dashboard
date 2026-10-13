@@ -1,0 +1,133 @@
+\chapter{Database Normalization}
+Normalization is shown in two parts. Sections~6.1 to 6.5 take one outpatient record, as a clerk might keep it on
+paper, through each normal form to the tables this system has. The patient, doctor, department, medicines and tests
+in it are real rows of the seed data; the visit itself is illustrative. The same sections then show the
+four decompositions performed on the live schema (migrations 015--022) at the normal form each one fixed.
+Section~6.6 gives the final schema and the normal form of all 33 tables.
+
+\section{Unnormalized Form (UNF)}
+\begin{table}[H]\centering\scriptsize\setlength{\tabcolsep}{3pt}
+\caption{One outpatient visit as a single unnormalized record}\label{tab:unf}
+\begin{tabular}{@{}p{2.1cm}p{1.5cm}p{2.0cm}p{1.6cm}p{2.3cm}p{3.1cm}p{3.3cm}@{}}
+\toprule
+\textbf{Patient} & \textbf{Phone} & \textbf{Doctor} & \textbf{Dept} & \textbf{Visit} & \textbf{Medicines (dose, freq, qty)} & \textbf{Tests (cost, result)} \\\midrule
+Aarav Sharma, M, 1985-03-15 & 9111000001 & Dr. John Smith & Cardiology, floor 2 & 2026-10-13 09:30; chest tightness / suspected angina & Aspirin 75mg (75 mg, OD, 30); Atorvastatin 10mg (10 mg, OD, 30) & Lipid Profile (800.00, pending); Blood Glucose Fasting (150.00, 128 mg/dL, HIGH) \\
+\bottomrule
+\end{tabular}
+\end{table}
+\textbf{Problems.} \emph{Medicines} and \emph{Tests} are repeating groups (a list in one cell), \emph{Patient},
+\emph{Dept} and \emph{Visit} each pack several facts into one cell, and there is no key.
+
+\section{First Normal Form (1NF)}
+Each cell is split into atomic values and each repeated item into its own row. The record becomes one row per
+(medicine, test) pair of the visit, four rows in all:
+\begin{center}\scriptsize
+VISIT\_RECORD(\underline{patient\_name, visit\_time, medicine, test}, dob, gender, phone, doctor, department, dept\_floor,
+symptoms, diagnosis, dose, frequency, quantity, test\_cost, result\_value, interpretation)
+\end{center}
+It is in 1NF but every patient and visit fact is repeated four times, giving the three anomalies:
+\textbf{update} (a new phone number must be written in four rows), \textbf{insertion} (a test cannot be recorded
+for a visit without a medicine) and \textbf{deletion} (removing the last medicine loses the diagnosis).
+Every live table is in 1NF: all columns are single-valued and typed, and lists such as a prescription's lines
+are rows of their own table.
+
+\section{Second Normal Form (2NF)}
+\textbf{The record.} Partial dependencies on the key (\emph{patient, visit time, medicine, test}):
+\emph{patient} $\to$ dob, gender, phone; (\emph{patient, visit time}) $\to$ doctor, department, dept\_floor,
+symptoms, diagnosis; (\emph{visit, medicine}) $\to$ dose, frequency, quantity; (\emph{visit, test}) $\to$ result;
+\emph{test} $\to$ cost. Removing them gives:
+\begin{center}\scriptsize
+PATIENT(\underline{patient}, dob, gender, phone) \quad VISIT(\underline{patient, visit\_time}, doctor, department, dept\_floor, symptoms, diagnosis)\\
+VISIT\_MEDICINE(\underline{patient, visit\_time, medicine}, dose, frequency, quantity) \quad VISIT\_TEST(\underline{patient, visit\_time, test}, result) \quad TEST(\underline{test}, cost)
+\end{center}
+A surrogate key is then given to each entity (\tbl{patient\_id}, \tbl{encounter\_id}, \dots) because names are not unique.
+
+\textbf{The live schema: three 2NF violations decomposed.} Each was a non-key column depending on part of a
+composite candidate key. In each case the determinant's own table already held the value, so the decomposition
+removes the copy and reads it through the existing foreign key; no new table was needed.
+\begin{enumerate}[before=\small]
+\item \textbf{A1, \tbl{beds}.} Key (\tbl{ward\_id, bed\_number}); \tbl{ward\_id} $\to$ \tbl{floor}.
+\\ \tbl{beds(\underline{bed\_id}, ward\_id, bed\_number, \sout{floor}, bed\_type, status, has\_ventilator)} $\Rightarrow$
+\tbl{beds(\underline{bed\_id}, ward\_id, bed\_number, bed\_type, status, has\_ventilator)} $\bowtie$ \tbl{wards(\underline{ward\_id}, \dots, floor)}.
+\item \textbf{A2, \tbl{appointments}.} Key (\tbl{doctor\_id, appointment\_date, appointment\_time}); \tbl{doctor\_id} $\to$ \tbl{department\_id}
+(copied from the booked doctor). $\Rightarrow$ \tbl{appointments} without \tbl{department\_id} $\bowtie$ \tbl{doctors(\underline{doctor\_id}, department\_id)};
+the view \tbl{v\_appointments} returns the old columns. Four seed rows booked under another department were first set to their doctor's department (old values kept in the audit log).
+\item \textbf{A3, \tbl{medication\_administrations}.} Key (\tbl{prescription\_item\_id, scheduled\_at\_utc}); \tbl{prescription\_item\_id} $\to$ \tbl{patient\_id}.
+$\Rightarrow$ the dose table without \tbl{patient\_id} $\bowtie$ \tbl{prescription\_items} $\bowtie$ \tbl{prescriptions(\underline{prescription\_id}, patient\_id)}.
+\end{enumerate}
+Each decomposition is \textbf{lossless}, because the shared attribute is the key of the other relation and every
+row was checked to rebuild from the join before the column was dropped (35/35 beds, 9/9 appointments, 15/15 doses).
+It is also \textbf{dependency-preserving}, because the removed dependency is now enforced by the other relation's key.
+
+\section{Third Normal Form (3NF)}
+\textbf{The record.} In VISIT, department and dept\_floor depend on the doctor, not the visit
+(\emph{visit} $\to$ \emph{doctor} $\to$ \emph{department} $\to$ \emph{floor}). Removing the transitive dependencies:
+\begin{center}\scriptsize
+VISIT(\underline{visit}, patient, doctor, visit\_time, symptoms, diagnosis) \quad DOCTOR(\underline{doctor}, name, department) \quad DEPARTMENT(\underline{department}, name, floor)
+\end{center}
+A visit can have several notes written by its doctor, so symptoms and diagnosis move to a note of the visit
+(\tbl{consultations}); medicines become a catalogue (\tbl{medicines}) and what is prescribed is grouped under a
+prescription header.
+
+\textbf{The live schema: one 3NF violation decomposed.} \textbf{A5, \tbl{bill\_items}}:
+(\tbl{quantity, unit\_price}) $\to$ \tbl{total\_price}, a dependency through two non-key columns. The column became
+\tbl{total\_price DECIMAL(10,2) GENERATED ALWAYS AS (quantity * unit\_price) VIRTUAL}: it is computed when read,
+so it cannot disagree, and the API still returns it (19/19 existing rows already matched).
+
+\section{Boyce--Codd Normal Form (BCNF)}
+\textbf{The record.} After 3NF every determinant of the record's relations is a key: a prescription line
+(\emph{prescription, medicine}) gets its own id, a lab result is determined by its order, and a test's cost by the
+test. The result is the tables of this system: PATIENT $\to$ \tbl{patients}; DOCTOR, DEPARTMENT $\to$
+\tbl{doctors}, \tbl{departments}; VISIT $\to$ \tbl{appointments} (the booking) and \tbl{encounters} (the visit);
+note $\to$ \tbl{consultations}; VISIT\_MEDICINE $\to$ \tbl{prescriptions} + \tbl{prescription\_items}; TEST,
+VISIT\_TEST $\to$ \tbl{lab\_tests}, \tbl{lab\_orders} + \tbl{lab\_results}.
+
+\textbf{The live schema: tables checked against BCNF.} 24 of the 33 tables are in BCNF: every non-trivial
+dependency has a candidate key on its left (Table~\ref{tab:fds}). Nine are not, and are kept on purpose:
+\begin{itemize}
+\item \textbf{Eight copy a patient, doctor or medicine from an optional parent} (Table~\ref{tab:kept}), e.g.
+\tbl{lab\_orders}: \tbl{encounter\_id} $\to$ \tbl{patient\_id, doctor\_id}. The textbook decomposition (drop
+\tbl{patient\_id}, read it through \tbl{encounter\_id}) is \emph{lossy} here: the link is optional, and an order
+with no visit would lose its patient (3 of the 9 live orders have neither a visit nor an admission). The
+doctor's access check also filters on these columns in every table. So the copies stay, and \textbf{the database
+enforces them}: each parent got a UNIQUE key over its id and the copied columns (e.g. \tbl{encounters
+(encounter\_id, patient\_id, doctor\_id)}) and each child a composite foreign key to it (\tbl{fk\_ctx\_*}, 15 in all,
+migration 018). InnoDB checks a composite foreign key only when none of its columns is NULL, so rows without the
+link are unaffected; a copy that disagrees is refused (test T10, Chapter~10).
+\item \textbf{\tbl{prescription\_items}}: \tbl{dispensed\_at} $\to$ \tbl{dispensed}. Replacing the flag by
+``\tbl{dispensed\_at IS NOT NULL}'' would lose information: three seed items are dispensed with no recorded time,
+and the guard against dispensing twice keys on the flag. The dependency is enforced by
+\tbl{CHECK (dispensed\_at IS NULL OR dispensed = 1)} (migration 023).
+\end{itemize}
+
+\section{Final Normalized Schema}
+The final relations are those of Section~4.3. Table~\ref{tab:nf} gives each table's highest normal form before
+this work (migration 014) and now; Table~\ref{tab:kept} lists the nine tables outside BCNF and what keeps their
+copies consistent. In summary: 20 tables were in BCNF before and 24 are now, every table is in 2NF (the three
+2NF violations were decomposed), and the nine remaining are in 2NF with each dependency enforced by the database.
+
+{\scriptsize
+\begin{longtable}{@{}lllR{2.3cm}@{\hspace{4mm}}lllR{2.3cm}@{}}
+\caption{Normal form of every table, before (migration 014) and now}\label{tab:nf}\\
+\toprule
+\textbf{Table} & \textbf{Before} & \textbf{Now} & \textbf{Note} & \textbf{Table} & \textbf{Before} & \textbf{Now} & \textbf{Note} \\\midrule\endfirsthead
+\toprule\textbf{Table} & \textbf{Before} & \textbf{Now} & \textbf{Note} & \textbf{Table} & \textbf{Before} & \textbf{Now} & \textbf{Note} \\\midrule\endhead
+\rows{generated/nf-summary.tex}
+\bottomrule
+\end{longtable}}
+
+{\scriptsize
+\begin{longtable}{@{}R{3.2cm}R{5.0cm}R{8.6cm}@{}}
+\caption{The nine tables kept outside BCNF: dependency and how consistency is enforced}\label{tab:kept}\\
+\toprule
+\textbf{Table} & \textbf{Dependency (left side not a key)} & \textbf{Enforced by} \\\midrule\endfirsthead
+\toprule\textbf{Table} & \textbf{Dependency} & \textbf{Enforced by} \\\midrule\endhead
+\rows{generated/nf-kept.tex}
+\bottomrule
+\end{longtable}}
+
+Values derived from \emph{other} tables do not break BCNF inside a table, but they are redundancy, and each is kept
+equal by the database: \tbl{medicines.stock\_quantity} (sum of its batches, updated in the dispensing and stock
+transactions), \tbl{bills.total\_amount} (sum of its items), \tbl{doctors.current\_workload} and \tbl{beds.status}
+(maintained by the admission triggers), and \tbl{appointments.status} (mirrors its visit, written in the same
+transaction).

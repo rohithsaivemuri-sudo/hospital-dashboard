@@ -1,0 +1,25 @@
+% Chen-notation styles for the ER diagrams (figures/er/*.tex).
+\tikzset{
+  ent/.style={draw, line width=0.6pt, minimum width=2.25cm, minimum height=0.62cm, inner sep=2pt, font=\sffamily\scriptsize\bfseries, fill=white},
+  weakent/.style={ent, double, double distance=1.3pt},
+  refent/.style={ent, dashed, align=center, fill=gray!7, font=\sffamily\scriptsize\bfseries, minimum height=0.66cm, inner sep=1.5pt},
+  rel/.style={draw, line width=0.6pt, diamond, aspect=2.6, inner sep=0.9pt, font=\sffamily\tiny\bfseries, fill=white},
+  idrel/.style={rel, double, double distance=1.1pt},
+  att/.style={draw, ellipse, inner xsep=0.3pt, inner ysep=0.1pt, font=\sffamily\tiny, fill=white, minimum height=0.34cm},
+  total/.style={draw, double, double distance=1.3pt, line width=0.45pt},
+  partial/.style={draw, line width=0.5pt},
+  card/.style={font=\sffamily\tiny\bfseries, fill=white, inner sep=0.6pt},
+}
+% A one-line key under each module diagram.
+\newcommand{\minilegend}{\par\smallskip{\tiny\centering
+\tikz[baseline=-0.6ex]\node[ent,minimum width=0.8cm,minimum height=0.3cm]{};~entity\quad
+\tikz[baseline=-0.6ex]\node[weakent,minimum width=0.8cm,minimum height=0.3cm]{};~weak entity\quad
+\tikz[baseline=-0.6ex]\node[refent,minimum width=0.8cm,minimum height=0.3cm]{};~entity on another page\quad
+\tikz[baseline=-0.6ex]\node[rel,minimum width=0.7cm]{};~relationship\quad
+\tikz[baseline=-0.6ex]\node[idrel,minimum width=0.7cm]{};~identifying\quad
+\tikz[baseline=-0.6ex]\node[att]{\underline{key}};\enspace
+\tikz[baseline=-0.6ex]\node[att]{\dashuline{partial key}};\enspace
+\tikz[baseline=-0.6ex]\node[att,double,double distance=0.8pt]{multivalued};\enspace
+\tikz[baseline=-0.6ex]\node[att,dashed]{derived};\quad
+\tikz[baseline=-0.6ex]\draw[total](0,0)--(0.6,0);~total\enspace
+\tikz[baseline=-0.6ex]\draw[partial](0,0)--(0.6,0);~partial participation\par}}

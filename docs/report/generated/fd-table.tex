@@ -1,0 +1,33 @@
+\texttt{patients} & patient\_id $\to$ all attributes; abha\_number $\to$ patient\_id (when not NULL) & \{patient\_id\}, \{abha\_number\} & patient\_id, abha\_number & 11 \\
+\texttt{appointments} & appointment\_id $\to$ all attributes; (doctor\_id, appointment\_date, appointment\_time) $\to$ appointment\_id & \{appointment\_id\}, \{doctor\_id, appointment\_date, appointment\_time\} & appointment\_id, doctor\_id, appointment\_date, appointment\_time & 6 \\
+\texttt{encounters} & encounter\_id $\to$ all attributes; appointment\_id $\to$ all attributes (when not NULL); admission\_id $\to$ patient\_id (when not NULL) & \{encounter\_id\}, \{appointment\_id\}, \{backfilled\_from\} & encounter\_id, appointment\_id, backfilled\_from & 12 \\
+\texttt{consultations} & consultation\_id $\to$ all attributes; encounter\_id $\to$ patient\_id, doctor\_id; appointment\_id $\to$ patient\_id, doctor\_id, encounter\_id; admission\_id $\to$ patient\_id & \{consultation\_id\} & consultation\_id & 12 \\
+\texttt{vital\_signs} & vital\_id $\to$ all attributes; encounter\_id $\to$ patient\_id; admission\_id $\to$ patient\_id & \{vital\_id\} & vital\_id & 14 \\
+\texttt{surgery\_requests} & request\_id $\to$ all attributes; encounter\_id $\to$ patient\_id, doctor\_id & \{request\_id\} & request\_id & 11 \\
+\texttt{departments} & department\_id $\to$ all attributes; name $\to$ department\_id & \{department\_id\}, \{name\} & department\_id, name & 4 \\
+\texttt{wards} & ward\_id $\to$ all attributes & \{ward\_id\} & ward\_id & 5 \\
+\texttt{beds} & bed\_id $\to$ all attributes; (ward\_id, bed\_number) $\to$ bed\_id & \{bed\_id\}, \{ward\_id, bed\_number\} & bed\_id, ward\_id, bed\_number & 3 \\
+\texttt{admissions} & admission\_id $\to$ all attributes & \{admission\_id\} & admission\_id & 12 \\
+\texttt{bed\_assignment\_log} & log\_id $\to$ all attributes; admission\_id $\to$ all attributes & \{log\_id\} & log\_id & 6 \\
+\texttt{emergency\_cases} & emergency\_id $\to$ all attributes & \{emergency\_id\} & emergency\_id & 14 \\
+\texttt{ambulances} & ambulance\_id $\to$ all attributes; vehicle\_number $\to$ ambulance\_id & \{ambulance\_id\}, \{vehicle\_number\} & ambulance\_id, vehicle\_number & 4 \\
+\texttt{medicines} & medicine\_id $\to$ all attributes & \{medicine\_id\} & medicine\_id & 10 \\
+\texttt{medicine\_batches} & batch\_id $\to$ all attributes; (medicine\_id, batch\_number) $\to$ batch\_id & \{batch\_id\}, \{medicine\_id, batch\_number\} & batch\_id, medicine\_id, batch\_number & 6 \\
+\texttt{prescriptions} & prescription\_id $\to$ all attributes; encounter\_id $\to$ patient\_id, doctor\_id; admission\_id $\to$ patient\_id; consultation\_id $\to$ patient\_id & \{prescription\_id\} & prescription\_id & 9 \\
+\texttt{prescription\_items} & item\_id $\to$ all attributes; dispensed\_at $\to$ dispensed & \{item\_id\} & item\_id & 12 \\
+\texttt{prescription\_item\_batches} & id $\to$ all attributes; (item\_id, batch\_id) $\to$ id & \{id\}, \{item\_id, batch\_id\} & id, item\_id, batch\_id & 2 \\
+\texttt{pharmacy\_stock\_movements} & movement\_id $\to$ all attributes; batch\_id $\to$ medicine\_id & \{movement\_id\} & movement\_id & 9 \\
+\texttt{medication\_administrations} & administration\_id $\to$ all attributes; (prescription\_item\_id, scheduled\_at\_utc) $\to$ administration\_id & \{administration\_id\}, \{prescription\_item\_id, scheduled\_at\_utc\} & administration\_id, prescription\_item\_id, scheduled\_at\_utc & 10 \\
+\texttt{lab\_tests} & test\_id $\to$ all attributes & \{test\_id\} & test\_id & 10 \\
+\texttt{lab\_orders} & order\_id $\to$ all attributes; encounter\_id $\to$ patient\_id, doctor\_id; admission\_id $\to$ patient\_id; consultation\_id $\to$ patient\_id & \{order\_id\} & order\_id & 12 \\
+\texttt{lab\_results} & result\_id $\to$ all attributes; order\_id $\to$ result\_id & \{result\_id\}, \{order\_id\} & result\_id, order\_id & 14 \\
+\texttt{lab\_result\_attachments} & attachment\_id $\to$ all attributes; stored\_filename $\to$ attachment\_id & \{attachment\_id\}, \{stored\_filename\} & attachment\_id, stored\_filename & 6 \\
+\texttt{users} & user\_id $\to$ all attributes; username $\to$ user\_id; email $\to$ user\_id & \{user\_id\}, \{email\}, \{username\} & user\_id, email, username & 7 \\
+\texttt{doctors} & doctor\_id $\to$ all attributes; user\_id $\to$ doctor\_id & \{doctor\_id\}, \{user\_id\} & doctor\_id, user\_id & 10 \\
+\texttt{doctor\_schedules} & schedule\_id $\to$ all attributes; (doctor\_id, day\_of\_week, start\_time) $\to$ schedule\_id & \{schedule\_id\}, \{doctor\_id, day\_of\_week, start\_time\} & schedule\_id, doctor\_id, day\_of\_week, start\_time & 2 \\
+\texttt{doctor\_daily\_analytics} & analytics\_id $\to$ all attributes; (doctor\_id, analytics\_date) $\to$ analytics\_id & \{analytics\_id\}, \{doctor\_id, analytics\_date\} & analytics\_id, doctor\_id, analytics\_date & 10 \\
+\texttt{nurse\_ward\_assignments} & assignment\_id $\to$ all attributes & \{assignment\_id\} & assignment\_id & 7 \\
+\texttt{bills} & bill\_id $\to$ all attributes; admission\_id $\to$ patient\_id & \{bill\_id\} & bill\_id & 10 \\
+\texttt{bill\_items} & item\_id $\to$ all attributes & \{item\_id\} & item\_id & 7 \\
+\texttt{audit\_logs} & audit\_id $\to$ all attributes & \{audit\_id\} & audit\_id & 13 \\
+\texttt{schema\_migrations} & version $\to$ applied\_at, note & \{version\} & version & 2 \\

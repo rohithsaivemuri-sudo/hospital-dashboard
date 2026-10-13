@@ -1,0 +1,23 @@
+CREATE TABLE `prescription_items` (
+  `item_id` int NOT NULL AUTO_INCREMENT,
+  `prescription_id` int NOT NULL,
+  `medicine_id` int NOT NULL,
+  `dosage` varchar(50) NOT NULL,
+  `frequency` varchar(50) NOT NULL,
+  `duration` varchar(50) NOT NULL,
+  `quantity` int NOT NULL,
+  `dispensed` tinyint(1) DEFAULT '0',
+  `dispensed_at` datetime DEFAULT NULL,
+  `frequency_code` enum('OD','BD','TDS','QID','Q6H','Q8H','STAT','PRN') DEFAULT NULL,
+  `duration_days` smallint DEFAULT NULL,
+  `route` enum('ORAL','IV','IM','SC','SUBLINGUAL','INHALED','TOPICAL','RECTAL','OTHER') DEFAULT NULL,
+  `units_per_dose` smallint DEFAULT NULL,
+  PRIMARY KEY (`item_id`),
+  KEY `prescription_id` (`prescription_id`),
+  KEY `medicine_id` (`medicine_id`),
+  CONSTRAINT `prescription_items_ibfk_1` FOREIGN KEY (`prescription_id`) REFERENCES `prescriptions` (`prescription_id`) ON DELETE CASCADE,
+  CONSTRAINT `prescription_items_ibfk_2` FOREIGN KEY (`medicine_id`) REFERENCES `medicines` (`medicine_id`) ON DELETE RESTRICT,
+  CONSTRAINT `chk_prescription_items_dispensed` CHECK (((`dispensed_at` is null) or (`dispensed` = 1))),
+  CONSTRAINT `chk_prescription_items_structured` CHECK ((((`duration_days` is null) or (`duration_days` > 0)) and ((`units_per_dose` is null) or (`units_per_dose` > 0)))),
+  CONSTRAINT `prescription_items_chk_1` CHECK ((`quantity` > 0))
+) ENGINE=InnoDB;

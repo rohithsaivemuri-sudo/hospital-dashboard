@@ -1,0 +1,27 @@
+\chapter{Conclusion and Future Scope}
+
+\section{Conclusion}
+The project models a hospital's operations as 30 entities and 69 relationships, maps them to 33 MySQL tables, and
+normalizes them: 24 tables are in BCNF, and the 9 that keep a copied value have that copy enforced by composite
+foreign keys or a CHECK constraint. The rules of the hospital live in the database (87 foreign keys, 23 unique keys,
+30 CHECKs, 7 triggers, row locking in a fixed order), and a role-based React and Express application uses it through
+a restricted account. Automated tests confirm the behaviour, including under concurrency.
+
+\section{Limitations}
+\begin{itemize}
+\item A lab order stores one result value: multi-analyte panels (a lipid profile's four values) are recorded as text in one result.
+\item The ABHA number is stored and validated for format and uniqueness only; there is no live integration with the national ABDM network.
+\item Allergies are free text in one column, not a separate table, so they cannot be checked against a prescription automatically.
+\item Bed transfers within one admission are not modelled; an admission has one bed.
+\item \tbl{POST /api/patients} returns HTTP 500 when optional fields are omitted from the request (Section~10.4).
+\item Seven of the ten views and the five stored procedures come from the original schema and are not used by the API.
+\item One hospital only; no payment gateway or insurance claims.
+\end{itemize}
+
+\section{Future Scope}
+\begin{itemize}
+\item Panel results (one row per analyte) and a structured allergy list checked at prescribing time.
+\item ABDM integration: verify ABHA numbers and exchange health records with consent.
+\item Bed transfers, with the bed history as the source of truth for where a patient is.
+\item Payments and insurance claims; dashboards over the audit log and the daily statistics.
+\end{itemize}

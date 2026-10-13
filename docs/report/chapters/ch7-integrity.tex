@@ -1,0 +1,40 @@
+\chapter{Relational Integrity and Constraints}
+The schema declares 33 primary keys, 87 foreign keys (72 relationships and 15 composite consistency keys),
+23 UNIQUE keys and 30 CHECK constraints, and runs in strict SQL mode, so an invalid value is an error rather than
+a silent conversion. Seven triggers keep derived values and the audit log correct. Table~\ref{tab:constraints}
+gives a real example of each kind.
+
+{\small
+\begin{longtable}{@{}R{2.4cm}R{7.4cm}R{7.0cm}@{}}
+\caption{Integrity constraints in hospital\_db, with real examples}\label{tab:constraints}\\
+\toprule
+\textbf{Constraint} & \textbf{Example} & \textbf{What it prevents} \\\midrule\endfirsthead
+\toprule\textbf{Constraint} & \textbf{Example} & \textbf{What it prevents} \\\midrule\endhead
+Domain & \tbl{patients.gender ENUM('MALE','FEMALE','OTHER')}; \tbl{bills.total\_amount DECIMAL(12,2)}; \tbl{appointment\_date DATE} & Values outside the column's type or list (``M'', ``tomorrow'') \\
+Primary key & \tbl{patients(patient\_id)}; every table has one & Duplicate or missing row identity \\
+Foreign key & \tbl{lab\_orders.test\_id} $\to$ \tbl{lab\_tests(test\_id)} & An order for a test that does not exist (test T3) \\
+Composite FK & \tbl{lab\_orders(encounter\_id, patient\_id, doctor\_id)} $\to$ \tbl{encounters(encounter\_id, patient\_id, doctor\_id)} & An order whose patient differs from its visit's patient (Section~6.5) \\
+UNIQUE & \tbl{users.username}; \tbl{uq\_patients\_abha}; (\tbl{doctor\_id, appointment\_date, appointment\_time}) & Two accounts with one username (T2); one ABHA number for two patients (T6); a double booking (T13) \\
+NOT NULL & \tbl{appointments.patient\_id}; \tbl{admissions.bed\_id}; \tbl{lab\_results.order\_id} & An appointment for nobody; an admission without a bed (total participation, Chapter~3) \\
+CHECK & \tbl{medicines\_chk\_1 (stock\_quantity >= 0)}; \tbl{bills\_chk\_2 (paid\_amount <= total\_amount)}; \tbl{chk\_vitals\_spo2 (spo2\_pct BETWEEN 50 AND 100)}; \tbl{chk\_patients\_abha\_format} (14 digits) & Negative stock (T4), over-payment, impossible readings, malformed ABHA \\
+Generated column & \tbl{bill\_items.total\_price AS (quantity * unit\_price)} & A line total that disagrees with its quantity and price \\
+Trigger & \tbl{before\_medicine\_stock\_update} (SIGNAL if negative); \tbl{audit\_logs\_no\_update}, \tbl{audit\_logs\_no\_delete} & Negative stock by any path; editing or deleting audit rows (T12) \\
+\bottomrule
+\end{longtable}}
+
+\textbf{Referential actions.} Every ON UPDATE rule is NO ACTION (InnoDB treats it as RESTRICT): primary keys are
+surrogates and never change. The ON DELETE rule of each foreign key follows the meaning of the relationship:
+\begin{itemize}
+\item \textbf{RESTRICT (67 keys)} for records that must not lose their parent: a patient with admissions, visits or
+bills cannot be deleted (\tbl{DELETE FROM patients WHERE patient\_id = 1} fails with error 1451, Section~8.4).
+The application has no delete operation for patients, and staff accounts are deactivated (\tbl{users.is\_active}), never deleted.
+\item \textbf{CASCADE (12)} for parts that have no meaning without their whole: \tbl{bill\_items} with their
+\tbl{bills}, \tbl{prescription\_items} with their \tbl{prescriptions}, \tbl{lab\_results} with their
+\tbl{lab\_orders}, \tbl{doctor\_schedules} and \tbl{doctor\_daily\_analytics} with their doctor (the weak entities).
+\item \textbf{SET NULL (8)} for optional references whose loss leaves the child valid: an emergency case keeps its
+record when its ambulance (\tbl{ambulance\_id}), doctor or bed is removed; a lab result keeps its value when the
+technician's account is removed (\tbl{performed\_by}).
+\end{itemize}
+Together these keep the data consistent without relying on the application: a row cannot reference a missing row,
+a copy cannot disagree with its source, totals cannot go out of range, and the history in the audit log cannot be
+rewritten.

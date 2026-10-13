@@ -1,0 +1,6 @@
+main.pdf
+main.log
+*.aux
+*.toc
+*.out
+*.xdv

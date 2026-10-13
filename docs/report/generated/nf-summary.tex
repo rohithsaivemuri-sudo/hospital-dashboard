@@ -1,0 +1,17 @@
+\texttt{patients} & BCNF & BCNF & keys only & \texttt{prescription\_item\_batches} & BCNF & BCNF & keys only \\
+\texttt{appointments} & 1NF & BCNF & decomposed (A2) & \texttt{pharmacy\_stock\_movements} & 2NF & 2NF & kept; Table~\ref{tab:kept} \\
+\texttt{encounters} & 2NF & 2NF & kept; Table~\ref{tab:kept} & \texttt{medication\_administrations} & 1NF & BCNF & decomposed (A3) \\
+\texttt{consultations} & 2NF & 2NF & kept; Table~\ref{tab:kept} & \texttt{lab\_tests} & BCNF & BCNF & keys only \\
+\texttt{vital\_signs} & 2NF & 2NF & kept; Table~\ref{tab:kept} & \texttt{lab\_orders} & 2NF & 2NF & kept; Table~\ref{tab:kept} \\
+\texttt{surgery\_requests} & 2NF & 2NF & kept; Table~\ref{tab:kept} & \texttt{lab\_results} & BCNF & BCNF & keys only \\
+\texttt{departments} & BCNF & BCNF & keys only & \texttt{lab\_result\_attachments} & BCNF & BCNF & keys only \\
+\texttt{wards} & BCNF & BCNF & keys only & \texttt{users} & BCNF & BCNF & keys only \\
+\texttt{beds} & 1NF & BCNF & decomposed (A1) & \texttt{doctors} & BCNF & BCNF & keys only \\
+\texttt{admissions} & BCNF & BCNF & keys only & \texttt{doctor\_schedules} & BCNF & BCNF & keys only \\
+\texttt{bed\_assignment\_log} & BCNF & BCNF & keys only & \texttt{doctor\_daily\_analytics} & BCNF & BCNF & keys only \\
+\texttt{emergency\_cases} & BCNF & BCNF & keys only & \texttt{nurse\_ward\_assignments} & BCNF & BCNF & keys only \\
+\texttt{ambulances} & BCNF & BCNF & keys only & \texttt{bills} & 2NF & 2NF & kept; Table~\ref{tab:kept} \\
+\texttt{medicines} & BCNF & BCNF & keys only & \texttt{bill\_items} & 2NF & BCNF & decomposed (A5) \\
+\texttt{medicine\_batches} & BCNF & BCNF & keys only & \texttt{audit\_logs} & BCNF & BCNF & keys only \\
+\texttt{prescriptions} & 2NF & 2NF & kept; Table~\ref{tab:kept} & \texttt{schema\_migrations} & BCNF & BCNF & keys only \\
+\texttt{prescription\_items} & 2NF & 2NF & kept; Table~\ref{tab:kept} &  & & &  \\

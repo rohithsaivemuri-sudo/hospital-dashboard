@@ -1,0 +1,7463 @@
+{
+ "tables": [
+  {
+   "name": "admissions",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 11,
+   "comment": ""
+  },
+  {
+   "name": "ambulances",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 6,
+   "comment": ""
+  },
+  {
+   "name": "appointments",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 9,
+   "comment": ""
+  },
+  {
+   "name": "audit_logs",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 9,
+   "comment": ""
+  },
+  {
+   "name": "available_beds_view",
+   "type": "VIEW",
+   "engine": null,
+   "approx_rows": null,
+   "comment": "VIEW"
+  },
+  {
+   "name": "available_doctors_view",
+   "type": "VIEW",
+   "engine": null,
+   "approx_rows": null,
+   "comment": "VIEW"
+  },
+  {
+   "name": "bed_assignment_log",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 11,
+   "comment": ""
+  },
+  {
+   "name": "bed_status_summary_view",
+   "type": "VIEW",
+   "engine": null,
+   "approx_rows": null,
+   "comment": "VIEW"
+  },
+  {
+   "name": "beds",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 35,
+   "comment": ""
+  },
+  {
+   "name": "bill_items",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 19,
+   "comment": ""
+  },
+  {
+   "name": "bills",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 4,
+   "comment": ""
+  },
+  {
+   "name": "consultations",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 3,
+   "comment": ""
+  },
+  {
+   "name": "current_admissions_view",
+   "type": "VIEW",
+   "engine": null,
+   "approx_rows": null,
+   "comment": "VIEW"
+  },
+  {
+   "name": "departments",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 9,
+   "comment": ""
+  },
+  {
+   "name": "doctor_daily_analytics",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 0,
+   "comment": ""
+  },
+  {
+   "name": "doctor_schedules",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 36,
+   "comment": ""
+  },
+  {
+   "name": "doctor_workload_view",
+   "type": "VIEW",
+   "engine": null,
+   "approx_rows": null,
+   "comment": "VIEW"
+  },
+  {
+   "name": "doctors",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 12,
+   "comment": ""
+  },
+  {
+   "name": "emergency_cases",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 5,
+   "comment": ""
+  },
+  {
+   "name": "emergency_queue_view",
+   "type": "VIEW",
+   "engine": null,
+   "approx_rows": null,
+   "comment": "VIEW"
+  },
+  {
+   "name": "encounters",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 4,
+   "comment": ""
+  },
+  {
+   "name": "hospital_occupancy_view",
+   "type": "VIEW",
+   "engine": null,
+   "approx_rows": null,
+   "comment": "VIEW"
+  },
+  {
+   "name": "lab_orders",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 6,
+   "comment": ""
+  },
+  {
+   "name": "lab_result_attachments",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 0,
+   "comment": ""
+  },
+  {
+   "name": "lab_results",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 4,
+   "comment": ""
+  },
+  {
+   "name": "lab_tests",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 15,
+   "comment": ""
+  },
+  {
+   "name": "medication_administrations",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 15,
+   "comment": ""
+  },
+  {
+   "name": "medicine_batches",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 22,
+   "comment": ""
+  },
+  {
+   "name": "medicines",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 22,
+   "comment": ""
+  },
+  {
+   "name": "nurse_ward_assignments",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 2,
+   "comment": ""
+  },
+  {
+   "name": "patients",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 32,
+   "comment": ""
+  },
+  {
+   "name": "pending_bills_view",
+   "type": "VIEW",
+   "engine": null,
+   "approx_rows": null,
+   "comment": "VIEW"
+  },
+  {
+   "name": "pharmacy_stock_movements",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 4,
+   "comment": ""
+  },
+  {
+   "name": "prescription_item_batches",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 4,
+   "comment": ""
+  },
+  {
+   "name": "prescription_items",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 10,
+   "comment": ""
+  },
+  {
+   "name": "prescriptions",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 3,
+   "comment": ""
+  },
+  {
+   "name": "schema_migrations",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 24,
+   "comment": ""
+  },
+  {
+   "name": "surgery_requests",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 0,
+   "comment": ""
+  },
+  {
+   "name": "users",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 17,
+   "comment": ""
+  },
+  {
+   "name": "v_appointments",
+   "type": "VIEW",
+   "engine": null,
+   "approx_rows": null,
+   "comment": "VIEW"
+  },
+  {
+   "name": "v_current_stock",
+   "type": "VIEW",
+   "engine": null,
+   "approx_rows": null,
+   "comment": "VIEW"
+  },
+  {
+   "name": "vital_signs",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 0,
+   "comment": ""
+  },
+  {
+   "name": "wards",
+   "type": "BASE TABLE",
+   "engine": "InnoDB",
+   "approx_rows": 6,
+   "comment": ""
+  }
+ ],
+ "columns": [
+  {
+   "t": "admissions",
+   "name": "admission_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "admissions",
+   "name": "patient_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "admissions",
+   "name": "doctor_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "admissions",
+   "name": "bed_id",
+   "pos": 4,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "admissions",
+   "name": "department_id",
+   "pos": 5,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "admissions",
+   "name": "emergency_id",
+   "pos": 6,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "admissions",
+   "name": "admission_date",
+   "pos": 7,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "admissions",
+   "name": "discharge_date",
+   "pos": 8,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "admissions",
+   "name": "status",
+   "pos": 9,
+   "type": "enum('ACTIVE','DISCHARGED','TRANSFERRED')",
+   "nullable": "YES",
+   "dflt": "ACTIVE",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "admissions",
+   "name": "diagnosis",
+   "pos": 10,
+   "type": "text",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "admissions",
+   "name": "notes",
+   "pos": 11,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "admissions",
+   "name": "created_at",
+   "pos": 12,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "admissions",
+   "name": "updated_at",
+   "pos": 13,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "ambulances",
+   "name": "ambulance_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "ambulances",
+   "name": "vehicle_number",
+   "pos": 2,
+   "type": "varchar(20)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "UNI",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "ambulances",
+   "name": "driver_name",
+   "pos": 3,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "ambulances",
+   "name": "driver_phone",
+   "pos": 4,
+   "type": "varchar(20)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "ambulances",
+   "name": "current_location",
+   "pos": 5,
+   "type": "varchar(255)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "ambulances",
+   "name": "status",
+   "pos": 6,
+   "type": "enum('AVAILABLE','EN_ROUTE','ARRIVED','IN_SERVICE','MAINTENANCE')",
+   "nullable": "YES",
+   "dflt": "AVAILABLE",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "appointments",
+   "name": "appointment_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "appointments",
+   "name": "patient_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "appointments",
+   "name": "doctor_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "appointments",
+   "name": "appointment_date",
+   "pos": 4,
+   "type": "date",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "appointments",
+   "name": "appointment_time",
+   "pos": 5,
+   "type": "time",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "appointments",
+   "name": "status",
+   "pos": 6,
+   "type": "enum('BOOKED','CHECKED_IN','IN_PROGRESS','COMPLETED','CANCELLED','NO_SHOW')",
+   "nullable": "YES",
+   "dflt": "BOOKED",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "appointments",
+   "name": "reason",
+   "pos": 7,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "appointments",
+   "name": "notes",
+   "pos": 8,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "appointments",
+   "name": "created_at",
+   "pos": 9,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "appointments",
+   "name": "updated_at",
+   "pos": 10,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "audit_logs",
+   "name": "audit_id",
+   "pos": 1,
+   "type": "bigint",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "audit_logs",
+   "name": "user_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "audit_logs",
+   "name": "role",
+   "pos": 3,
+   "type": "varchar(20)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "audit_logs",
+   "name": "action",
+   "pos": 4,
+   "type": "varchar(64)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "audit_logs",
+   "name": "entity_type",
+   "pos": 5,
+   "type": "varchar(50)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "audit_logs",
+   "name": "entity_id",
+   "pos": 6,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "audit_logs",
+   "name": "patient_id",
+   "pos": 7,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "audit_logs",
+   "name": "outcome",
+   "pos": 8,
+   "type": "enum('SUCCESS','DENIED')",
+   "nullable": "NO",
+   "dflt": "SUCCESS",
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "audit_logs",
+   "name": "status_code",
+   "pos": 9,
+   "type": "smallint",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "audit_logs",
+   "name": "method",
+   "pos": 10,
+   "type": "varchar(10)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "audit_logs",
+   "name": "path",
+   "pos": 11,
+   "type": "varchar(255)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "audit_logs",
+   "name": "ip_address",
+   "pos": 12,
+   "type": "varchar(45)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "audit_logs",
+   "name": "details",
+   "pos": 13,
+   "type": "json",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "audit_logs",
+   "name": "created_at",
+   "pos": 14,
+   "type": "datetime(3)",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP(3)",
+   "k": "MUL",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "available_beds_view",
+   "name": "bed_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "available_beds_view",
+   "name": "bed_number",
+   "pos": 2,
+   "type": "varchar(20)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "available_beds_view",
+   "name": "floor",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "available_beds_view",
+   "name": "bed_type",
+   "pos": 4,
+   "type": "enum('GENERAL','ICU','NICU','ISOLATION','VENTILATOR_ICU')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "available_beds_view",
+   "name": "has_ventilator",
+   "pos": 5,
+   "type": "tinyint(1)",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "available_beds_view",
+   "name": "ward_name",
+   "pos": 6,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "available_beds_view",
+   "name": "department_name",
+   "pos": 7,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "available_doctors_view",
+   "name": "doctor_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "available_doctors_view",
+   "name": "doctor_name",
+   "pos": 2,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "available_doctors_view",
+   "name": "specialization",
+   "pos": 3,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "available_doctors_view",
+   "name": "phone",
+   "pos": 4,
+   "type": "varchar(20)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "available_doctors_view",
+   "name": "current_workload",
+   "pos": 5,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "available_doctors_view",
+   "name": "max_workload",
+   "pos": 6,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "5",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "available_doctors_view",
+   "name": "department_name",
+   "pos": 7,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bed_assignment_log",
+   "name": "log_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bed_assignment_log",
+   "name": "bed_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bed_assignment_log",
+   "name": "patient_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bed_assignment_log",
+   "name": "admission_id",
+   "pos": 4,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bed_assignment_log",
+   "name": "assigned_at",
+   "pos": 5,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bed_assignment_log",
+   "name": "released_at",
+   "pos": 6,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bed_assignment_log",
+   "name": "status",
+   "pos": 7,
+   "type": "enum('ACTIVE','RELEASED')",
+   "nullable": "YES",
+   "dflt": "ACTIVE",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bed_status_summary_view",
+   "name": "ward_name",
+   "pos": 1,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bed_status_summary_view",
+   "name": "department_name",
+   "pos": 2,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bed_status_summary_view",
+   "name": "bed_type",
+   "pos": 3,
+   "type": "enum('GENERAL','ICU','NICU','ISOLATION','VENTILATOR_ICU')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bed_status_summary_view",
+   "name": "status",
+   "pos": 4,
+   "type": "enum('AVAILABLE','OCCUPIED','MAINTENANCE','RESERVED')",
+   "nullable": "YES",
+   "dflt": "AVAILABLE",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bed_status_summary_view",
+   "name": "count",
+   "pos": 5,
+   "type": "bigint",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "beds",
+   "name": "bed_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "beds",
+   "name": "ward_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "beds",
+   "name": "bed_number",
+   "pos": 3,
+   "type": "varchar(20)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "beds",
+   "name": "bed_type",
+   "pos": 4,
+   "type": "enum('GENERAL','ICU','NICU','ISOLATION','VENTILATOR_ICU')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "beds",
+   "name": "status",
+   "pos": 5,
+   "type": "enum('AVAILABLE','OCCUPIED','MAINTENANCE','RESERVED')",
+   "nullable": "YES",
+   "dflt": "AVAILABLE",
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "beds",
+   "name": "has_ventilator",
+   "pos": 6,
+   "type": "tinyint(1)",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bill_items",
+   "name": "item_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bill_items",
+   "name": "bill_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bill_items",
+   "name": "description",
+   "pos": 3,
+   "type": "varchar(255)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bill_items",
+   "name": "category",
+   "pos": 4,
+   "type": "enum('CONSULTATION','BED','ICU','LABORATORY','MEDICINE','PROCEDURE','AMBULANCE','OTHER')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bill_items",
+   "name": "quantity",
+   "pos": 5,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "1",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bill_items",
+   "name": "unit_price",
+   "pos": 6,
+   "type": "decimal(10,2)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bill_items",
+   "name": "total_price",
+   "pos": 7,
+   "type": "decimal(10,2)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "VIRTUAL GENERATED",
+   "comment": "",
+   "gen": "(`quantity` * `unit_price`)"
+  },
+  {
+   "t": "bill_items",
+   "name": "created_at",
+   "pos": 8,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bills",
+   "name": "bill_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bills",
+   "name": "patient_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bills",
+   "name": "admission_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bills",
+   "name": "bill_date",
+   "pos": 4,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bills",
+   "name": "total_amount",
+   "pos": 5,
+   "type": "decimal(12,2)",
+   "nullable": "YES",
+   "dflt": "0.00",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bills",
+   "name": "paid_amount",
+   "pos": 6,
+   "type": "decimal(12,2)",
+   "nullable": "YES",
+   "dflt": "0.00",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bills",
+   "name": "status",
+   "pos": 7,
+   "type": "enum('PENDING','PARTIAL','PAID','CANCELLED')",
+   "nullable": "YES",
+   "dflt": "PENDING",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bills",
+   "name": "payment_method",
+   "pos": 8,
+   "type": "varchar(50)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bills",
+   "name": "notes",
+   "pos": 9,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bills",
+   "name": "created_at",
+   "pos": 10,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "bills",
+   "name": "updated_at",
+   "pos": 11,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "consultations",
+   "name": "consultation_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "consultations",
+   "name": "appointment_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "consultations",
+   "name": "patient_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "consultations",
+   "name": "doctor_id",
+   "pos": 4,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "consultations",
+   "name": "admission_id",
+   "pos": 5,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "consultations",
+   "name": "symptoms",
+   "pos": 6,
+   "type": "text",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "consultations",
+   "name": "diagnosis",
+   "pos": 7,
+   "type": "text",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "consultations",
+   "name": "assessment",
+   "pos": 8,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "consultations",
+   "name": "plan",
+   "pos": 9,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "consultations",
+   "name": "notes",
+   "pos": 10,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "consultations",
+   "name": "consultation_time",
+   "pos": 11,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "consultations",
+   "name": "created_at",
+   "pos": 12,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "consultations",
+   "name": "encounter_id",
+   "pos": 13,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "current_admissions_view",
+   "name": "admission_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "current_admissions_view",
+   "name": "admission_date",
+   "pos": 2,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "current_admissions_view",
+   "name": "diagnosis",
+   "pos": 3,
+   "type": "text",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "current_admissions_view",
+   "name": "patient_name",
+   "pos": 4,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "current_admissions_view",
+   "name": "patient_id",
+   "pos": 5,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "current_admissions_view",
+   "name": "doctor_name",
+   "pos": 6,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "current_admissions_view",
+   "name": "doctor_id",
+   "pos": 7,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "current_admissions_view",
+   "name": "bed_number",
+   "pos": 8,
+   "type": "varchar(20)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "current_admissions_view",
+   "name": "bed_type",
+   "pos": 9,
+   "type": "enum('GENERAL','ICU','NICU','ISOLATION','VENTILATOR_ICU')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "current_admissions_view",
+   "name": "ward_name",
+   "pos": 10,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "current_admissions_view",
+   "name": "department_name",
+   "pos": 11,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "departments",
+   "name": "department_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "departments",
+   "name": "name",
+   "pos": 2,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "UNI",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "departments",
+   "name": "description",
+   "pos": 3,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "departments",
+   "name": "floor",
+   "pos": 4,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "departments",
+   "name": "phone",
+   "pos": 5,
+   "type": "varchar(20)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "departments",
+   "name": "is_active",
+   "pos": 6,
+   "type": "tinyint(1)",
+   "nullable": "YES",
+   "dflt": "1",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "analytics_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "doctor_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "analytics_date",
+   "pos": 3,
+   "type": "date",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "patients_seen",
+   "pos": 4,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "emergency_cases",
+   "pos": 5,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "appointment_patients",
+   "pos": 6,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "patients_treated",
+   "pos": 7,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "cases_solved",
+   "pos": 8,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "cases_postponed",
+   "pos": 9,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "cases_cancelled",
+   "pos": 10,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "cases_pending",
+   "pos": 11,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "created_at",
+   "pos": 12,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "updated_at",
+   "pos": 13,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_schedules",
+   "name": "schedule_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_schedules",
+   "name": "doctor_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_schedules",
+   "name": "day_of_week",
+   "pos": 3,
+   "type": "enum('MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_schedules",
+   "name": "start_time",
+   "pos": 4,
+   "type": "time",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_schedules",
+   "name": "end_time",
+   "pos": 5,
+   "type": "time",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_schedules",
+   "name": "is_available",
+   "pos": 6,
+   "type": "tinyint(1)",
+   "nullable": "YES",
+   "dflt": "1",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_workload_view",
+   "name": "doctor_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_workload_view",
+   "name": "name",
+   "pos": 2,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_workload_view",
+   "name": "specialization",
+   "pos": 3,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_workload_view",
+   "name": "department",
+   "pos": 4,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_workload_view",
+   "name": "status",
+   "pos": 5,
+   "type": "enum('AVAILABLE','BUSY','OFF_DUTY','ON_LEAVE')",
+   "nullable": "YES",
+   "dflt": "AVAILABLE",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_workload_view",
+   "name": "shift",
+   "pos": 6,
+   "type": "enum('MORNING','AFTERNOON','NIGHT')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_workload_view",
+   "name": "current_workload",
+   "pos": 7,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_workload_view",
+   "name": "max_workload",
+   "pos": 8,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "5",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctor_workload_view",
+   "name": "available_capacity",
+   "pos": 9,
+   "type": "bigint",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctors",
+   "name": "doctor_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctors",
+   "name": "user_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "UNI",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctors",
+   "name": "department_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctors",
+   "name": "name",
+   "pos": 4,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctors",
+   "name": "specialization",
+   "pos": 5,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctors",
+   "name": "phone",
+   "pos": 6,
+   "type": "varchar(20)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctors",
+   "name": "status",
+   "pos": 7,
+   "type": "enum('AVAILABLE','BUSY','OFF_DUTY','ON_LEAVE')",
+   "nullable": "YES",
+   "dflt": "AVAILABLE",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctors",
+   "name": "shift",
+   "pos": 8,
+   "type": "enum('MORNING','AFTERNOON','NIGHT')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctors",
+   "name": "current_workload",
+   "pos": 9,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctors",
+   "name": "max_workload",
+   "pos": 10,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "5",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctors",
+   "name": "created_at",
+   "pos": 11,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "doctors",
+   "name": "updated_at",
+   "pos": 12,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "emergency_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "patient_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "ambulance_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "severity",
+   "pos": 4,
+   "type": "enum('CRITICAL','VERY_SERIOUS','SERIOUS','MODERATE','STABLE')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "symptoms",
+   "pos": 5,
+   "type": "text",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "arrival_time",
+   "pos": 6,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "required_specialization",
+   "pos": 7,
+   "type": "varchar(100)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "required_bed_type",
+   "pos": 8,
+   "type": "enum('GENERAL','ICU','NICU','ISOLATION','VENTILATOR_ICU')",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "ventilator_required",
+   "pos": 9,
+   "type": "tinyint(1)",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "status",
+   "pos": 10,
+   "type": "enum('WAITING','TRIAGED','ALLOCATED','ADMITTED','DISCHARGED','CANCELLED')",
+   "nullable": "YES",
+   "dflt": "WAITING",
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "assigned_doctor_id",
+   "pos": 11,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "assigned_bed_id",
+   "pos": 12,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "notes",
+   "pos": 13,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "created_at",
+   "pos": 14,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_cases",
+   "name": "updated_at",
+   "pos": 15,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_queue_view",
+   "name": "emergency_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_queue_view",
+   "name": "severity",
+   "pos": 2,
+   "type": "enum('CRITICAL','VERY_SERIOUS','SERIOUS','MODERATE','STABLE')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_queue_view",
+   "name": "arrival_time",
+   "pos": 3,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_queue_view",
+   "name": "symptoms",
+   "pos": 4,
+   "type": "text",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_queue_view",
+   "name": "required_specialization",
+   "pos": 5,
+   "type": "varchar(100)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_queue_view",
+   "name": "required_bed_type",
+   "pos": 6,
+   "type": "enum('GENERAL','ICU','NICU','ISOLATION','VENTILATOR_ICU')",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_queue_view",
+   "name": "ventilator_required",
+   "pos": 7,
+   "type": "tinyint(1)",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_queue_view",
+   "name": "patient_name",
+   "pos": 8,
+   "type": "varchar(100)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "emergency_queue_view",
+   "name": "ambulance_number",
+   "pos": 9,
+   "type": "varchar(20)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "encounter_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "patient_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "doctor_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "appointment_id",
+   "pos": 4,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "UNI",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "admission_id",
+   "pos": 5,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "encounter_type",
+   "pos": 6,
+   "type": "enum('OUTPATIENT','INPATIENT','EMERGENCY')",
+   "nullable": "NO",
+   "dflt": "OUTPATIENT",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "status",
+   "pos": 7,
+   "type": "enum('PLANNED','ARRIVED','TRIAGED','IN_PROGRESS','FINISHED','CANCELLED','ENTERED_IN_ERROR')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "arrived_at",
+   "pos": 8,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "triaged_at",
+   "pos": 9,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "start_timestamp",
+   "pos": 10,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "end_timestamp",
+   "pos": 11,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "created_by",
+   "pos": 12,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "backfilled_from",
+   "pos": 13,
+   "type": "varchar(40)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "UNI",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "created_at",
+   "pos": 14,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "encounters",
+   "name": "updated_at",
+   "pos": 15,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "hospital_occupancy_view",
+   "name": "bed_type",
+   "pos": 1,
+   "type": "enum('GENERAL','ICU','NICU','ISOLATION','VENTILATOR_ICU')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "hospital_occupancy_view",
+   "name": "total_beds",
+   "pos": 2,
+   "type": "bigint",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "hospital_occupancy_view",
+   "name": "occupied_beds",
+   "pos": 3,
+   "type": "decimal(23,0)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "hospital_occupancy_view",
+   "name": "available_beds",
+   "pos": 4,
+   "type": "decimal(23,0)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "hospital_occupancy_view",
+   "name": "unavailable_beds",
+   "pos": 5,
+   "type": "decimal(23,0)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "hospital_occupancy_view",
+   "name": "occupancy_rate",
+   "pos": 6,
+   "type": "decimal(29,2)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_orders",
+   "name": "order_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_orders",
+   "name": "consultation_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_orders",
+   "name": "patient_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_orders",
+   "name": "doctor_id",
+   "pos": 4,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_orders",
+   "name": "test_id",
+   "pos": 5,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_orders",
+   "name": "order_date",
+   "pos": 6,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_orders",
+   "name": "status",
+   "pos": 7,
+   "type": "enum('ORDERED','SAMPLE_COLLECTED','PROCESSING','COMPLETED','CANCELLED')",
+   "nullable": "YES",
+   "dflt": "ORDERED",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_orders",
+   "name": "priority",
+   "pos": 8,
+   "type": "enum('NORMAL','URGENT','STAT')",
+   "nullable": "YES",
+   "dflt": "NORMAL",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_orders",
+   "name": "notes",
+   "pos": 9,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_orders",
+   "name": "created_at",
+   "pos": 10,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_orders",
+   "name": "updated_at",
+   "pos": 11,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_orders",
+   "name": "encounter_id",
+   "pos": 12,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_orders",
+   "name": "admission_id",
+   "pos": 13,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "attachment_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "result_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "original_filename",
+   "pos": 3,
+   "type": "varchar(255)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "stored_filename",
+   "pos": 4,
+   "type": "varchar(255)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "UNI",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "mime_type",
+   "pos": 5,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "file_size",
+   "pos": 6,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "uploaded_by",
+   "pos": 7,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "uploaded_at",
+   "pos": 8,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "result_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "order_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "UNI",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "result_value",
+   "pos": 3,
+   "type": "text",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "unit",
+   "pos": 4,
+   "type": "varchar(50)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "reference_range",
+   "pos": 5,
+   "type": "varchar(100)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "interpretation",
+   "pos": 6,
+   "type": "enum('NORMAL','LOW','HIGH','CRITICAL')",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "result_date",
+   "pos": 7,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "technician_notes",
+   "pos": 8,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "performed_by",
+   "pos": 9,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "reviewed_by_doctor",
+   "pos": 10,
+   "type": "tinyint(1)",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "reviewed_at",
+   "pos": 11,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "created_at",
+   "pos": 12,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "numeric_value",
+   "pos": 13,
+   "type": "decimal(14,4)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "reference_low",
+   "pos": 14,
+   "type": "decimal(14,4)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "reference_high",
+   "pos": 15,
+   "type": "decimal(14,4)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_results",
+   "name": "interpretation_source",
+   "pos": 16,
+   "type": "enum('AUTO','MANUAL')",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_tests",
+   "name": "test_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_tests",
+   "name": "name",
+   "pos": 2,
+   "type": "varchar(150)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_tests",
+   "name": "category",
+   "pos": 3,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_tests",
+   "name": "department_id",
+   "pos": 4,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_tests",
+   "name": "normal_range",
+   "pos": 5,
+   "type": "varchar(100)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_tests",
+   "name": "unit",
+   "pos": 6,
+   "type": "varchar(50)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_tests",
+   "name": "cost",
+   "pos": 7,
+   "type": "decimal(10,2)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_tests",
+   "name": "reference_low",
+   "pos": 8,
+   "type": "decimal(14,4)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_tests",
+   "name": "reference_high",
+   "pos": 9,
+   "type": "decimal(14,4)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_tests",
+   "name": "critical_low",
+   "pos": 10,
+   "type": "decimal(14,4)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "lab_tests",
+   "name": "critical_high",
+   "pos": 11,
+   "type": "decimal(14,4)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medication_administrations",
+   "name": "administration_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medication_administrations",
+   "name": "prescription_item_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medication_administrations",
+   "name": "admission_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medication_administrations",
+   "name": "scheduled_at_utc",
+   "pos": 4,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medication_administrations",
+   "name": "status",
+   "pos": 5,
+   "type": "enum('PENDING','ADMINISTERED','REFUSED','MISSED','CANCELLED')",
+   "nullable": "NO",
+   "dflt": "PENDING",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medication_administrations",
+   "name": "administered_at_utc",
+   "pos": 6,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medication_administrations",
+   "name": "dose_given",
+   "pos": 7,
+   "type": "varchar(50)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medication_administrations",
+   "name": "route_given",
+   "pos": 8,
+   "type": "enum('ORAL','IV','IM','SC','SUBLINGUAL','INHALED','TOPICAL','RECTAL','OTHER')",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medication_administrations",
+   "name": "reason",
+   "pos": 9,
+   "type": "varchar(255)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medication_administrations",
+   "name": "recorded_by",
+   "pos": 10,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medication_administrations",
+   "name": "recorded_at_utc",
+   "pos": 11,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medication_administrations",
+   "name": "created_at",
+   "pos": 12,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medication_administrations",
+   "name": "updated_at",
+   "pos": 13,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicine_batches",
+   "name": "batch_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicine_batches",
+   "name": "medicine_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicine_batches",
+   "name": "batch_number",
+   "pos": 3,
+   "type": "varchar(50)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicine_batches",
+   "name": "quantity",
+   "pos": 4,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicine_batches",
+   "name": "expiry_date",
+   "pos": 5,
+   "type": "date",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicine_batches",
+   "name": "received_date",
+   "pos": 6,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicine_batches",
+   "name": "received_by",
+   "pos": 7,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicine_batches",
+   "name": "created_at",
+   "pos": 8,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicine_batches",
+   "name": "updated_at",
+   "pos": 9,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicines",
+   "name": "medicine_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicines",
+   "name": "name",
+   "pos": 2,
+   "type": "varchar(150)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicines",
+   "name": "category",
+   "pos": 3,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicines",
+   "name": "manufacturer",
+   "pos": 4,
+   "type": "varchar(150)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicines",
+   "name": "stock_quantity",
+   "pos": 5,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicines",
+   "name": "reorder_level",
+   "pos": 6,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": "50",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicines",
+   "name": "unit_price",
+   "pos": 7,
+   "type": "decimal(10,2)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicines",
+   "name": "expiry_date",
+   "pos": 8,
+   "type": "date",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicines",
+   "name": "requires_prescription",
+   "pos": 9,
+   "type": "tinyint(1)",
+   "nullable": "YES",
+   "dflt": "1",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicines",
+   "name": "created_at",
+   "pos": 10,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "medicines",
+   "name": "updated_at",
+   "pos": 11,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "assignment_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "nurse_user_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "ward_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "start_date",
+   "pos": 4,
+   "type": "date",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "end_date",
+   "pos": 5,
+   "type": "date",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "assigned_by",
+   "pos": 6,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "created_at",
+   "pos": 7,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "updated_at",
+   "pos": 8,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "patients",
+   "name": "patient_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "patients",
+   "name": "name",
+   "pos": 2,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "patients",
+   "name": "date_of_birth",
+   "pos": 3,
+   "type": "date",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "patients",
+   "name": "dob_estimated",
+   "pos": 4,
+   "type": "tinyint(1)",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "patients",
+   "name": "gender",
+   "pos": 5,
+   "type": "enum('MALE','FEMALE','OTHER')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "patients",
+   "name": "blood_group",
+   "pos": 6,
+   "type": "enum('A+','A-','B+','B-','AB+','AB-','O+','O-')",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "patients",
+   "name": "phone",
+   "pos": 7,
+   "type": "varchar(20)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "patients",
+   "name": "address",
+   "pos": 8,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "patients",
+   "name": "emergency_contact",
+   "pos": 9,
+   "type": "varchar(100)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "patients",
+   "name": "created_at",
+   "pos": 10,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "patients",
+   "name": "updated_at",
+   "pos": 11,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "patients",
+   "name": "allergies",
+   "pos": 12,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "patients",
+   "name": "abha_number",
+   "pos": 13,
+   "type": "char(14)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "UNI",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pending_bills_view",
+   "name": "bill_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pending_bills_view",
+   "name": "bill_date",
+   "pos": 2,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pending_bills_view",
+   "name": "patient_name",
+   "pos": 3,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pending_bills_view",
+   "name": "phone",
+   "pos": 4,
+   "type": "varchar(20)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pending_bills_view",
+   "name": "total_amount",
+   "pos": 5,
+   "type": "decimal(12,2)",
+   "nullable": "YES",
+   "dflt": "0.00",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pending_bills_view",
+   "name": "paid_amount",
+   "pos": 6,
+   "type": "decimal(12,2)",
+   "nullable": "YES",
+   "dflt": "0.00",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pending_bills_view",
+   "name": "balance_due",
+   "pos": 7,
+   "type": "decimal(13,2)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pending_bills_view",
+   "name": "status",
+   "pos": 8,
+   "type": "enum('PENDING','PARTIAL','PAID','CANCELLED')",
+   "nullable": "YES",
+   "dflt": "PENDING",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "movement_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "medicine_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "movement_type",
+   "pos": 3,
+   "type": "enum('RECEIPT','ADJUSTMENT','DISPENSE')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "quantity",
+   "pos": 4,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "reason",
+   "pos": 5,
+   "type": "varchar(50)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "notes",
+   "pos": 6,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "performed_by",
+   "pos": 7,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "created_at",
+   "pos": 8,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "reference_id",
+   "pos": 9,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "batch_id",
+   "pos": 10,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_item_batches",
+   "name": "id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_item_batches",
+   "name": "item_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_item_batches",
+   "name": "batch_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_item_batches",
+   "name": "quantity",
+   "pos": 4,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_item_batches",
+   "name": "created_at",
+   "pos": 5,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_items",
+   "name": "item_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_items",
+   "name": "prescription_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_items",
+   "name": "medicine_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_items",
+   "name": "dosage",
+   "pos": 4,
+   "type": "varchar(50)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_items",
+   "name": "frequency",
+   "pos": 5,
+   "type": "varchar(50)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_items",
+   "name": "duration",
+   "pos": 6,
+   "type": "varchar(50)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_items",
+   "name": "quantity",
+   "pos": 7,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_items",
+   "name": "dispensed",
+   "pos": 8,
+   "type": "tinyint(1)",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_items",
+   "name": "dispensed_at",
+   "pos": 9,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_items",
+   "name": "frequency_code",
+   "pos": 10,
+   "type": "enum('OD','BD','TDS','QID','Q6H','Q8H','STAT','PRN')",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_items",
+   "name": "duration_days",
+   "pos": 11,
+   "type": "smallint",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_items",
+   "name": "route",
+   "pos": 12,
+   "type": "enum('ORAL','IV','IM','SC','SUBLINGUAL','INHALED','TOPICAL','RECTAL','OTHER')",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescription_items",
+   "name": "units_per_dose",
+   "pos": 13,
+   "type": "smallint",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescriptions",
+   "name": "prescription_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescriptions",
+   "name": "consultation_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescriptions",
+   "name": "patient_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescriptions",
+   "name": "doctor_id",
+   "pos": 4,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescriptions",
+   "name": "prescription_date",
+   "pos": 5,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescriptions",
+   "name": "status",
+   "pos": 6,
+   "type": "enum('CREATED','DISPENSED','PARTIALLY_DISPENSED','CANCELLED')",
+   "nullable": "YES",
+   "dflt": "CREATED",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescriptions",
+   "name": "notes",
+   "pos": 7,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescriptions",
+   "name": "created_at",
+   "pos": 8,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescriptions",
+   "name": "encounter_id",
+   "pos": 9,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "prescriptions",
+   "name": "admission_id",
+   "pos": 10,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "schema_migrations",
+   "name": "version",
+   "pos": 1,
+   "type": "varchar(255)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "schema_migrations",
+   "name": "applied_at",
+   "pos": 2,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "schema_migrations",
+   "name": "note",
+   "pos": 3,
+   "type": "varchar(100)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "surgery_requests",
+   "name": "request_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "surgery_requests",
+   "name": "patient_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "surgery_requests",
+   "name": "doctor_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "surgery_requests",
+   "name": "procedure_name",
+   "pos": 4,
+   "type": "varchar(255)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "surgery_requests",
+   "name": "diagnosis",
+   "pos": 5,
+   "type": "text",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "surgery_requests",
+   "name": "priority",
+   "pos": 6,
+   "type": "enum('ROUTINE','URGENT','EMERGENCY')",
+   "nullable": "YES",
+   "dflt": "ROUTINE",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "surgery_requests",
+   "name": "requested_date",
+   "pos": 7,
+   "type": "date",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "surgery_requests",
+   "name": "status",
+   "pos": 8,
+   "type": "enum('REQUESTED','SCHEDULED','IN_PROGRESS','COMPLETED','CANCELLED')",
+   "nullable": "YES",
+   "dflt": "REQUESTED",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "surgery_requests",
+   "name": "notes",
+   "pos": 9,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "surgery_requests",
+   "name": "created_at",
+   "pos": 10,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "surgery_requests",
+   "name": "updated_at",
+   "pos": 11,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "surgery_requests",
+   "name": "encounter_id",
+   "pos": 12,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "users",
+   "name": "user_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "users",
+   "name": "username",
+   "pos": 2,
+   "type": "varchar(50)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "UNI",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "users",
+   "name": "password_hash",
+   "pos": 3,
+   "type": "varchar(255)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "users",
+   "name": "role",
+   "pos": 4,
+   "type": "enum('ADMIN','DOCTOR','RECEPTIONIST','NURSE','LABORATORY','PHARMACY')",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "users",
+   "name": "full_name",
+   "pos": 5,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "users",
+   "name": "email",
+   "pos": 6,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "UNI",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "users",
+   "name": "phone",
+   "pos": 7,
+   "type": "varchar(20)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "users",
+   "name": "is_active",
+   "pos": 8,
+   "type": "tinyint(1)",
+   "nullable": "YES",
+   "dflt": "1",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "users",
+   "name": "created_at",
+   "pos": 9,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "users",
+   "name": "updated_at",
+   "pos": 10,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_appointments",
+   "name": "appointment_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_appointments",
+   "name": "patient_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_appointments",
+   "name": "doctor_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_appointments",
+   "name": "department_id",
+   "pos": 4,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_appointments",
+   "name": "appointment_date",
+   "pos": 5,
+   "type": "date",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_appointments",
+   "name": "appointment_time",
+   "pos": 6,
+   "type": "time",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_appointments",
+   "name": "status",
+   "pos": 7,
+   "type": "enum('BOOKED','CHECKED_IN','IN_PROGRESS','COMPLETED','CANCELLED','NO_SHOW')",
+   "nullable": "YES",
+   "dflt": "BOOKED",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_appointments",
+   "name": "reason",
+   "pos": 8,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_appointments",
+   "name": "notes",
+   "pos": 9,
+   "type": "text",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_appointments",
+   "name": "created_at",
+   "pos": 10,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_appointments",
+   "name": "updated_at",
+   "pos": 11,
+   "type": "datetime",
+   "nullable": "YES",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_current_stock",
+   "name": "medicine_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_current_stock",
+   "name": "name",
+   "pos": 2,
+   "type": "varchar(150)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_current_stock",
+   "name": "stock_quantity",
+   "pos": 3,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_current_stock",
+   "name": "batch_total",
+   "pos": 4,
+   "type": "decimal(32,0)",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_current_stock",
+   "name": "usable_quantity",
+   "pos": 5,
+   "type": "decimal(32,0)",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_current_stock",
+   "name": "expired_quantity",
+   "pos": 6,
+   "type": "decimal(32,0)",
+   "nullable": "NO",
+   "dflt": "0",
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "v_current_stock",
+   "name": "next_expiry",
+   "pos": 7,
+   "type": "date",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "vital_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "patient_id",
+   "pos": 2,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "encounter_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "admission_id",
+   "pos": 4,
+   "type": "int",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "recorded_at_utc",
+   "pos": 5,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "recorded_by",
+   "pos": 6,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "temperature_c",
+   "pos": 7,
+   "type": "decimal(4,1)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "pulse_bpm",
+   "pos": 8,
+   "type": "smallint",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "resp_rate",
+   "pos": 9,
+   "type": "smallint",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "bp_systolic",
+   "pos": 10,
+   "type": "smallint",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "bp_diastolic",
+   "pos": 11,
+   "type": "smallint",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "spo2_pct",
+   "pos": 12,
+   "type": "smallint",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "pain_score",
+   "pos": 13,
+   "type": "tinyint",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "notes",
+   "pos": 14,
+   "type": "varchar(255)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "vital_signs",
+   "name": "created_at",
+   "pos": 15,
+   "type": "datetime",
+   "nullable": "NO",
+   "dflt": "CURRENT_TIMESTAMP",
+   "k": "",
+   "extra": "DEFAULT_GENERATED",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "wards",
+   "name": "ward_id",
+   "pos": 1,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "PRI",
+   "extra": "auto_increment",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "wards",
+   "name": "name",
+   "pos": 2,
+   "type": "varchar(100)",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "wards",
+   "name": "department_id",
+   "pos": 3,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "MUL",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "wards",
+   "name": "floor",
+   "pos": 4,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "wards",
+   "name": "capacity",
+   "pos": 5,
+   "type": "int",
+   "nullable": "NO",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  },
+  {
+   "t": "wards",
+   "name": "ward_type",
+   "pos": 6,
+   "type": "varchar(50)",
+   "nullable": "YES",
+   "dflt": null,
+   "k": "",
+   "extra": "",
+   "comment": "",
+   "gen": ""
+  }
+ ],
+ "indexes": [
+  {
+   "t": "admissions",
+   "name": "department_id",
+   "non_unique": 1,
+   "cols": "department_id"
+  },
+  {
+   "t": "admissions",
+   "name": "emergency_id",
+   "non_unique": 1,
+   "cols": "emergency_id"
+  },
+  {
+   "t": "admissions",
+   "name": "idx_admissions_bed_status",
+   "non_unique": 1,
+   "cols": "bed_id,status"
+  },
+  {
+   "t": "admissions",
+   "name": "idx_admissions_doctor_status",
+   "non_unique": 1,
+   "cols": "doctor_id,status"
+  },
+  {
+   "t": "admissions",
+   "name": "idx_admissions_patient_status",
+   "non_unique": 1,
+   "cols": "patient_id,status"
+  },
+  {
+   "t": "admissions",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "admission_id"
+  },
+  {
+   "t": "admissions",
+   "name": "uq_admissions_id_patient",
+   "non_unique": 0,
+   "cols": "admission_id,patient_id"
+  },
+  {
+   "t": "ambulances",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "ambulance_id"
+  },
+  {
+   "t": "ambulances",
+   "name": "vehicle_number",
+   "non_unique": 0,
+   "cols": "vehicle_number"
+  },
+  {
+   "t": "appointments",
+   "name": "doctor_id",
+   "non_unique": 0,
+   "cols": "doctor_id,appointment_date,appointment_time"
+  },
+  {
+   "t": "appointments",
+   "name": "idx_appointments_doc_date_time",
+   "non_unique": 1,
+   "cols": "doctor_id,appointment_date,appointment_time"
+  },
+  {
+   "t": "appointments",
+   "name": "patient_id",
+   "non_unique": 1,
+   "cols": "patient_id"
+  },
+  {
+   "t": "appointments",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "appointment_id"
+  },
+  {
+   "t": "appointments",
+   "name": "uq_appointments_id_patient_doctor",
+   "non_unique": 0,
+   "cols": "appointment_id,patient_id,doctor_id"
+  },
+  {
+   "t": "audit_logs",
+   "name": "idx_audit_action_created",
+   "non_unique": 1,
+   "cols": "action,created_at"
+  },
+  {
+   "t": "audit_logs",
+   "name": "idx_audit_created",
+   "non_unique": 1,
+   "cols": "created_at"
+  },
+  {
+   "t": "audit_logs",
+   "name": "idx_audit_outcome_created",
+   "non_unique": 1,
+   "cols": "outcome,created_at"
+  },
+  {
+   "t": "audit_logs",
+   "name": "idx_audit_patient_created",
+   "non_unique": 1,
+   "cols": "patient_id,created_at"
+  },
+  {
+   "t": "audit_logs",
+   "name": "idx_audit_user_created",
+   "non_unique": 1,
+   "cols": "user_id,created_at"
+  },
+  {
+   "t": "audit_logs",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "audit_id"
+  },
+  {
+   "t": "bed_assignment_log",
+   "name": "admission_id",
+   "non_unique": 1,
+   "cols": "admission_id"
+  },
+  {
+   "t": "bed_assignment_log",
+   "name": "bed_id",
+   "non_unique": 1,
+   "cols": "bed_id"
+  },
+  {
+   "t": "bed_assignment_log",
+   "name": "patient_id",
+   "non_unique": 1,
+   "cols": "patient_id"
+  },
+  {
+   "t": "bed_assignment_log",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "log_id"
+  },
+  {
+   "t": "beds",
+   "name": "idx_beds_status_type",
+   "non_unique": 1,
+   "cols": "status,bed_type"
+  },
+  {
+   "t": "beds",
+   "name": "idx_beds_ward_status",
+   "non_unique": 1,
+   "cols": "ward_id,status"
+  },
+  {
+   "t": "beds",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "bed_id"
+  },
+  {
+   "t": "beds",
+   "name": "ward_id",
+   "non_unique": 0,
+   "cols": "ward_id,bed_number"
+  },
+  {
+   "t": "bill_items",
+   "name": "bill_id",
+   "non_unique": 1,
+   "cols": "bill_id"
+  },
+  {
+   "t": "bill_items",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "item_id"
+  },
+  {
+   "t": "bills",
+   "name": "fk_ctx_bills_admission",
+   "non_unique": 1,
+   "cols": "admission_id,patient_id"
+  },
+  {
+   "t": "bills",
+   "name": "idx_bills_patient_status",
+   "non_unique": 1,
+   "cols": "patient_id,status"
+  },
+  {
+   "t": "bills",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "bill_id"
+  },
+  {
+   "t": "consultations",
+   "name": "doctor_id",
+   "non_unique": 1,
+   "cols": "doctor_id"
+  },
+  {
+   "t": "consultations",
+   "name": "fk_ctx_consultations_admission",
+   "non_unique": 1,
+   "cols": "admission_id,patient_id"
+  },
+  {
+   "t": "consultations",
+   "name": "fk_ctx_consultations_appointment",
+   "non_unique": 1,
+   "cols": "appointment_id,patient_id,doctor_id"
+  },
+  {
+   "t": "consultations",
+   "name": "fk_ctx_consultations_encounter",
+   "non_unique": 1,
+   "cols": "encounter_id,patient_id,doctor_id"
+  },
+  {
+   "t": "consultations",
+   "name": "idx_consultations_encounter",
+   "non_unique": 1,
+   "cols": "encounter_id"
+  },
+  {
+   "t": "consultations",
+   "name": "patient_id",
+   "non_unique": 1,
+   "cols": "patient_id"
+  },
+  {
+   "t": "consultations",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "consultation_id"
+  },
+  {
+   "t": "consultations",
+   "name": "uq_consultations_id_patient",
+   "non_unique": 0,
+   "cols": "consultation_id,patient_id"
+  },
+  {
+   "t": "departments",
+   "name": "name",
+   "non_unique": 0,
+   "cols": "name"
+  },
+  {
+   "t": "departments",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "department_id"
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "analytics_id"
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "unique_doctor_date",
+   "non_unique": 0,
+   "cols": "doctor_id,analytics_date"
+  },
+  {
+   "t": "doctor_schedules",
+   "name": "doctor_id",
+   "non_unique": 0,
+   "cols": "doctor_id,day_of_week,start_time"
+  },
+  {
+   "t": "doctor_schedules",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "schedule_id"
+  },
+  {
+   "t": "doctors",
+   "name": "department_id",
+   "non_unique": 1,
+   "cols": "department_id"
+  },
+  {
+   "t": "doctors",
+   "name": "idx_doctors_spec_status",
+   "non_unique": 1,
+   "cols": "specialization,status"
+  },
+  {
+   "t": "doctors",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "doctor_id"
+  },
+  {
+   "t": "doctors",
+   "name": "uq_doctors_user_id",
+   "non_unique": 0,
+   "cols": "user_id"
+  },
+  {
+   "t": "emergency_cases",
+   "name": "ambulance_id",
+   "non_unique": 1,
+   "cols": "ambulance_id"
+  },
+  {
+   "t": "emergency_cases",
+   "name": "assigned_bed_id",
+   "non_unique": 1,
+   "cols": "assigned_bed_id"
+  },
+  {
+   "t": "emergency_cases",
+   "name": "assigned_doctor_id",
+   "non_unique": 1,
+   "cols": "assigned_doctor_id"
+  },
+  {
+   "t": "emergency_cases",
+   "name": "idx_emergency_status_severity_time",
+   "non_unique": 1,
+   "cols": "status,severity,arrival_time"
+  },
+  {
+   "t": "emergency_cases",
+   "name": "patient_id",
+   "non_unique": 1,
+   "cols": "patient_id"
+  },
+  {
+   "t": "emergency_cases",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "emergency_id"
+  },
+  {
+   "t": "encounters",
+   "name": "fk_ctx_encounters_admission",
+   "non_unique": 1,
+   "cols": "admission_id,patient_id"
+  },
+  {
+   "t": "encounters",
+   "name": "fk_encounters_created_by",
+   "non_unique": 1,
+   "cols": "created_by"
+  },
+  {
+   "t": "encounters",
+   "name": "idx_encounters_admission",
+   "non_unique": 1,
+   "cols": "admission_id"
+  },
+  {
+   "t": "encounters",
+   "name": "idx_encounters_doctor_status",
+   "non_unique": 1,
+   "cols": "doctor_id,status"
+  },
+  {
+   "t": "encounters",
+   "name": "idx_encounters_patient_status",
+   "non_unique": 1,
+   "cols": "patient_id,status"
+  },
+  {
+   "t": "encounters",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "encounter_id"
+  },
+  {
+   "t": "encounters",
+   "name": "uq_encounters_appointment",
+   "non_unique": 0,
+   "cols": "appointment_id"
+  },
+  {
+   "t": "encounters",
+   "name": "uq_encounters_backfilled_from",
+   "non_unique": 0,
+   "cols": "backfilled_from"
+  },
+  {
+   "t": "encounters",
+   "name": "uq_encounters_id_patient",
+   "non_unique": 0,
+   "cols": "encounter_id,patient_id"
+  },
+  {
+   "t": "encounters",
+   "name": "uq_encounters_id_patient_doctor",
+   "non_unique": 0,
+   "cols": "encounter_id,patient_id,doctor_id"
+  },
+  {
+   "t": "lab_orders",
+   "name": "doctor_id",
+   "non_unique": 1,
+   "cols": "doctor_id"
+  },
+  {
+   "t": "lab_orders",
+   "name": "fk_ctx_lab_orders_admission",
+   "non_unique": 1,
+   "cols": "admission_id,patient_id"
+  },
+  {
+   "t": "lab_orders",
+   "name": "fk_ctx_lab_orders_consultation",
+   "non_unique": 1,
+   "cols": "consultation_id,patient_id"
+  },
+  {
+   "t": "lab_orders",
+   "name": "fk_ctx_lab_orders_encounter",
+   "non_unique": 1,
+   "cols": "encounter_id,patient_id,doctor_id"
+  },
+  {
+   "t": "lab_orders",
+   "name": "idx_lab_orders_admission",
+   "non_unique": 1,
+   "cols": "admission_id"
+  },
+  {
+   "t": "lab_orders",
+   "name": "idx_lab_orders_encounter",
+   "non_unique": 1,
+   "cols": "encounter_id"
+  },
+  {
+   "t": "lab_orders",
+   "name": "idx_lab_orders_patient_status",
+   "non_unique": 1,
+   "cols": "patient_id,status"
+  },
+  {
+   "t": "lab_orders",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "order_id"
+  },
+  {
+   "t": "lab_orders",
+   "name": "test_id",
+   "non_unique": 1,
+   "cols": "test_id"
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "idx_lab_attachment_result",
+   "non_unique": 1,
+   "cols": "result_id"
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "attachment_id"
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "stored_filename",
+   "non_unique": 0,
+   "cols": "stored_filename"
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "uploaded_by",
+   "non_unique": 1,
+   "cols": "uploaded_by"
+  },
+  {
+   "t": "lab_results",
+   "name": "fk_lab_results_performed_by",
+   "non_unique": 1,
+   "cols": "performed_by"
+  },
+  {
+   "t": "lab_results",
+   "name": "order_id",
+   "non_unique": 0,
+   "cols": "order_id"
+  },
+  {
+   "t": "lab_results",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "result_id"
+  },
+  {
+   "t": "lab_tests",
+   "name": "department_id",
+   "non_unique": 1,
+   "cols": "department_id"
+  },
+  {
+   "t": "lab_tests",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "test_id"
+  },
+  {
+   "t": "medication_administrations",
+   "name": "fk_mar_recorded_by",
+   "non_unique": 1,
+   "cols": "recorded_by"
+  },
+  {
+   "t": "medication_administrations",
+   "name": "idx_mar_admission_status",
+   "non_unique": 1,
+   "cols": "admission_id,status"
+  },
+  {
+   "t": "medication_administrations",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "administration_id"
+  },
+  {
+   "t": "medication_administrations",
+   "name": "uq_mar_item_slot",
+   "non_unique": 0,
+   "cols": "prescription_item_id,scheduled_at_utc"
+  },
+  {
+   "t": "medicine_batches",
+   "name": "fk_medicine_batches_received_by",
+   "non_unique": 1,
+   "cols": "received_by"
+  },
+  {
+   "t": "medicine_batches",
+   "name": "idx_medicine_batches_fefo",
+   "non_unique": 1,
+   "cols": "medicine_id,expiry_date,batch_id"
+  },
+  {
+   "t": "medicine_batches",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "batch_id"
+  },
+  {
+   "t": "medicine_batches",
+   "name": "uq_medicine_batches_id_medicine",
+   "non_unique": 0,
+   "cols": "batch_id,medicine_id"
+  },
+  {
+   "t": "medicine_batches",
+   "name": "uq_medicine_batches_number",
+   "non_unique": 0,
+   "cols": "medicine_id,batch_number"
+  },
+  {
+   "t": "medicines",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "medicine_id"
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "fk_nwa_assigned_by",
+   "non_unique": 1,
+   "cols": "assigned_by"
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "idx_nwa_nurse_dates",
+   "non_unique": 1,
+   "cols": "nurse_user_id,start_date,end_date"
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "idx_nwa_ward",
+   "non_unique": 1,
+   "cols": "ward_id"
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "assignment_id"
+  },
+  {
+   "t": "patients",
+   "name": "idx_patients_name",
+   "non_unique": 1,
+   "cols": "name"
+  },
+  {
+   "t": "patients",
+   "name": "idx_patients_phone",
+   "non_unique": 1,
+   "cols": "phone"
+  },
+  {
+   "t": "patients",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "patient_id"
+  },
+  {
+   "t": "patients",
+   "name": "uq_patients_abha",
+   "non_unique": 0,
+   "cols": "abha_number"
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "fk_ctx_stock_movements_batch",
+   "non_unique": 1,
+   "cols": "batch_id,medicine_id"
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "idx_stock_movement_batch",
+   "non_unique": 1,
+   "cols": "batch_id"
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "idx_stock_movement_medicine",
+   "non_unique": 1,
+   "cols": "medicine_id"
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "performed_by",
+   "non_unique": 1,
+   "cols": "performed_by"
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "movement_id"
+  },
+  {
+   "t": "prescription_item_batches",
+   "name": "idx_prescription_item_batches_batch",
+   "non_unique": 1,
+   "cols": "batch_id"
+  },
+  {
+   "t": "prescription_item_batches",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "id"
+  },
+  {
+   "t": "prescription_item_batches",
+   "name": "uq_prescription_item_batches",
+   "non_unique": 0,
+   "cols": "item_id,batch_id"
+  },
+  {
+   "t": "prescription_items",
+   "name": "medicine_id",
+   "non_unique": 1,
+   "cols": "medicine_id"
+  },
+  {
+   "t": "prescription_items",
+   "name": "prescription_id",
+   "non_unique": 1,
+   "cols": "prescription_id"
+  },
+  {
+   "t": "prescription_items",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "item_id"
+  },
+  {
+   "t": "prescriptions",
+   "name": "doctor_id",
+   "non_unique": 1,
+   "cols": "doctor_id"
+  },
+  {
+   "t": "prescriptions",
+   "name": "fk_ctx_prescriptions_admission",
+   "non_unique": 1,
+   "cols": "admission_id,patient_id"
+  },
+  {
+   "t": "prescriptions",
+   "name": "fk_ctx_prescriptions_consultation",
+   "non_unique": 1,
+   "cols": "consultation_id,patient_id"
+  },
+  {
+   "t": "prescriptions",
+   "name": "fk_ctx_prescriptions_encounter",
+   "non_unique": 1,
+   "cols": "encounter_id,patient_id,doctor_id"
+  },
+  {
+   "t": "prescriptions",
+   "name": "idx_prescriptions_admission",
+   "non_unique": 1,
+   "cols": "admission_id"
+  },
+  {
+   "t": "prescriptions",
+   "name": "idx_prescriptions_encounter",
+   "non_unique": 1,
+   "cols": "encounter_id"
+  },
+  {
+   "t": "prescriptions",
+   "name": "idx_prescriptions_patient_status",
+   "non_unique": 1,
+   "cols": "patient_id,status"
+  },
+  {
+   "t": "prescriptions",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "prescription_id"
+  },
+  {
+   "t": "schema_migrations",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "version"
+  },
+  {
+   "t": "surgery_requests",
+   "name": "doctor_id",
+   "non_unique": 1,
+   "cols": "doctor_id"
+  },
+  {
+   "t": "surgery_requests",
+   "name": "fk_ctx_surgery_requests_encounter",
+   "non_unique": 1,
+   "cols": "encounter_id,patient_id,doctor_id"
+  },
+  {
+   "t": "surgery_requests",
+   "name": "idx_surgery_requests_encounter",
+   "non_unique": 1,
+   "cols": "encounter_id"
+  },
+  {
+   "t": "surgery_requests",
+   "name": "patient_id",
+   "non_unique": 1,
+   "cols": "patient_id"
+  },
+  {
+   "t": "surgery_requests",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "request_id"
+  },
+  {
+   "t": "users",
+   "name": "email",
+   "non_unique": 0,
+   "cols": "email"
+  },
+  {
+   "t": "users",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "user_id"
+  },
+  {
+   "t": "users",
+   "name": "username",
+   "non_unique": 0,
+   "cols": "username"
+  },
+  {
+   "t": "vital_signs",
+   "name": "fk_ctx_vital_signs_admission",
+   "non_unique": 1,
+   "cols": "admission_id,patient_id"
+  },
+  {
+   "t": "vital_signs",
+   "name": "fk_ctx_vital_signs_encounter",
+   "non_unique": 1,
+   "cols": "encounter_id,patient_id"
+  },
+  {
+   "t": "vital_signs",
+   "name": "fk_vitals_recorded_by",
+   "non_unique": 1,
+   "cols": "recorded_by"
+  },
+  {
+   "t": "vital_signs",
+   "name": "idx_vitals_admission",
+   "non_unique": 1,
+   "cols": "admission_id"
+  },
+  {
+   "t": "vital_signs",
+   "name": "idx_vitals_encounter",
+   "non_unique": 1,
+   "cols": "encounter_id"
+  },
+  {
+   "t": "vital_signs",
+   "name": "idx_vitals_patient_time",
+   "non_unique": 1,
+   "cols": "patient_id,recorded_at_utc"
+  },
+  {
+   "t": "vital_signs",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "vital_id"
+  },
+  {
+   "t": "wards",
+   "name": "department_id",
+   "non_unique": 1,
+   "cols": "department_id"
+  },
+  {
+   "t": "wards",
+   "name": "PRIMARY",
+   "non_unique": 0,
+   "cols": "ward_id"
+  }
+ ],
+ "fks": [
+  {
+   "t": "admissions",
+   "name": "admissions_ibfk_1",
+   "cols": "patient_id",
+   "rt": "patients",
+   "rcols": "patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "admissions",
+   "name": "admissions_ibfk_2",
+   "cols": "doctor_id",
+   "rt": "doctors",
+   "rcols": "doctor_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "admissions",
+   "name": "admissions_ibfk_3",
+   "cols": "bed_id",
+   "rt": "beds",
+   "rcols": "bed_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "admissions",
+   "name": "admissions_ibfk_4",
+   "cols": "department_id",
+   "rt": "departments",
+   "rcols": "department_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "admissions",
+   "name": "admissions_ibfk_5",
+   "cols": "emergency_id",
+   "rt": "emergency_cases",
+   "rcols": "emergency_id",
+   "on_delete": "SET NULL",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "appointments",
+   "name": "appointments_ibfk_1",
+   "cols": "patient_id",
+   "rt": "patients",
+   "rcols": "patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "appointments",
+   "name": "appointments_ibfk_2",
+   "cols": "doctor_id",
+   "rt": "doctors",
+   "rcols": "doctor_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "audit_logs",
+   "name": "fk_audit_logs_user",
+   "cols": "user_id",
+   "rt": "users",
+   "rcols": "user_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "bed_assignment_log",
+   "name": "bed_assignment_log_ibfk_1",
+   "cols": "bed_id",
+   "rt": "beds",
+   "rcols": "bed_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "bed_assignment_log",
+   "name": "bed_assignment_log_ibfk_2",
+   "cols": "patient_id",
+   "rt": "patients",
+   "rcols": "patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "bed_assignment_log",
+   "name": "bed_assignment_log_ibfk_3",
+   "cols": "admission_id",
+   "rt": "admissions",
+   "rcols": "admission_id",
+   "on_delete": "CASCADE",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "beds",
+   "name": "beds_ibfk_1",
+   "cols": "ward_id",
+   "rt": "wards",
+   "rcols": "ward_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "bill_items",
+   "name": "bill_items_ibfk_1",
+   "cols": "bill_id",
+   "rt": "bills",
+   "rcols": "bill_id",
+   "on_delete": "CASCADE",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "bills",
+   "name": "bills_ibfk_1",
+   "cols": "patient_id",
+   "rt": "patients",
+   "rcols": "patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "bills",
+   "name": "bills_ibfk_2",
+   "cols": "admission_id",
+   "rt": "admissions",
+   "rcols": "admission_id",
+   "on_delete": "CASCADE",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "bills",
+   "name": "fk_ctx_bills_admission",
+   "cols": "admission_id,patient_id",
+   "rt": "admissions",
+   "rcols": "admission_id,patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "consultations",
+   "name": "consultations_ibfk_1",
+   "cols": "appointment_id",
+   "rt": "appointments",
+   "rcols": "appointment_id",
+   "on_delete": "SET NULL",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "consultations",
+   "name": "consultations_ibfk_2",
+   "cols": "patient_id",
+   "rt": "patients",
+   "rcols": "patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "consultations",
+   "name": "consultations_ibfk_3",
+   "cols": "doctor_id",
+   "rt": "doctors",
+   "rcols": "doctor_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "consultations",
+   "name": "consultations_ibfk_4",
+   "cols": "admission_id",
+   "rt": "admissions",
+   "rcols": "admission_id",
+   "on_delete": "CASCADE",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "consultations",
+   "name": "fk_consultations_encounter",
+   "cols": "encounter_id",
+   "rt": "encounters",
+   "rcols": "encounter_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "consultations",
+   "name": "fk_ctx_consultations_admission",
+   "cols": "admission_id,patient_id",
+   "rt": "admissions",
+   "rcols": "admission_id,patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "consultations",
+   "name": "fk_ctx_consultations_appointment",
+   "cols": "appointment_id,patient_id,doctor_id",
+   "rt": "appointments",
+   "rcols": "appointment_id,patient_id,doctor_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "consultations",
+   "name": "fk_ctx_consultations_encounter",
+   "cols": "encounter_id,patient_id,doctor_id",
+   "rt": "encounters",
+   "rcols": "encounter_id,patient_id,doctor_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "doctor_daily_analytics_ibfk_1",
+   "cols": "doctor_id",
+   "rt": "doctors",
+   "rcols": "doctor_id",
+   "on_delete": "CASCADE",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "doctor_schedules",
+   "name": "doctor_schedules_ibfk_1",
+   "cols": "doctor_id",
+   "rt": "doctors",
+   "rcols": "doctor_id",
+   "on_delete": "CASCADE",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "doctors",
+   "name": "doctors_ibfk_1",
+   "cols": "user_id",
+   "rt": "users",
+   "rcols": "user_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "doctors",
+   "name": "doctors_ibfk_2",
+   "cols": "department_id",
+   "rt": "departments",
+   "rcols": "department_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "emergency_cases",
+   "name": "emergency_cases_ibfk_1",
+   "cols": "patient_id",
+   "rt": "patients",
+   "rcols": "patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "emergency_cases",
+   "name": "emergency_cases_ibfk_2",
+   "cols": "ambulance_id",
+   "rt": "ambulances",
+   "rcols": "ambulance_id",
+   "on_delete": "SET NULL",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "emergency_cases",
+   "name": "emergency_cases_ibfk_3",
+   "cols": "assigned_doctor_id",
+   "rt": "doctors",
+   "rcols": "doctor_id",
+   "on_delete": "SET NULL",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "emergency_cases",
+   "name": "emergency_cases_ibfk_4",
+   "cols": "assigned_bed_id",
+   "rt": "beds",
+   "rcols": "bed_id",
+   "on_delete": "SET NULL",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "encounters",
+   "name": "fk_ctx_encounters_admission",
+   "cols": "admission_id,patient_id",
+   "rt": "admissions",
+   "rcols": "admission_id,patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "encounters",
+   "name": "fk_encounters_admission",
+   "cols": "admission_id",
+   "rt": "admissions",
+   "rcols": "admission_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "encounters",
+   "name": "fk_encounters_appointment",
+   "cols": "appointment_id",
+   "rt": "appointments",
+   "rcols": "appointment_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "encounters",
+   "name": "fk_encounters_created_by",
+   "cols": "created_by",
+   "rt": "users",
+   "rcols": "user_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "encounters",
+   "name": "fk_encounters_doctor",
+   "cols": "doctor_id",
+   "rt": "doctors",
+   "rcols": "doctor_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "encounters",
+   "name": "fk_encounters_patient",
+   "cols": "patient_id",
+   "rt": "patients",
+   "rcols": "patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "lab_orders",
+   "name": "fk_ctx_lab_orders_admission",
+   "cols": "admission_id,patient_id",
+   "rt": "admissions",
+   "rcols": "admission_id,patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "lab_orders",
+   "name": "fk_ctx_lab_orders_consultation",
+   "cols": "consultation_id,patient_id",
+   "rt": "consultations",
+   "rcols": "consultation_id,patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "lab_orders",
+   "name": "fk_ctx_lab_orders_encounter",
+   "cols": "encounter_id,patient_id,doctor_id",
+   "rt": "encounters",
+   "rcols": "encounter_id,patient_id,doctor_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "lab_orders",
+   "name": "fk_lab_orders_admission",
+   "cols": "admission_id",
+   "rt": "admissions",
+   "rcols": "admission_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "lab_orders",
+   "name": "fk_lab_orders_encounter",
+   "cols": "encounter_id",
+   "rt": "encounters",
+   "rcols": "encounter_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "lab_orders",
+   "name": "lab_orders_ibfk_1",
+   "cols": "consultation_id",
+   "rt": "consultations",
+   "rcols": "consultation_id",
+   "on_delete": "SET NULL",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "lab_orders",
+   "name": "lab_orders_ibfk_2",
+   "cols": "patient_id",
+   "rt": "patients",
+   "rcols": "patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "lab_orders",
+   "name": "lab_orders_ibfk_3",
+   "cols": "doctor_id",
+   "rt": "doctors",
+   "rcols": "doctor_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "lab_orders",
+   "name": "lab_orders_ibfk_4",
+   "cols": "test_id",
+   "rt": "lab_tests",
+   "rcols": "test_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "lab_result_attachments_ibfk_1",
+   "cols": "result_id",
+   "rt": "lab_results",
+   "rcols": "result_id",
+   "on_delete": "CASCADE",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "lab_result_attachments_ibfk_2",
+   "cols": "uploaded_by",
+   "rt": "users",
+   "rcols": "user_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "lab_results",
+   "name": "fk_lab_results_performed_by",
+   "cols": "performed_by",
+   "rt": "users",
+   "rcols": "user_id",
+   "on_delete": "SET NULL",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "lab_results",
+   "name": "lab_results_ibfk_1",
+   "cols": "order_id",
+   "rt": "lab_orders",
+   "rcols": "order_id",
+   "on_delete": "CASCADE",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "lab_tests",
+   "name": "lab_tests_ibfk_1",
+   "cols": "department_id",
+   "rt": "departments",
+   "rcols": "department_id",
+   "on_delete": "SET NULL",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "medication_administrations",
+   "name": "fk_mar_admission",
+   "cols": "admission_id",
+   "rt": "admissions",
+   "rcols": "admission_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "medication_administrations",
+   "name": "fk_mar_item",
+   "cols": "prescription_item_id",
+   "rt": "prescription_items",
+   "rcols": "item_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "medication_administrations",
+   "name": "fk_mar_recorded_by",
+   "cols": "recorded_by",
+   "rt": "users",
+   "rcols": "user_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "medicine_batches",
+   "name": "fk_medicine_batches_medicine",
+   "cols": "medicine_id",
+   "rt": "medicines",
+   "rcols": "medicine_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "medicine_batches",
+   "name": "fk_medicine_batches_received_by",
+   "cols": "received_by",
+   "rt": "users",
+   "rcols": "user_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "fk_nwa_assigned_by",
+   "cols": "assigned_by",
+   "rt": "users",
+   "rcols": "user_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "fk_nwa_nurse",
+   "cols": "nurse_user_id",
+   "rt": "users",
+   "rcols": "user_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "fk_nwa_ward",
+   "cols": "ward_id",
+   "rt": "wards",
+   "rcols": "ward_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "fk_ctx_stock_movements_batch",
+   "cols": "batch_id,medicine_id",
+   "rt": "medicine_batches",
+   "rcols": "batch_id,medicine_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "fk_stock_movement_batch",
+   "cols": "batch_id",
+   "rt": "medicine_batches",
+   "rcols": "batch_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "pharmacy_stock_movements_ibfk_1",
+   "cols": "medicine_id",
+   "rt": "medicines",
+   "rcols": "medicine_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "pharmacy_stock_movements",
+   "name": "pharmacy_stock_movements_ibfk_2",
+   "cols": "performed_by",
+   "rt": "users",
+   "rcols": "user_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "prescription_item_batches",
+   "name": "fk_pib_batch",
+   "cols": "batch_id",
+   "rt": "medicine_batches",
+   "rcols": "batch_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "prescription_item_batches",
+   "name": "fk_pib_item",
+   "cols": "item_id",
+   "rt": "prescription_items",
+   "rcols": "item_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "prescription_items",
+   "name": "prescription_items_ibfk_1",
+   "cols": "prescription_id",
+   "rt": "prescriptions",
+   "rcols": "prescription_id",
+   "on_delete": "CASCADE",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "prescription_items",
+   "name": "prescription_items_ibfk_2",
+   "cols": "medicine_id",
+   "rt": "medicines",
+   "rcols": "medicine_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "prescriptions",
+   "name": "fk_ctx_prescriptions_admission",
+   "cols": "admission_id,patient_id",
+   "rt": "admissions",
+   "rcols": "admission_id,patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "prescriptions",
+   "name": "fk_ctx_prescriptions_consultation",
+   "cols": "consultation_id,patient_id",
+   "rt": "consultations",
+   "rcols": "consultation_id,patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "prescriptions",
+   "name": "fk_ctx_prescriptions_encounter",
+   "cols": "encounter_id,patient_id,doctor_id",
+   "rt": "encounters",
+   "rcols": "encounter_id,patient_id,doctor_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "prescriptions",
+   "name": "fk_prescriptions_admission",
+   "cols": "admission_id",
+   "rt": "admissions",
+   "rcols": "admission_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "prescriptions",
+   "name": "fk_prescriptions_encounter",
+   "cols": "encounter_id",
+   "rt": "encounters",
+   "rcols": "encounter_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "prescriptions",
+   "name": "prescriptions_ibfk_1",
+   "cols": "consultation_id",
+   "rt": "consultations",
+   "rcols": "consultation_id",
+   "on_delete": "CASCADE",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "prescriptions",
+   "name": "prescriptions_ibfk_2",
+   "cols": "patient_id",
+   "rt": "patients",
+   "rcols": "patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "prescriptions",
+   "name": "prescriptions_ibfk_3",
+   "cols": "doctor_id",
+   "rt": "doctors",
+   "rcols": "doctor_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "surgery_requests",
+   "name": "fk_ctx_surgery_requests_encounter",
+   "cols": "encounter_id,patient_id,doctor_id",
+   "rt": "encounters",
+   "rcols": "encounter_id,patient_id,doctor_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "surgery_requests",
+   "name": "fk_surgery_requests_encounter",
+   "cols": "encounter_id",
+   "rt": "encounters",
+   "rcols": "encounter_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "surgery_requests",
+   "name": "surgery_requests_ibfk_1",
+   "cols": "patient_id",
+   "rt": "patients",
+   "rcols": "patient_id",
+   "on_delete": "CASCADE",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "surgery_requests",
+   "name": "surgery_requests_ibfk_2",
+   "cols": "doctor_id",
+   "rt": "doctors",
+   "rcols": "doctor_id",
+   "on_delete": "CASCADE",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "vital_signs",
+   "name": "fk_ctx_vital_signs_admission",
+   "cols": "admission_id,patient_id",
+   "rt": "admissions",
+   "rcols": "admission_id,patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "vital_signs",
+   "name": "fk_ctx_vital_signs_encounter",
+   "cols": "encounter_id,patient_id",
+   "rt": "encounters",
+   "rcols": "encounter_id,patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "vital_signs",
+   "name": "fk_vitals_admission",
+   "cols": "admission_id",
+   "rt": "admissions",
+   "rcols": "admission_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "vital_signs",
+   "name": "fk_vitals_encounter",
+   "cols": "encounter_id",
+   "rt": "encounters",
+   "rcols": "encounter_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "vital_signs",
+   "name": "fk_vitals_patient",
+   "cols": "patient_id",
+   "rt": "patients",
+   "rcols": "patient_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "vital_signs",
+   "name": "fk_vitals_recorded_by",
+   "cols": "recorded_by",
+   "rt": "users",
+   "rcols": "user_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  },
+  {
+   "t": "wards",
+   "name": "wards_ibfk_1",
+   "cols": "department_id",
+   "rt": "departments",
+   "rcols": "department_id",
+   "on_delete": "RESTRICT",
+   "on_update": "NO ACTION"
+  }
+ ],
+ "checks": [
+  {
+   "t": "admissions",
+   "name": "admissions_chk_1",
+   "clause": "((`discharge_date` is null) or (`discharge_date` >= `admission_date`))"
+  },
+  {
+   "t": "bill_items",
+   "name": "bill_items_chk_1",
+   "clause": "(`quantity` > 0)"
+  },
+  {
+   "t": "bill_items",
+   "name": "bill_items_chk_2",
+   "clause": "(`unit_price` >= 0)"
+  },
+  {
+   "t": "bill_items",
+   "name": "bill_items_chk_3",
+   "clause": "(`total_price` >= 0)"
+  },
+  {
+   "t": "bills",
+   "name": "bills_chk_1",
+   "clause": "(`total_amount` >= 0)"
+  },
+  {
+   "t": "bills",
+   "name": "bills_chk_2",
+   "clause": "((`paid_amount` >= 0) and (`paid_amount` <= `total_amount`))"
+  },
+  {
+   "t": "doctors",
+   "name": "doctors_chk_1",
+   "clause": "((`current_workload` <= `max_workload`) and (`current_workload` >= 0))"
+  },
+  {
+   "t": "encounters",
+   "name": "chk_encounters_times",
+   "clause": "((`end_timestamp` is null) or (`start_timestamp` is null) or (`end_timestamp` >= `start_timestamp`))"
+  },
+  {
+   "t": "lab_tests",
+   "name": "lab_tests_chk_1",
+   "clause": "(`cost` >= 0)"
+  },
+  {
+   "t": "medication_administrations",
+   "name": "chk_mar_given",
+   "clause": "((`status` <> _utf8mb4\\'ADMINISTERED\\') or (`administered_at_utc` is not null))"
+  },
+  {
+   "t": "medicine_batches",
+   "name": "chk_medicine_batches_quantity",
+   "clause": "(`quantity` >= 0)"
+  },
+  {
+   "t": "medicines",
+   "name": "medicines_chk_1",
+   "clause": "(`stock_quantity` >= 0)"
+  },
+  {
+   "t": "medicines",
+   "name": "medicines_chk_2",
+   "clause": "(`unit_price` >= 0)"
+  },
+  {
+   "t": "nurse_ward_assignments",
+   "name": "chk_nwa_dates",
+   "clause": "((`end_date` is null) or (`end_date` >= `start_date`))"
+  },
+  {
+   "t": "patients",
+   "name": "chk_patients_abha_format",
+   "clause": "((`abha_number` is null) or regexp_like(`abha_number`,_utf8mb4\\'^[0-9]{14}$\\'))"
+  },
+  {
+   "t": "prescription_item_batches",
+   "name": "chk_pib_quantity",
+   "clause": "(`quantity` > 0)"
+  },
+  {
+   "t": "prescription_items",
+   "name": "chk_prescription_items_dispensed",
+   "clause": "((`dispensed_at` is null) or (`dispensed` = 1))"
+  },
+  {
+   "t": "prescription_items",
+   "name": "chk_prescription_items_structured",
+   "clause": "(((`duration_days` is null) or (`duration_days` > 0)) and ((`units_per_dose` is null) or (`units_per_dose` > 0)))"
+  },
+  {
+   "t": "prescription_items",
+   "name": "prescription_items_chk_1",
+   "clause": "(`quantity` > 0)"
+  },
+  {
+   "t": "vital_signs",
+   "name": "chk_vitals_any",
+   "clause": "((`temperature_c` is not null) or (`pulse_bpm` is not null) or (`resp_rate` is not null) or (`bp_systolic` is not null) or (`spo2_pct` is not null) or (`pain_score` is not null))"
+  },
+  {
+   "t": "vital_signs",
+   "name": "chk_vitals_bp_order",
+   "clause": "((`bp_systolic` is null) or (`bp_systolic` > `bp_diastolic`))"
+  },
+  {
+   "t": "vital_signs",
+   "name": "chk_vitals_bp_pair",
+   "clause": "((`bp_systolic` is null) = (`bp_diastolic` is null))"
+  },
+  {
+   "t": "vital_signs",
+   "name": "chk_vitals_context",
+   "clause": "((`encounter_id` is not null) or (`admission_id` is not null))"
+  },
+  {
+   "t": "vital_signs",
+   "name": "chk_vitals_diastolic",
+   "clause": "((`bp_diastolic` is null) or (`bp_diastolic` between 20 and 200))"
+  },
+  {
+   "t": "vital_signs",
+   "name": "chk_vitals_pain",
+   "clause": "((`pain_score` is null) or (`pain_score` between 0 and 10))"
+  },
+  {
+   "t": "vital_signs",
+   "name": "chk_vitals_pulse",
+   "clause": "((`pulse_bpm` is null) or (`pulse_bpm` between 20 and 250))"
+  },
+  {
+   "t": "vital_signs",
+   "name": "chk_vitals_resp_rate",
+   "clause": "((`resp_rate` is null) or (`resp_rate` between 4 and 80))"
+  },
+  {
+   "t": "vital_signs",
+   "name": "chk_vitals_spo2",
+   "clause": "((`spo2_pct` is null) or (`spo2_pct` between 50 and 100))"
+  },
+  {
+   "t": "vital_signs",
+   "name": "chk_vitals_systolic",
+   "clause": "((`bp_systolic` is null) or (`bp_systolic` between 40 and 300))"
+  },
+  {
+   "t": "vital_signs",
+   "name": "chk_vitals_temperature",
+   "clause": "((`temperature_c` is null) or (`temperature_c` between 25.0 and 45.0))"
+  }
+ ],
+ "uniques": [
+  {
+   "t": "admissions",
+   "name": "uq_admissions_id_patient"
+  },
+  {
+   "t": "ambulances",
+   "name": "vehicle_number"
+  },
+  {
+   "t": "appointments",
+   "name": "doctor_id"
+  },
+  {
+   "t": "appointments",
+   "name": "uq_appointments_id_patient_doctor"
+  },
+  {
+   "t": "beds",
+   "name": "ward_id"
+  },
+  {
+   "t": "consultations",
+   "name": "uq_consultations_id_patient"
+  },
+  {
+   "t": "departments",
+   "name": "name"
+  },
+  {
+   "t": "doctor_daily_analytics",
+   "name": "unique_doctor_date"
+  },
+  {
+   "t": "doctor_schedules",
+   "name": "doctor_id"
+  },
+  {
+   "t": "doctors",
+   "name": "uq_doctors_user_id"
+  },
+  {
+   "t": "encounters",
+   "name": "uq_encounters_appointment"
+  },
+  {
+   "t": "encounters",
+   "name": "uq_encounters_backfilled_from"
+  },
+  {
+   "t": "encounters",
+   "name": "uq_encounters_id_patient"
+  },
+  {
+   "t": "encounters",
+   "name": "uq_encounters_id_patient_doctor"
+  },
+  {
+   "t": "lab_result_attachments",
+   "name": "stored_filename"
+  },
+  {
+   "t": "lab_results",
+   "name": "order_id"
+  },
+  {
+   "t": "medication_administrations",
+   "name": "uq_mar_item_slot"
+  },
+  {
+   "t": "medicine_batches",
+   "name": "uq_medicine_batches_id_medicine"
+  },
+  {
+   "t": "medicine_batches",
+   "name": "uq_medicine_batches_number"
+  },
+  {
+   "t": "patients",
+   "name": "uq_patients_abha"
+  },
+  {
+   "t": "prescription_item_batches",
+   "name": "uq_prescription_item_batches"
+  },
+  {
+   "t": "users",
+   "name": "email"
+  },
+  {
+   "t": "users",
+   "name": "username"
+  }
+ ],
+ "triggers": [
+  {
+   "name": "after_admission_discharge",
+   "event": "UPDATE",
+   "t": "admissions",
+   "timing": "AFTER",
+   "body": "BEGIN\n    IF OLD.status = 'ACTIVE' AND NEW.status = 'DISCHARGED' THEN\n        UPDATE beds SET status = 'AVAILABLE' WHERE bed_id = OLD.bed_id;\n        UPDATE doctors SET current_workload = current_workload - 1 WHERE doctor_id = OLD.doctor_id;\n        \n        UPDATE bed_assignment_log \n        SET released_at = NEW.discharge_date, status = 'RELEASED'\n        WHERE admission_id = NEW.admission_id AND status = 'ACTIVE';\n    END IF;\nEND"
+  },
+  {
+   "name": "after_admission_insert",
+   "event": "INSERT",
+   "t": "admissions",
+   "timing": "AFTER",
+   "body": "BEGIN\n    UPDATE beds SET status = 'OCCUPIED' WHERE bed_id = NEW.bed_id;\n    -- Workload is the number of ACTIVE admissions; one inserted already discharged does not count.\n    IF NEW.status = 'ACTIVE' THEN\n        UPDATE doctors SET current_workload = current_workload + 1 WHERE doctor_id = NEW.doctor_id;\n    END IF;\n\n    INSERT INTO bed_assignment_log (bed_id, patient_id, admission_id, assigned_at, status)\n    VALUES (NEW.bed_id, NEW.patient_id, NEW.admission_id, NEW.admission_date, 'ACTIVE');\nEND"
+  },
+  {
+   "name": "after_bed_assignment_log",
+   "event": "INSERT",
+   "t": "bed_assignment_log",
+   "timing": "AFTER",
+   "body": "BEGIN\n    -- This trigger is just for demonstration if we want to cascade logs or notify systems.\n    -- The actual logging is handled in the after_admission_insert and update triggers.\nEND"
+  },
+  {
+   "name": "after_prescription_dispense",
+   "event": "UPDATE",
+   "t": "prescription_items",
+   "timing": "AFTER",
+   "body": "BEGIN\n    IF OLD.dispensed = FALSE AND NEW.dispensed = TRUE THEN\n        UPDATE medicines \n        SET stock_quantity = stock_quantity - NEW.quantity\n        WHERE medicine_id = NEW.medicine_id;\n    END IF;\nEND"
+  },
+  {
+   "name": "audit_logs_no_delete",
+   "event": "DELETE",
+   "t": "audit_logs",
+   "timing": "BEFORE",
+   "body": "BEGIN\n  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'audit_logs is append-only: rows cannot be deleted';\nEND"
+  },
+  {
+   "name": "audit_logs_no_update",
+   "event": "UPDATE",
+   "t": "audit_logs",
+   "timing": "BEFORE",
+   "body": "BEGIN\n  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'audit_logs is append-only: rows cannot be updated';\nEND"
+  },
+  {
+   "name": "before_medicine_stock_update",
+   "event": "UPDATE",
+   "t": "medicines",
+   "timing": "BEFORE",
+   "body": "BEGIN\n    IF NEW.stock_quantity < 0 THEN\n        SIGNAL SQLSTATE '45000'\n        SET MESSAGE_TEXT = 'Error: Medicine stock cannot be negative.';\n    END IF;\nEND"
+  }
+ ],
+ "views": [
+  {
+   "name": "available_beds_view",
+   "def": "select `b`.`bed_id` AS `bed_id`,`b`.`bed_number` AS `bed_number`,`w`.`floor` AS `floor`,`b`.`bed_type` AS `bed_type`,`b`.`has_ventilator` AS `has_ventilator`,`w`.`name` AS `ward_name`,`d`.`name` AS `department_name` from ((`hospital_db_test`.`beds` `b` join `hospital_db_test`.`wards` `w` on((`b`.`ward_id` = `w`.`ward_id`))) join `hospital_db_test`.`departments` `d` on((`w`.`department_id` = `d`.`department_id`))) where (`b`.`status` = 'AVAILABLE')"
+  },
+  {
+   "name": "available_doctors_view",
+   "def": "select `doc`.`doctor_id` AS `doctor_id`,`doc`.`name` AS `doctor_name`,`doc`.`specialization` AS `specialization`,`doc`.`phone` AS `phone`,`doc`.`current_workload` AS `current_workload`,`doc`.`max_workload` AS `max_workload`,`dep`.`name` AS `department_name` from (`hospital_db_test`.`doctors` `doc` join `hospital_db_test`.`departments` `dep` on((`doc`.`department_id` = `dep`.`department_id`))) where ((`doc`.`status` = 'AVAILABLE') and (`doc`.`current_workload` < `doc`.`max_workload`))"
+  },
+  {
+   "name": "bed_status_summary_view",
+   "def": "select `w`.`name` AS `ward_name`,`d`.`name` AS `department_name`,`b`.`bed_type` AS `bed_type`,`b`.`status` AS `status`,count(`b`.`bed_id`) AS `count` from ((`hospital_db_test`.`beds` `b` join `hospital_db_test`.`wards` `w` on((`b`.`ward_id` = `w`.`ward_id`))) join `hospital_db_test`.`departments` `d` on((`w`.`department_id` = `d`.`department_id`))) group by `w`.`name`,`d`.`name`,`b`.`bed_type`,`b`.`status`"
+  },
+  {
+   "name": "current_admissions_view",
+   "def": "select `a`.`admission_id` AS `admission_id`,`a`.`admission_date` AS `admission_date`,`a`.`diagnosis` AS `diagnosis`,`p`.`name` AS `patient_name`,`p`.`patient_id` AS `patient_id`,`doc`.`name` AS `doctor_name`,`doc`.`doctor_id` AS `doctor_id`,`b`.`bed_number` AS `bed_number`,`b`.`bed_type` AS `bed_type`,`w`.`name` AS `ward_name`,`dep`.`name` AS `department_name` from (((((`hospital_db_test`.`admissions` `a` join `hospital_db_test`.`patients` `p` on((`a`.`patient_id` = `p`.`patient_id`))) join `hospital_db_test`.`doctors` `doc` on((`a`.`doctor_id` = `doc`.`doctor_id`))) join `hospital_db_test`.`beds` `b` on((`a`.`bed_id` = `b`.`bed_id`))) join `hospital_db_test`.`wards` `w` on((`b`.`ward_id` = `w`.`ward_id`))) join `hospital_db_test`.`departments` `dep` on((`a`.`department_id` = `dep`.`department_id`))) where (`a`.`status` = 'ACTIVE')"
+  },
+  {
+   "name": "doctor_workload_view",
+   "def": "select `doc`.`doctor_id` AS `doctor_id`,`doc`.`name` AS `name`,`doc`.`specialization` AS `specialization`,`dep`.`name` AS `department`,`doc`.`status` AS `status`,`doc`.`shift` AS `shift`,`doc`.`current_workload` AS `current_workload`,`doc`.`max_workload` AS `max_workload`,(`doc`.`max_workload` - `doc`.`current_workload`) AS `available_capacity` from (`hospital_db_test`.`doctors` `doc` join `hospital_db_test`.`departments` `dep` on((`doc`.`department_id` = `dep`.`department_id`)))"
+  },
+  {
+   "name": "emergency_queue_view",
+   "def": "select `e`.`emergency_id` AS `emergency_id`,`e`.`severity` AS `severity`,`e`.`arrival_time` AS `arrival_time`,`e`.`symptoms` AS `symptoms`,`e`.`required_specialization` AS `required_specialization`,`e`.`required_bed_type` AS `required_bed_type`,`e`.`ventilator_required` AS `ventilator_required`,`p`.`name` AS `patient_name`,`a`.`vehicle_number` AS `ambulance_number` from ((`hospital_db_test`.`emergency_cases` `e` left join `hospital_db_test`.`patients` `p` on((`e`.`patient_id` = `p`.`patient_id`))) left join `hospital_db_test`.`ambulances` `a` on((`e`.`ambulance_id` = `a`.`ambulance_id`))) where (`e`.`status` in ('WAITING','TRIAGED')) order by (case `e`.`severity` when 'CRITICAL' then 1 when 'VERY_SERIOUS' then 2 when 'SERIOUS' then 3 when 'MODERATE' then 4 when 'STABLE' then 5 end),`e`.`arrival_time`"
+  },
+  {
+   "name": "hospital_occupancy_view",
+   "def": "select `hospital_db_test`.`beds`.`bed_type` AS `bed_type`,count(0) AS `total_beds`,sum((case when (`hospital_db_test`.`beds`.`status` = 'OCCUPIED') then 1 else 0 end)) AS `occupied_beds`,sum((case when (`hospital_db_test`.`beds`.`status` = 'AVAILABLE') then 1 else 0 end)) AS `available_beds`,sum((case when (`hospital_db_test`.`beds`.`status` in ('MAINTENANCE','RESERVED')) then 1 else 0 end)) AS `unavailable_beds`,round(((sum((case when (`hospital_db_test`.`beds`.`status` = 'OCCUPIED') then 1 else 0 end)) / count(0)) * 100),2) AS `occupancy_rate` from `hospital_db_test`.`beds` group by `hospital_db_test`.`beds`.`bed_type`"
+  },
+  {
+   "name": "pending_bills_view",
+   "def": "select `b`.`bill_id` AS `bill_id`,`b`.`bill_date` AS `bill_date`,`p`.`name` AS `patient_name`,`p`.`phone` AS `phone`,`b`.`total_amount` AS `total_amount`,`b`.`paid_amount` AS `paid_amount`,(`b`.`total_amount` - `b`.`paid_amount`) AS `balance_due`,`b`.`status` AS `status` from (`hospital_db_test`.`bills` `b` join `hospital_db_test`.`patients` `p` on((`b`.`patient_id` = `p`.`patient_id`))) where (`b`.`status` in ('PENDING','PARTIAL'))"
+  },
+  {
+   "name": "v_appointments",
+   "def": "select `a`.`appointment_id` AS `appointment_id`,`a`.`patient_id` AS `patient_id`,`a`.`doctor_id` AS `doctor_id`,`d`.`department_id` AS `department_id`,`a`.`appointment_date` AS `appointment_date`,`a`.`appointment_time` AS `appointment_time`,`a`.`status` AS `status`,`a`.`reason` AS `reason`,`a`.`notes` AS `notes`,`a`.`created_at` AS `created_at`,`a`.`updated_at` AS `updated_at` from (`hospital_db_test`.`appointments` `a` join `hospital_db_test`.`doctors` `d` on((`d`.`doctor_id` = `a`.`doctor_id`)))"
+  },
+  {
+   "name": "v_current_stock",
+   "def": "select `m`.`medicine_id` AS `medicine_id`,`m`.`name` AS `name`,`m`.`stock_quantity` AS `stock_quantity`,coalesce(sum(`b`.`quantity`),0) AS `batch_total`,coalesce(sum((case when (`b`.`expiry_date` >= curdate()) then `b`.`quantity` end)),0) AS `usable_quantity`,coalesce(sum((case when (`b`.`expiry_date` < curdate()) then `b`.`quantity` end)),0) AS `expired_quantity`,min((case when ((`b`.`quantity` > 0) and (`b`.`expiry_date` >= curdate())) then `b`.`expiry_date` end)) AS `next_expiry` from (`hospital_db_test`.`medicines` `m` left join `hospital_db_test`.`medicine_batches` `b` on((`b`.`medicine_id` = `m`.`medicine_id`))) group by `m`.`medicine_id`,`m`.`name`,`m`.`stock_quantity`"
+  }
+ ],
+ "routines": [
+  {
+   "name": "sp_admit_patient",
+   "type": "PROCEDURE",
+   "def": "BEGIN\n    INSERT INTO admissions (patient_id, doctor_id, bed_id, department_id, admission_date, status, diagnosis)\n    VALUES (p_patient_id, p_doctor_id, p_bed_id, p_department_id, NOW(), 'ACTIVE', p_diagnosis);\nEND",
+   "returns": "",
+   "access": "CONTAINS SQL"
+  },
+  {
+   "name": "sp_allocate_emergency",
+   "type": "PROCEDURE",
+   "def": "BEGIN\n    DECLARE v_severity VARCHAR(20);\n    DECLARE v_req_spec VARCHAR(100);\n    DECLARE v_req_bed VARCHAR(50);\n    DECLARE v_patient_id INT;\n    DECLARE v_arrival_time DATETIME;\n    \n    DECLARE v_best_bed_id INT;\n    DECLARE v_bed_dept_id INT;\n    DECLARE v_best_doctor_id INT;\n    \n    DECLARE v_admission_id INT;\n    \n    DECLARE EXIT HANDLER FOR SQLEXCEPTION\n    BEGIN\n        ROLLBACK;\n        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Emergency allocation failed due to an error. Rolled back.';\n    END;\n\n    START TRANSACTION;\n\n    -- 1. Get emergency details\n    SELECT severity, required_specialization, required_bed_type, patient_id, arrival_time\n    INTO v_severity, v_req_spec, v_req_bed, v_patient_id, v_arrival_time\n    FROM emergency_cases \n    WHERE emergency_id = p_emergency_id AND status IN ('WAITING', 'TRIAGED')\n    FOR UPDATE;\n    \n    IF v_patient_id IS NULL THEN\n        ROLLBACK;\n        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Emergency case not found or not waiting.';\n    END IF;\n\n    -- 2. Find and lock the best available bed (by requested type)\n    SELECT b.bed_id, w.department_id \n    INTO v_best_bed_id, v_bed_dept_id\n    FROM beds b\n    JOIN wards w ON b.ward_id = w.ward_id\n    WHERE b.status = 'AVAILABLE' \n      AND b.bed_type = COALESCE(v_req_bed, b.bed_type)\n    ORDER BY b.bed_id ASC\n    LIMIT 1\n    FOR UPDATE SKIP LOCKED;\n\n    IF v_best_bed_id IS NULL THEN\n        ROLLBACK;\n        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No available bed of required type.';\n    END IF;\n\n    -- 3. Find and lock the best available doctor (by workload)\n    SELECT doctor_id \n    INTO v_best_doctor_id\n    FROM doctors\n    WHERE status = 'AVAILABLE'\n      AND specialization = COALESCE(v_req_spec, specialization)\n      AND current_workload < max_workload\n    ORDER BY current_workload ASC, doctor_id ASC\n    LIMIT 1\n    FOR UPDATE SKIP LOCKED;\n\n    IF v_best_doctor_id IS NULL THEN\n        ROLLBACK;\n        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No available doctor for required specialization.';\n    END IF;\n\n    -- 4. Create admission record\n    INSERT INTO admissions (patient_id, doctor_id, bed_id, department_id, emergency_id, admission_date, status, diagnosis)\n    VALUES (v_patient_id, v_best_doctor_id, v_best_bed_id, v_bed_dept_id, p_emergency_id, NOW(), 'ACTIVE', 'Emergency Admission');\n    \n    SET v_admission_id = LAST_INSERT_ID();\n\n    -- 5. Update emergency case\n    UPDATE emergency_cases\n    SET status = 'ADMITTED', assigned_doctor_id = v_best_doctor_id, assigned_bed_id = v_best_bed_id\n    WHERE emergency_id = p_emergency_id;\n\n    COMMIT;\nEND",
+   "returns": "",
+   "access": "CONTAINS SQL"
+  },
+  {
+   "name": "sp_discharge_patient",
+   "type": "PROCEDURE",
+   "def": "BEGIN\n    UPDATE admissions \n    SET discharge_date = NOW(), status = 'DISCHARGED'\n    WHERE admission_id = p_admission_id AND status = 'ACTIVE';\nEND",
+   "returns": "",
+   "access": "CONTAINS SQL"
+  },
+  {
+   "name": "sp_generate_bill",
+   "type": "PROCEDURE",
+   "def": "BEGIN\n    DECLARE v_patient_id INT;\n    DECLARE v_bill_id INT;\n    DECLARE v_total DECIMAL(12,2) DEFAULT 0;\n\n    SELECT patient_id INTO v_patient_id FROM admissions WHERE admission_id = p_admission_id;\n\n    INSERT INTO bills (patient_id, admission_id, bill_date, status)\n    VALUES (v_patient_id, p_admission_id, NOW(), 'PENDING');\n\n    SET v_bill_id = LAST_INSERT_ID();\n\n    -- Generic consultation fee; total_price is quantity * unit_price.\n    INSERT INTO bill_items (bill_id, description, category, quantity, unit_price)\n    VALUES (v_bill_id, 'Base Consultation Fee', 'CONSULTATION', 1, 500.00);\n\n    SELECT SUM(total_price) INTO v_total FROM bill_items WHERE bill_id = v_bill_id;\n\n    UPDATE bills SET total_amount = v_total WHERE bill_id = v_bill_id;\nEND",
+   "returns": "",
+   "access": "CONTAINS SQL"
+  },
+  {
+   "name": "sp_get_emergency_queue",
+   "type": "PROCEDURE",
+   "def": "BEGIN\n    SELECT * FROM emergency_queue_view;\nEND",
+   "returns": "",
+   "access": "CONTAINS SQL"
+  }
+ ],
+ "params": [
+  {
+   "r": "sp_admit_patient",
+   "pos": 1,
+   "mode": "IN",
+   "name": "p_patient_id",
+   "type": "int"
+  },
+  {
+   "r": "sp_admit_patient",
+   "pos": 2,
+   "mode": "IN",
+   "name": "p_doctor_id",
+   "type": "int"
+  },
+  {
+   "r": "sp_admit_patient",
+   "pos": 3,
+   "mode": "IN",
+   "name": "p_bed_id",
+   "type": "int"
+  },
+  {
+   "r": "sp_admit_patient",
+   "pos": 4,
+   "mode": "IN",
+   "name": "p_department_id",
+   "type": "int"
+  },
+  {
+   "r": "sp_admit_patient",
+   "pos": 5,
+   "mode": "IN",
+   "name": "p_diagnosis",
+   "type": "text"
+  },
+  {
+   "r": "sp_allocate_emergency",
+   "pos": 1,
+   "mode": "IN",
+   "name": "p_emergency_id",
+   "type": "int"
+  },
+  {
+   "r": "sp_discharge_patient",
+   "pos": 1,
+   "mode": "IN",
+   "name": "p_admission_id",
+   "type": "int"
+  },
+  {
+   "r": "sp_generate_bill",
+   "pos": 1,
+   "mode": "IN",
+   "name": "p_admission_id",
+   "type": "int"
+  }
+ ],
+ "events": [],
+ "create": {
+  "admissions": "CREATE TABLE `admissions` (\n  `admission_id` int NOT NULL AUTO_INCREMENT,\n  `patient_id` int NOT NULL,\n  `doctor_id` int NOT NULL,\n  `bed_id` int NOT NULL,\n  `department_id` int NOT NULL,\n  `emergency_id` int DEFAULT NULL,\n  `admission_date` datetime NOT NULL,\n  `discharge_date` datetime DEFAULT NULL,\n  `status` enum('ACTIVE','DISCHARGED','TRANSFERRED') DEFAULT 'ACTIVE',\n  `diagnosis` text NOT NULL,\n  `notes` text,\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`admission_id`),\n  UNIQUE KEY `uq_admissions_id_patient` (`admission_id`,`patient_id`),\n  KEY `department_id` (`department_id`),\n  KEY `emergency_id` (`emergency_id`),\n  KEY `idx_admissions_patient_status` (`patient_id`,`status`),\n  KEY `idx_admissions_bed_status` (`bed_id`,`status`),\n  KEY `idx_admissions_doctor_status` (`doctor_id`,`status`),\n  CONSTRAINT `admissions_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `admissions_ibfk_2` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`doctor_id`) ON DELETE RESTRICT,\n  CONSTRAINT `admissions_ibfk_3` FOREIGN KEY (`bed_id`) REFERENCES `beds` (`bed_id`) ON DELETE RESTRICT,\n  CONSTRAINT `admissions_ibfk_4` FOREIGN KEY (`department_id`) REFERENCES `departments` (`department_id`) ON DELETE RESTRICT,\n  CONSTRAINT `admissions_ibfk_5` FOREIGN KEY (`emergency_id`) REFERENCES `emergency_cases` (`emergency_id`) ON DELETE SET NULL,\n  CONSTRAINT `admissions_chk_1` CHECK (((`discharge_date` is null) or (`discharge_date` >= `admission_date`)))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "ambulances": "CREATE TABLE `ambulances` (\n  `ambulance_id` int NOT NULL AUTO_INCREMENT,\n  `vehicle_number` varchar(20) NOT NULL,\n  `driver_name` varchar(100) NOT NULL,\n  `driver_phone` varchar(20) NOT NULL,\n  `current_location` varchar(255) DEFAULT NULL,\n  `status` enum('AVAILABLE','EN_ROUTE','ARRIVED','IN_SERVICE','MAINTENANCE') DEFAULT 'AVAILABLE',\n  PRIMARY KEY (`ambulance_id`),\n  UNIQUE KEY `vehicle_number` (`vehicle_number`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "appointments": "CREATE TABLE `appointments` (\n  `appointment_id` int NOT NULL AUTO_INCREMENT,\n  `patient_id` int NOT NULL,\n  `doctor_id` int NOT NULL,\n  `appointment_date` date NOT NULL,\n  `appointment_time` time NOT NULL,\n  `status` enum('BOOKED','CHECKED_IN','IN_PROGRESS','COMPLETED','CANCELLED','NO_SHOW') DEFAULT 'BOOKED',\n  `reason` text,\n  `notes` text,\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`appointment_id`),\n  UNIQUE KEY `doctor_id` (`doctor_id`,`appointment_date`,`appointment_time`),\n  UNIQUE KEY `uq_appointments_id_patient_doctor` (`appointment_id`,`patient_id`,`doctor_id`),\n  KEY `patient_id` (`patient_id`),\n  KEY `idx_appointments_doc_date_time` (`doctor_id`,`appointment_date`,`appointment_time`),\n  CONSTRAINT `appointments_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `appointments_ibfk_2` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`doctor_id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "audit_logs": "CREATE TABLE `audit_logs` (\n  `audit_id` bigint NOT NULL AUTO_INCREMENT,\n  `user_id` int DEFAULT NULL,\n  `role` varchar(20) DEFAULT NULL,\n  `action` varchar(64) NOT NULL,\n  `entity_type` varchar(50) DEFAULT NULL,\n  `entity_id` int DEFAULT NULL,\n  `patient_id` int DEFAULT NULL,\n  `outcome` enum('SUCCESS','DENIED') NOT NULL DEFAULT 'SUCCESS',\n  `status_code` smallint DEFAULT NULL,\n  `method` varchar(10) DEFAULT NULL,\n  `path` varchar(255) DEFAULT NULL,\n  `ip_address` varchar(45) DEFAULT NULL,\n  `details` json DEFAULT NULL,\n  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),\n  PRIMARY KEY (`audit_id`),\n  KEY `idx_audit_created` (`created_at`),\n  KEY `idx_audit_user_created` (`user_id`,`created_at`),\n  KEY `idx_audit_patient_created` (`patient_id`,`created_at`),\n  KEY `idx_audit_action_created` (`action`,`created_at`),\n  KEY `idx_audit_outcome_created` (`outcome`,`created_at`),\n  CONSTRAINT `fk_audit_logs_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "bed_assignment_log": "CREATE TABLE `bed_assignment_log` (\n  `log_id` int NOT NULL AUTO_INCREMENT,\n  `bed_id` int NOT NULL,\n  `patient_id` int NOT NULL,\n  `admission_id` int NOT NULL,\n  `assigned_at` datetime NOT NULL,\n  `released_at` datetime DEFAULT NULL,\n  `status` enum('ACTIVE','RELEASED') DEFAULT 'ACTIVE',\n  PRIMARY KEY (`log_id`),\n  KEY `bed_id` (`bed_id`),\n  KEY `patient_id` (`patient_id`),\n  KEY `admission_id` (`admission_id`),\n  CONSTRAINT `bed_assignment_log_ibfk_1` FOREIGN KEY (`bed_id`) REFERENCES `beds` (`bed_id`) ON DELETE RESTRICT,\n  CONSTRAINT `bed_assignment_log_ibfk_2` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `bed_assignment_log_ibfk_3` FOREIGN KEY (`admission_id`) REFERENCES `admissions` (`admission_id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "beds": "CREATE TABLE `beds` (\n  `bed_id` int NOT NULL AUTO_INCREMENT,\n  `ward_id` int NOT NULL,\n  `bed_number` varchar(20) NOT NULL,\n  `bed_type` enum('GENERAL','ICU','NICU','ISOLATION','VENTILATOR_ICU') NOT NULL,\n  `status` enum('AVAILABLE','OCCUPIED','MAINTENANCE','RESERVED') DEFAULT 'AVAILABLE',\n  `has_ventilator` tinyint(1) DEFAULT '0',\n  PRIMARY KEY (`bed_id`),\n  UNIQUE KEY `ward_id` (`ward_id`,`bed_number`),\n  KEY `idx_beds_status_type` (`status`,`bed_type`),\n  KEY `idx_beds_ward_status` (`ward_id`,`status`),\n  CONSTRAINT `beds_ibfk_1` FOREIGN KEY (`ward_id`) REFERENCES `wards` (`ward_id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "bill_items": "CREATE TABLE `bill_items` (\n  `item_id` int NOT NULL AUTO_INCREMENT,\n  `bill_id` int NOT NULL,\n  `description` varchar(255) NOT NULL,\n  `category` enum('CONSULTATION','BED','ICU','LABORATORY','MEDICINE','PROCEDURE','AMBULANCE','OTHER') NOT NULL,\n  `quantity` int DEFAULT '1',\n  `unit_price` decimal(10,2) NOT NULL,\n  `total_price` decimal(10,2) GENERATED ALWAYS AS ((`quantity` * `unit_price`)) VIRTUAL NOT NULL,\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`item_id`),\n  KEY `bill_id` (`bill_id`),\n  CONSTRAINT `bill_items_ibfk_1` FOREIGN KEY (`bill_id`) REFERENCES `bills` (`bill_id`) ON DELETE CASCADE,\n  CONSTRAINT `bill_items_chk_1` CHECK ((`quantity` > 0)),\n  CONSTRAINT `bill_items_chk_2` CHECK ((`unit_price` >= 0)),\n  CONSTRAINT `bill_items_chk_3` CHECK ((`total_price` >= 0))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "bills": "CREATE TABLE `bills` (\n  `bill_id` int NOT NULL AUTO_INCREMENT,\n  `patient_id` int NOT NULL,\n  `admission_id` int DEFAULT NULL,\n  `bill_date` datetime NOT NULL,\n  `total_amount` decimal(12,2) DEFAULT '0.00',\n  `paid_amount` decimal(12,2) DEFAULT '0.00',\n  `status` enum('PENDING','PARTIAL','PAID','CANCELLED') DEFAULT 'PENDING',\n  `payment_method` varchar(50) DEFAULT NULL,\n  `notes` text,\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`bill_id`),\n  KEY `idx_bills_patient_status` (`patient_id`,`status`),\n  KEY `fk_ctx_bills_admission` (`admission_id`,`patient_id`),\n  CONSTRAINT `bills_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `bills_ibfk_2` FOREIGN KEY (`admission_id`) REFERENCES `admissions` (`admission_id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_ctx_bills_admission` FOREIGN KEY (`admission_id`, `patient_id`) REFERENCES `admissions` (`admission_id`, `patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `bills_chk_1` CHECK ((`total_amount` >= 0)),\n  CONSTRAINT `bills_chk_2` CHECK (((`paid_amount` >= 0) and (`paid_amount` <= `total_amount`)))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "consultations": "CREATE TABLE `consultations` (\n  `consultation_id` int NOT NULL AUTO_INCREMENT,\n  `appointment_id` int DEFAULT NULL,\n  `patient_id` int NOT NULL,\n  `doctor_id` int NOT NULL,\n  `admission_id` int DEFAULT NULL,\n  `symptoms` text NOT NULL,\n  `diagnosis` text NOT NULL,\n  `assessment` text,\n  `plan` text,\n  `notes` text,\n  `consultation_time` datetime NOT NULL,\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `encounter_id` int DEFAULT NULL,\n  PRIMARY KEY (`consultation_id`),\n  UNIQUE KEY `uq_consultations_id_patient` (`consultation_id`,`patient_id`),\n  KEY `patient_id` (`patient_id`),\n  KEY `doctor_id` (`doctor_id`),\n  KEY `idx_consultations_encounter` (`encounter_id`),\n  KEY `fk_ctx_consultations_encounter` (`encounter_id`,`patient_id`,`doctor_id`),\n  KEY `fk_ctx_consultations_appointment` (`appointment_id`,`patient_id`,`doctor_id`),\n  KEY `fk_ctx_consultations_admission` (`admission_id`,`patient_id`),\n  CONSTRAINT `consultations_ibfk_1` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`appointment_id`) ON DELETE SET NULL,\n  CONSTRAINT `consultations_ibfk_2` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `consultations_ibfk_3` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`doctor_id`) ON DELETE RESTRICT,\n  CONSTRAINT `consultations_ibfk_4` FOREIGN KEY (`admission_id`) REFERENCES `admissions` (`admission_id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_consultations_encounter` FOREIGN KEY (`encounter_id`) REFERENCES `encounters` (`encounter_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_ctx_consultations_admission` FOREIGN KEY (`admission_id`, `patient_id`) REFERENCES `admissions` (`admission_id`, `patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_ctx_consultations_appointment` FOREIGN KEY (`appointment_id`, `patient_id`, `doctor_id`) REFERENCES `appointments` (`appointment_id`, `patient_id`, `doctor_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_ctx_consultations_encounter` FOREIGN KEY (`encounter_id`, `patient_id`, `doctor_id`) REFERENCES `encounters` (`encounter_id`, `patient_id`, `doctor_id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "departments": "CREATE TABLE `departments` (\n  `department_id` int NOT NULL AUTO_INCREMENT,\n  `name` varchar(100) NOT NULL,\n  `description` text,\n  `floor` int NOT NULL,\n  `phone` varchar(20) DEFAULT NULL,\n  `is_active` tinyint(1) DEFAULT '1',\n  PRIMARY KEY (`department_id`),\n  UNIQUE KEY `name` (`name`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "doctor_daily_analytics": "CREATE TABLE `doctor_daily_analytics` (\n  `analytics_id` int NOT NULL AUTO_INCREMENT,\n  `doctor_id` int NOT NULL,\n  `analytics_date` date NOT NULL,\n  `patients_seen` int DEFAULT '0',\n  `emergency_cases` int DEFAULT '0',\n  `appointment_patients` int DEFAULT '0',\n  `patients_treated` int DEFAULT '0',\n  `cases_solved` int DEFAULT '0',\n  `cases_postponed` int DEFAULT '0',\n  `cases_cancelled` int DEFAULT '0',\n  `cases_pending` int DEFAULT '0',\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`analytics_id`),\n  UNIQUE KEY `unique_doctor_date` (`doctor_id`,`analytics_date`),\n  CONSTRAINT `doctor_daily_analytics_ibfk_1` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`doctor_id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "doctor_schedules": "CREATE TABLE `doctor_schedules` (\n  `schedule_id` int NOT NULL AUTO_INCREMENT,\n  `doctor_id` int NOT NULL,\n  `day_of_week` enum('MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY') NOT NULL,\n  `start_time` time NOT NULL,\n  `end_time` time NOT NULL,\n  `is_available` tinyint(1) DEFAULT '1',\n  PRIMARY KEY (`schedule_id`),\n  UNIQUE KEY `doctor_id` (`doctor_id`,`day_of_week`,`start_time`),\n  CONSTRAINT `doctor_schedules_ibfk_1` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`doctor_id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "doctors": "CREATE TABLE `doctors` (\n  `doctor_id` int NOT NULL AUTO_INCREMENT,\n  `user_id` int NOT NULL,\n  `department_id` int NOT NULL,\n  `name` varchar(100) NOT NULL,\n  `specialization` varchar(100) NOT NULL,\n  `phone` varchar(20) DEFAULT NULL,\n  `status` enum('AVAILABLE','BUSY','OFF_DUTY','ON_LEAVE') DEFAULT 'AVAILABLE',\n  `shift` enum('MORNING','AFTERNOON','NIGHT') NOT NULL,\n  `current_workload` int DEFAULT '0',\n  `max_workload` int DEFAULT '5',\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`doctor_id`),\n  UNIQUE KEY `uq_doctors_user_id` (`user_id`),\n  KEY `department_id` (`department_id`),\n  KEY `idx_doctors_spec_status` (`specialization`,`status`),\n  CONSTRAINT `doctors_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,\n  CONSTRAINT `doctors_ibfk_2` FOREIGN KEY (`department_id`) REFERENCES `departments` (`department_id`) ON DELETE RESTRICT,\n  CONSTRAINT `doctors_chk_1` CHECK (((`current_workload` <= `max_workload`) and (`current_workload` >= 0)))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "emergency_cases": "CREATE TABLE `emergency_cases` (\n  `emergency_id` int NOT NULL AUTO_INCREMENT,\n  `patient_id` int DEFAULT NULL,\n  `ambulance_id` int DEFAULT NULL,\n  `severity` enum('CRITICAL','VERY_SERIOUS','SERIOUS','MODERATE','STABLE') NOT NULL,\n  `symptoms` text NOT NULL,\n  `arrival_time` datetime NOT NULL,\n  `required_specialization` varchar(100) DEFAULT NULL,\n  `required_bed_type` enum('GENERAL','ICU','NICU','ISOLATION','VENTILATOR_ICU') DEFAULT NULL,\n  `ventilator_required` tinyint(1) DEFAULT '0',\n  `status` enum('WAITING','TRIAGED','ALLOCATED','ADMITTED','DISCHARGED','CANCELLED') DEFAULT 'WAITING',\n  `assigned_doctor_id` int DEFAULT NULL,\n  `assigned_bed_id` int DEFAULT NULL,\n  `notes` text,\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`emergency_id`),\n  KEY `patient_id` (`patient_id`),\n  KEY `ambulance_id` (`ambulance_id`),\n  KEY `assigned_doctor_id` (`assigned_doctor_id`),\n  KEY `assigned_bed_id` (`assigned_bed_id`),\n  KEY `idx_emergency_status_severity_time` (`status`,`severity`,`arrival_time`),\n  CONSTRAINT `emergency_cases_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `emergency_cases_ibfk_2` FOREIGN KEY (`ambulance_id`) REFERENCES `ambulances` (`ambulance_id`) ON DELETE SET NULL,\n  CONSTRAINT `emergency_cases_ibfk_3` FOREIGN KEY (`assigned_doctor_id`) REFERENCES `doctors` (`doctor_id`) ON DELETE SET NULL,\n  CONSTRAINT `emergency_cases_ibfk_4` FOREIGN KEY (`assigned_bed_id`) REFERENCES `beds` (`bed_id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "encounters": "CREATE TABLE `encounters` (\n  `encounter_id` int NOT NULL AUTO_INCREMENT,\n  `patient_id` int NOT NULL,\n  `doctor_id` int NOT NULL,\n  `appointment_id` int DEFAULT NULL,\n  `admission_id` int DEFAULT NULL,\n  `encounter_type` enum('OUTPATIENT','INPATIENT','EMERGENCY') NOT NULL DEFAULT 'OUTPATIENT',\n  `status` enum('PLANNED','ARRIVED','TRIAGED','IN_PROGRESS','FINISHED','CANCELLED','ENTERED_IN_ERROR') NOT NULL,\n  `arrived_at` datetime DEFAULT NULL,\n  `triaged_at` datetime DEFAULT NULL,\n  `start_timestamp` datetime DEFAULT NULL,\n  `end_timestamp` datetime DEFAULT NULL,\n  `created_by` int DEFAULT NULL,\n  `backfilled_from` varchar(40) DEFAULT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`encounter_id`),\n  UNIQUE KEY `uq_encounters_id_patient_doctor` (`encounter_id`,`patient_id`,`doctor_id`),\n  UNIQUE KEY `uq_encounters_id_patient` (`encounter_id`,`patient_id`),\n  UNIQUE KEY `uq_encounters_appointment` (`appointment_id`),\n  UNIQUE KEY `uq_encounters_backfilled_from` (`backfilled_from`),\n  KEY `idx_encounters_doctor_status` (`doctor_id`,`status`),\n  KEY `idx_encounters_patient_status` (`patient_id`,`status`),\n  KEY `idx_encounters_admission` (`admission_id`),\n  KEY `fk_encounters_created_by` (`created_by`),\n  KEY `fk_ctx_encounters_admission` (`admission_id`,`patient_id`),\n  CONSTRAINT `fk_ctx_encounters_admission` FOREIGN KEY (`admission_id`, `patient_id`) REFERENCES `admissions` (`admission_id`, `patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_encounters_admission` FOREIGN KEY (`admission_id`) REFERENCES `admissions` (`admission_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_encounters_appointment` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`appointment_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_encounters_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_encounters_doctor` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`doctor_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_encounters_patient` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `chk_encounters_times` CHECK (((`end_timestamp` is null) or (`start_timestamp` is null) or (`end_timestamp` >= `start_timestamp`)))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "lab_orders": "CREATE TABLE `lab_orders` (\n  `order_id` int NOT NULL AUTO_INCREMENT,\n  `consultation_id` int DEFAULT NULL,\n  `patient_id` int NOT NULL,\n  `doctor_id` int NOT NULL,\n  `test_id` int NOT NULL,\n  `order_date` datetime NOT NULL,\n  `status` enum('ORDERED','SAMPLE_COLLECTED','PROCESSING','COMPLETED','CANCELLED') DEFAULT 'ORDERED',\n  `priority` enum('NORMAL','URGENT','STAT') DEFAULT 'NORMAL',\n  `notes` text,\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  `encounter_id` int DEFAULT NULL,\n  `admission_id` int DEFAULT NULL,\n  PRIMARY KEY (`order_id`),\n  KEY `doctor_id` (`doctor_id`),\n  KEY `test_id` (`test_id`),\n  KEY `idx_lab_orders_patient_status` (`patient_id`,`status`),\n  KEY `idx_lab_orders_encounter` (`encounter_id`),\n  KEY `idx_lab_orders_admission` (`admission_id`),\n  KEY `fk_ctx_lab_orders_encounter` (`encounter_id`,`patient_id`,`doctor_id`),\n  KEY `fk_ctx_lab_orders_admission` (`admission_id`,`patient_id`),\n  KEY `fk_ctx_lab_orders_consultation` (`consultation_id`,`patient_id`),\n  CONSTRAINT `fk_ctx_lab_orders_admission` FOREIGN KEY (`admission_id`, `patient_id`) REFERENCES `admissions` (`admission_id`, `patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_ctx_lab_orders_consultation` FOREIGN KEY (`consultation_id`, `patient_id`) REFERENCES `consultations` (`consultation_id`, `patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_ctx_lab_orders_encounter` FOREIGN KEY (`encounter_id`, `patient_id`, `doctor_id`) REFERENCES `encounters` (`encounter_id`, `patient_id`, `doctor_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_lab_orders_admission` FOREIGN KEY (`admission_id`) REFERENCES `admissions` (`admission_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_lab_orders_encounter` FOREIGN KEY (`encounter_id`) REFERENCES `encounters` (`encounter_id`) ON DELETE RESTRICT,\n  CONSTRAINT `lab_orders_ibfk_1` FOREIGN KEY (`consultation_id`) REFERENCES `consultations` (`consultation_id`) ON DELETE SET NULL,\n  CONSTRAINT `lab_orders_ibfk_2` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `lab_orders_ibfk_3` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`doctor_id`) ON DELETE RESTRICT,\n  CONSTRAINT `lab_orders_ibfk_4` FOREIGN KEY (`test_id`) REFERENCES `lab_tests` (`test_id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "lab_result_attachments": "CREATE TABLE `lab_result_attachments` (\n  `attachment_id` int NOT NULL AUTO_INCREMENT,\n  `result_id` int NOT NULL,\n  `original_filename` varchar(255) NOT NULL,\n  `stored_filename` varchar(255) NOT NULL,\n  `mime_type` varchar(100) NOT NULL,\n  `file_size` int NOT NULL,\n  `uploaded_by` int NOT NULL,\n  `uploaded_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`attachment_id`),\n  UNIQUE KEY `stored_filename` (`stored_filename`),\n  KEY `uploaded_by` (`uploaded_by`),\n  KEY `idx_lab_attachment_result` (`result_id`),\n  CONSTRAINT `lab_result_attachments_ibfk_1` FOREIGN KEY (`result_id`) REFERENCES `lab_results` (`result_id`) ON DELETE CASCADE,\n  CONSTRAINT `lab_result_attachments_ibfk_2` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "lab_results": "CREATE TABLE `lab_results` (\n  `result_id` int NOT NULL AUTO_INCREMENT,\n  `order_id` int NOT NULL,\n  `result_value` text NOT NULL,\n  `unit` varchar(50) DEFAULT NULL,\n  `reference_range` varchar(100) DEFAULT NULL,\n  `interpretation` enum('NORMAL','LOW','HIGH','CRITICAL') DEFAULT NULL,\n  `result_date` datetime NOT NULL,\n  `technician_notes` text,\n  `performed_by` int DEFAULT NULL,\n  `reviewed_by_doctor` tinyint(1) DEFAULT '0',\n  `reviewed_at` datetime DEFAULT NULL,\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `numeric_value` decimal(14,4) DEFAULT NULL,\n  `reference_low` decimal(14,4) DEFAULT NULL,\n  `reference_high` decimal(14,4) DEFAULT NULL,\n  `interpretation_source` enum('AUTO','MANUAL') DEFAULT NULL,\n  PRIMARY KEY (`result_id`),\n  UNIQUE KEY `order_id` (`order_id`),\n  KEY `fk_lab_results_performed_by` (`performed_by`),\n  CONSTRAINT `fk_lab_results_performed_by` FOREIGN KEY (`performed_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,\n  CONSTRAINT `lab_results_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `lab_orders` (`order_id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "lab_tests": "CREATE TABLE `lab_tests` (\n  `test_id` int NOT NULL AUTO_INCREMENT,\n  `name` varchar(150) NOT NULL,\n  `category` varchar(100) NOT NULL,\n  `department_id` int DEFAULT NULL,\n  `normal_range` varchar(100) DEFAULT NULL,\n  `unit` varchar(50) DEFAULT NULL,\n  `cost` decimal(10,2) NOT NULL,\n  `reference_low` decimal(14,4) DEFAULT NULL,\n  `reference_high` decimal(14,4) DEFAULT NULL,\n  `critical_low` decimal(14,4) DEFAULT NULL,\n  `critical_high` decimal(14,4) DEFAULT NULL,\n  PRIMARY KEY (`test_id`),\n  KEY `department_id` (`department_id`),\n  CONSTRAINT `lab_tests_ibfk_1` FOREIGN KEY (`department_id`) REFERENCES `departments` (`department_id`) ON DELETE SET NULL,\n  CONSTRAINT `lab_tests_chk_1` CHECK ((`cost` >= 0))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "medication_administrations": "CREATE TABLE `medication_administrations` (\n  `administration_id` int NOT NULL AUTO_INCREMENT,\n  `prescription_item_id` int NOT NULL,\n  `admission_id` int DEFAULT NULL,\n  `scheduled_at_utc` datetime DEFAULT NULL,\n  `status` enum('PENDING','ADMINISTERED','REFUSED','MISSED','CANCELLED') NOT NULL DEFAULT 'PENDING',\n  `administered_at_utc` datetime DEFAULT NULL,\n  `dose_given` varchar(50) DEFAULT NULL,\n  `route_given` enum('ORAL','IV','IM','SC','SUBLINGUAL','INHALED','TOPICAL','RECTAL','OTHER') DEFAULT NULL,\n  `reason` varchar(255) DEFAULT NULL,\n  `recorded_by` int DEFAULT NULL,\n  `recorded_at_utc` datetime DEFAULT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`administration_id`),\n  UNIQUE KEY `uq_mar_item_slot` (`prescription_item_id`,`scheduled_at_utc`),\n  KEY `idx_mar_admission_status` (`admission_id`,`status`),\n  KEY `fk_mar_recorded_by` (`recorded_by`),\n  CONSTRAINT `fk_mar_admission` FOREIGN KEY (`admission_id`) REFERENCES `admissions` (`admission_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_mar_item` FOREIGN KEY (`prescription_item_id`) REFERENCES `prescription_items` (`item_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_mar_recorded_by` FOREIGN KEY (`recorded_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,\n  CONSTRAINT `chk_mar_given` CHECK (((`status` <> _utf8mb4'ADMINISTERED') or (`administered_at_utc` is not null)))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "medicine_batches": "CREATE TABLE `medicine_batches` (\n  `batch_id` int NOT NULL AUTO_INCREMENT,\n  `medicine_id` int NOT NULL,\n  `batch_number` varchar(50) NOT NULL,\n  `quantity` int NOT NULL,\n  `expiry_date` date NOT NULL,\n  `received_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `received_by` int DEFAULT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`batch_id`),\n  UNIQUE KEY `uq_medicine_batches_number` (`medicine_id`,`batch_number`),\n  UNIQUE KEY `uq_medicine_batches_id_medicine` (`batch_id`,`medicine_id`),\n  KEY `idx_medicine_batches_fefo` (`medicine_id`,`expiry_date`,`batch_id`),\n  KEY `fk_medicine_batches_received_by` (`received_by`),\n  CONSTRAINT `fk_medicine_batches_medicine` FOREIGN KEY (`medicine_id`) REFERENCES `medicines` (`medicine_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_medicine_batches_received_by` FOREIGN KEY (`received_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,\n  CONSTRAINT `chk_medicine_batches_quantity` CHECK ((`quantity` >= 0))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "medicines": "CREATE TABLE `medicines` (\n  `medicine_id` int NOT NULL AUTO_INCREMENT,\n  `name` varchar(150) NOT NULL,\n  `category` varchar(100) NOT NULL,\n  `manufacturer` varchar(150) DEFAULT NULL,\n  `stock_quantity` int DEFAULT '0',\n  `reorder_level` int NOT NULL DEFAULT '50',\n  `unit_price` decimal(10,2) NOT NULL,\n  `expiry_date` date NOT NULL,\n  `requires_prescription` tinyint(1) DEFAULT '1',\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`medicine_id`),\n  CONSTRAINT `medicines_chk_1` CHECK ((`stock_quantity` >= 0)),\n  CONSTRAINT `medicines_chk_2` CHECK ((`unit_price` >= 0))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "nurse_ward_assignments": "CREATE TABLE `nurse_ward_assignments` (\n  `assignment_id` int NOT NULL AUTO_INCREMENT,\n  `nurse_user_id` int NOT NULL,\n  `ward_id` int NOT NULL,\n  `start_date` date NOT NULL,\n  `end_date` date DEFAULT NULL,\n  `assigned_by` int DEFAULT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`assignment_id`),\n  KEY `idx_nwa_nurse_dates` (`nurse_user_id`,`start_date`,`end_date`),\n  KEY `idx_nwa_ward` (`ward_id`),\n  KEY `fk_nwa_assigned_by` (`assigned_by`),\n  CONSTRAINT `fk_nwa_assigned_by` FOREIGN KEY (`assigned_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_nwa_nurse` FOREIGN KEY (`nurse_user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_nwa_ward` FOREIGN KEY (`ward_id`) REFERENCES `wards` (`ward_id`) ON DELETE RESTRICT,\n  CONSTRAINT `chk_nwa_dates` CHECK (((`end_date` is null) or (`end_date` >= `start_date`)))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "patients": "CREATE TABLE `patients` (\n  `patient_id` int NOT NULL AUTO_INCREMENT,\n  `name` varchar(100) NOT NULL,\n  `date_of_birth` date NOT NULL,\n  `dob_estimated` tinyint(1) NOT NULL DEFAULT '0',\n  `gender` enum('MALE','FEMALE','OTHER') NOT NULL,\n  `blood_group` enum('A+','A-','B+','B-','AB+','AB-','O+','O-') DEFAULT NULL,\n  `phone` varchar(20) DEFAULT NULL,\n  `address` text,\n  `emergency_contact` varchar(100) DEFAULT NULL,\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  `allergies` text,\n  `abha_number` char(14) DEFAULT NULL,\n  PRIMARY KEY (`patient_id`),\n  UNIQUE KEY `uq_patients_abha` (`abha_number`),\n  KEY `idx_patients_name` (`name`),\n  KEY `idx_patients_phone` (`phone`),\n  CONSTRAINT `chk_patients_abha_format` CHECK (((`abha_number` is null) or regexp_like(`abha_number`,_utf8mb4'^[0-9]{14}$')))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "pharmacy_stock_movements": "CREATE TABLE `pharmacy_stock_movements` (\n  `movement_id` int NOT NULL AUTO_INCREMENT,\n  `medicine_id` int NOT NULL,\n  `movement_type` enum('RECEIPT','ADJUSTMENT','DISPENSE') NOT NULL,\n  `quantity` int NOT NULL,\n  `reason` varchar(50) DEFAULT NULL,\n  `notes` text,\n  `performed_by` int NOT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `reference_id` int DEFAULT NULL,\n  `batch_id` int DEFAULT NULL,\n  PRIMARY KEY (`movement_id`),\n  KEY `performed_by` (`performed_by`),\n  KEY `idx_stock_movement_medicine` (`medicine_id`),\n  KEY `idx_stock_movement_batch` (`batch_id`),\n  KEY `fk_ctx_stock_movements_batch` (`batch_id`,`medicine_id`),\n  CONSTRAINT `fk_ctx_stock_movements_batch` FOREIGN KEY (`batch_id`, `medicine_id`) REFERENCES `medicine_batches` (`batch_id`, `medicine_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_stock_movement_batch` FOREIGN KEY (`batch_id`) REFERENCES `medicine_batches` (`batch_id`) ON DELETE RESTRICT,\n  CONSTRAINT `pharmacy_stock_movements_ibfk_1` FOREIGN KEY (`medicine_id`) REFERENCES `medicines` (`medicine_id`) ON DELETE RESTRICT,\n  CONSTRAINT `pharmacy_stock_movements_ibfk_2` FOREIGN KEY (`performed_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "prescription_item_batches": "CREATE TABLE `prescription_item_batches` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `item_id` int NOT NULL,\n  `batch_id` int NOT NULL,\n  `quantity` int NOT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uq_prescription_item_batches` (`item_id`,`batch_id`),\n  KEY `idx_prescription_item_batches_batch` (`batch_id`),\n  CONSTRAINT `fk_pib_batch` FOREIGN KEY (`batch_id`) REFERENCES `medicine_batches` (`batch_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_pib_item` FOREIGN KEY (`item_id`) REFERENCES `prescription_items` (`item_id`) ON DELETE RESTRICT,\n  CONSTRAINT `chk_pib_quantity` CHECK ((`quantity` > 0))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "prescription_items": "CREATE TABLE `prescription_items` (\n  `item_id` int NOT NULL AUTO_INCREMENT,\n  `prescription_id` int NOT NULL,\n  `medicine_id` int NOT NULL,\n  `dosage` varchar(50) NOT NULL,\n  `frequency` varchar(50) NOT NULL,\n  `duration` varchar(50) NOT NULL,\n  `quantity` int NOT NULL,\n  `dispensed` tinyint(1) DEFAULT '0',\n  `dispensed_at` datetime DEFAULT NULL,\n  `frequency_code` enum('OD','BD','TDS','QID','Q6H','Q8H','STAT','PRN') DEFAULT NULL,\n  `duration_days` smallint DEFAULT NULL,\n  `route` enum('ORAL','IV','IM','SC','SUBLINGUAL','INHALED','TOPICAL','RECTAL','OTHER') DEFAULT NULL,\n  `units_per_dose` smallint DEFAULT NULL,\n  PRIMARY KEY (`item_id`),\n  KEY `prescription_id` (`prescription_id`),\n  KEY `medicine_id` (`medicine_id`),\n  CONSTRAINT `prescription_items_ibfk_1` FOREIGN KEY (`prescription_id`) REFERENCES `prescriptions` (`prescription_id`) ON DELETE CASCADE,\n  CONSTRAINT `prescription_items_ibfk_2` FOREIGN KEY (`medicine_id`) REFERENCES `medicines` (`medicine_id`) ON DELETE RESTRICT,\n  CONSTRAINT `chk_prescription_items_dispensed` CHECK (((`dispensed_at` is null) or (`dispensed` = 1))),\n  CONSTRAINT `chk_prescription_items_structured` CHECK ((((`duration_days` is null) or (`duration_days` > 0)) and ((`units_per_dose` is null) or (`units_per_dose` > 0)))),\n  CONSTRAINT `prescription_items_chk_1` CHECK ((`quantity` > 0))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "prescriptions": "CREATE TABLE `prescriptions` (\n  `prescription_id` int NOT NULL AUTO_INCREMENT,\n  `consultation_id` int DEFAULT NULL,\n  `patient_id` int NOT NULL,\n  `doctor_id` int NOT NULL,\n  `prescription_date` datetime NOT NULL,\n  `status` enum('CREATED','DISPENSED','PARTIALLY_DISPENSED','CANCELLED') DEFAULT 'CREATED',\n  `notes` text,\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `encounter_id` int DEFAULT NULL,\n  `admission_id` int DEFAULT NULL,\n  PRIMARY KEY (`prescription_id`),\n  KEY `doctor_id` (`doctor_id`),\n  KEY `idx_prescriptions_patient_status` (`patient_id`,`status`),\n  KEY `idx_prescriptions_encounter` (`encounter_id`),\n  KEY `idx_prescriptions_admission` (`admission_id`),\n  KEY `fk_ctx_prescriptions_encounter` (`encounter_id`,`patient_id`,`doctor_id`),\n  KEY `fk_ctx_prescriptions_admission` (`admission_id`,`patient_id`),\n  KEY `fk_ctx_prescriptions_consultation` (`consultation_id`,`patient_id`),\n  CONSTRAINT `fk_ctx_prescriptions_admission` FOREIGN KEY (`admission_id`, `patient_id`) REFERENCES `admissions` (`admission_id`, `patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_ctx_prescriptions_consultation` FOREIGN KEY (`consultation_id`, `patient_id`) REFERENCES `consultations` (`consultation_id`, `patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_ctx_prescriptions_encounter` FOREIGN KEY (`encounter_id`, `patient_id`, `doctor_id`) REFERENCES `encounters` (`encounter_id`, `patient_id`, `doctor_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_prescriptions_admission` FOREIGN KEY (`admission_id`) REFERENCES `admissions` (`admission_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_prescriptions_encounter` FOREIGN KEY (`encounter_id`) REFERENCES `encounters` (`encounter_id`) ON DELETE RESTRICT,\n  CONSTRAINT `prescriptions_ibfk_1` FOREIGN KEY (`consultation_id`) REFERENCES `consultations` (`consultation_id`) ON DELETE CASCADE,\n  CONSTRAINT `prescriptions_ibfk_2` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `prescriptions_ibfk_3` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`doctor_id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "schema_migrations": "CREATE TABLE `schema_migrations` (\n  `version` varchar(255) NOT NULL,\n  `applied_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `note` varchar(100) DEFAULT NULL,\n  PRIMARY KEY (`version`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "surgery_requests": "CREATE TABLE `surgery_requests` (\n  `request_id` int NOT NULL AUTO_INCREMENT,\n  `patient_id` int NOT NULL,\n  `doctor_id` int NOT NULL,\n  `procedure_name` varchar(255) NOT NULL,\n  `diagnosis` text NOT NULL,\n  `priority` enum('ROUTINE','URGENT','EMERGENCY') DEFAULT 'ROUTINE',\n  `requested_date` date NOT NULL,\n  `status` enum('REQUESTED','SCHEDULED','IN_PROGRESS','COMPLETED','CANCELLED') DEFAULT 'REQUESTED',\n  `notes` text,\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  `encounter_id` int DEFAULT NULL,\n  PRIMARY KEY (`request_id`),\n  KEY `patient_id` (`patient_id`),\n  KEY `doctor_id` (`doctor_id`),\n  KEY `idx_surgery_requests_encounter` (`encounter_id`),\n  KEY `fk_ctx_surgery_requests_encounter` (`encounter_id`,`patient_id`,`doctor_id`),\n  CONSTRAINT `fk_ctx_surgery_requests_encounter` FOREIGN KEY (`encounter_id`, `patient_id`, `doctor_id`) REFERENCES `encounters` (`encounter_id`, `patient_id`, `doctor_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_surgery_requests_encounter` FOREIGN KEY (`encounter_id`) REFERENCES `encounters` (`encounter_id`) ON DELETE RESTRICT,\n  CONSTRAINT `surgery_requests_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE CASCADE,\n  CONSTRAINT `surgery_requests_ibfk_2` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`doctor_id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "users": "CREATE TABLE `users` (\n  `user_id` int NOT NULL AUTO_INCREMENT,\n  `username` varchar(50) NOT NULL,\n  `password_hash` varchar(255) NOT NULL,\n  `role` enum('ADMIN','DOCTOR','RECEPTIONIST','NURSE','LABORATORY','PHARMACY') NOT NULL,\n  `full_name` varchar(100) NOT NULL,\n  `email` varchar(100) NOT NULL,\n  `phone` varchar(20) NOT NULL,\n  `is_active` tinyint(1) DEFAULT '1',\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`user_id`),\n  UNIQUE KEY `username` (`username`),\n  UNIQUE KEY `email` (`email`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "vital_signs": "CREATE TABLE `vital_signs` (\n  `vital_id` int NOT NULL AUTO_INCREMENT,\n  `patient_id` int NOT NULL,\n  `encounter_id` int DEFAULT NULL,\n  `admission_id` int DEFAULT NULL,\n  `recorded_at_utc` datetime NOT NULL,\n  `recorded_by` int NOT NULL,\n  `temperature_c` decimal(4,1) DEFAULT NULL,\n  `pulse_bpm` smallint DEFAULT NULL,\n  `resp_rate` smallint DEFAULT NULL,\n  `bp_systolic` smallint DEFAULT NULL,\n  `bp_diastolic` smallint DEFAULT NULL,\n  `spo2_pct` smallint DEFAULT NULL,\n  `pain_score` tinyint DEFAULT NULL,\n  `notes` varchar(255) DEFAULT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`vital_id`),\n  KEY `idx_vitals_patient_time` (`patient_id`,`recorded_at_utc`),\n  KEY `idx_vitals_encounter` (`encounter_id`),\n  KEY `idx_vitals_admission` (`admission_id`),\n  KEY `fk_vitals_recorded_by` (`recorded_by`),\n  KEY `fk_ctx_vital_signs_encounter` (`encounter_id`,`patient_id`),\n  KEY `fk_ctx_vital_signs_admission` (`admission_id`,`patient_id`),\n  CONSTRAINT `fk_ctx_vital_signs_admission` FOREIGN KEY (`admission_id`, `patient_id`) REFERENCES `admissions` (`admission_id`, `patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_ctx_vital_signs_encounter` FOREIGN KEY (`encounter_id`, `patient_id`) REFERENCES `encounters` (`encounter_id`, `patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_vitals_admission` FOREIGN KEY (`admission_id`) REFERENCES `admissions` (`admission_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_vitals_encounter` FOREIGN KEY (`encounter_id`) REFERENCES `encounters` (`encounter_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_vitals_patient` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_vitals_recorded_by` FOREIGN KEY (`recorded_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,\n  CONSTRAINT `chk_vitals_any` CHECK (((`temperature_c` is not null) or (`pulse_bpm` is not null) or (`resp_rate` is not null) or (`bp_systolic` is not null) or (`spo2_pct` is not null) or (`pain_score` is not null))),\n  CONSTRAINT `chk_vitals_bp_order` CHECK (((`bp_systolic` is null) or (`bp_systolic` > `bp_diastolic`))),\n  CONSTRAINT `chk_vitals_bp_pair` CHECK (((`bp_systolic` is null) = (`bp_diastolic` is null))),\n  CONSTRAINT `chk_vitals_context` CHECK (((`encounter_id` is not null) or (`admission_id` is not null))),\n  CONSTRAINT `chk_vitals_diastolic` CHECK (((`bp_diastolic` is null) or (`bp_diastolic` between 20 and 200))),\n  CONSTRAINT `chk_vitals_pain` CHECK (((`pain_score` is null) or (`pain_score` between 0 and 10))),\n  CONSTRAINT `chk_vitals_pulse` CHECK (((`pulse_bpm` is null) or (`pulse_bpm` between 20 and 250))),\n  CONSTRAINT `chk_vitals_resp_rate` CHECK (((`resp_rate` is null) or (`resp_rate` between 4 and 80))),\n  CONSTRAINT `chk_vitals_spo2` CHECK (((`spo2_pct` is null) or (`spo2_pct` between 50 and 100))),\n  CONSTRAINT `chk_vitals_systolic` CHECK (((`bp_systolic` is null) or (`bp_systolic` between 40 and 300))),\n  CONSTRAINT `chk_vitals_temperature` CHECK (((`temperature_c` is null) or (`temperature_c` between 25.0 and 45.0)))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "wards": "CREATE TABLE `wards` (\n  `ward_id` int NOT NULL AUTO_INCREMENT,\n  `name` varchar(100) NOT NULL,\n  `department_id` int NOT NULL,\n  `floor` int NOT NULL,\n  `capacity` int NOT NULL,\n  `ward_type` varchar(50) DEFAULT NULL,\n  PRIMARY KEY (`ward_id`),\n  KEY `department_id` (`department_id`),\n  CONSTRAINT `wards_ibfk_1` FOREIGN KEY (`department_id`) REFERENCES `departments` (`department_id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci"
+ },
+ "procCreate": {
+  "sp_admit_patient": "CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_admit_patient`(\n    IN p_patient_id INT,\n    IN p_doctor_id INT,\n    IN p_bed_id INT,\n    IN p_department_id INT,\n    IN p_diagnosis TEXT\n)\nBEGIN\n    INSERT INTO admissions (patient_id, doctor_id, bed_id, department_id, admission_date, status, diagnosis)\n    VALUES (p_patient_id, p_doctor_id, p_bed_id, p_department_id, NOW(), 'ACTIVE', p_diagnosis);\nEND",
+  "sp_allocate_emergency": "CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_allocate_emergency`(IN p_emergency_id INT)\nBEGIN\n    DECLARE v_severity VARCHAR(20);\n    DECLARE v_req_spec VARCHAR(100);\n    DECLARE v_req_bed VARCHAR(50);\n    DECLARE v_patient_id INT;\n    DECLARE v_arrival_time DATETIME;\n    \n    DECLARE v_best_bed_id INT;\n    DECLARE v_bed_dept_id INT;\n    DECLARE v_best_doctor_id INT;\n    \n    DECLARE v_admission_id INT;\n    \n    DECLARE EXIT HANDLER FOR SQLEXCEPTION\n    BEGIN\n        ROLLBACK;\n        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Emergency allocation failed due to an error. Rolled back.';\n    END;\n\n    START TRANSACTION;\n\n    -- 1. Get emergency details\n    SELECT severity, required_specialization, required_bed_type, patient_id, arrival_time\n    INTO v_severity, v_req_spec, v_req_bed, v_patient_id, v_arrival_time\n    FROM emergency_cases \n    WHERE emergency_id = p_emergency_id AND status IN ('WAITING', 'TRIAGED')\n    FOR UPDATE;\n    \n    IF v_patient_id IS NULL THEN\n        ROLLBACK;\n        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Emergency case not found or not waiting.';\n    END IF;\n\n    -- 2. Find and lock the best available bed (by requested type)\n    SELECT b.bed_id, w.department_id \n    INTO v_best_bed_id, v_bed_dept_id\n    FROM beds b\n    JOIN wards w ON b.ward_id = w.ward_id\n    WHERE b.status = 'AVAILABLE' \n      AND b.bed_type = COALESCE(v_req_bed, b.bed_type)\n    ORDER BY b.bed_id ASC\n    LIMIT 1\n    FOR UPDATE SKIP LOCKED;\n\n    IF v_best_bed_id IS NULL THEN\n        ROLLBACK;\n        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No available bed of required type.';\n    END IF;\n\n    -- 3. Find and lock the best available doctor (by workload)\n    SELECT doctor_id \n    INTO v_best_doctor_id\n    FROM doctors\n    WHERE status = 'AVAILABLE'\n      AND specialization = COALESCE(v_req_spec, specialization)\n      AND current_workload < max_workload\n    ORDER BY current_workload ASC, doctor_id ASC\n    LIMIT 1\n    FOR UPDATE SKIP LOCKED;\n\n    IF v_best_doctor_id IS NULL THEN\n        ROLLBACK;\n        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No available doctor for required specialization.';\n    END IF;\n\n    -- 4. Create admission record\n    INSERT INTO admissions (patient_id, doctor_id, bed_id, department_id, emergency_id, admission_date, status, diagnosis)\n    VALUES (v_patient_id, v_best_doctor_id, v_best_bed_id, v_bed_dept_id, p_emergency_id, NOW(), 'ACTIVE', 'Emergency Admission');\n    \n    SET v_admission_id = LAST_INSERT_ID();\n\n    -- 5. Update emergency case\n    UPDATE emergency_cases\n    SET status = 'ADMITTED', assigned_doctor_id = v_best_doctor_id, assigned_bed_id = v_best_bed_id\n    WHERE emergency_id = p_emergency_id;\n\n    COMMIT;\nEND",
+  "sp_discharge_patient": "CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_discharge_patient`(IN p_admission_id INT)\nBEGIN\n    UPDATE admissions \n    SET discharge_date = NOW(), status = 'DISCHARGED'\n    WHERE admission_id = p_admission_id AND status = 'ACTIVE';\nEND",
+  "sp_generate_bill": "CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_generate_bill`(IN p_admission_id INT)\nBEGIN\n    DECLARE v_patient_id INT;\n    DECLARE v_bill_id INT;\n    DECLARE v_total DECIMAL(12,2) DEFAULT 0;\n\n    SELECT patient_id INTO v_patient_id FROM admissions WHERE admission_id = p_admission_id;\n\n    INSERT INTO bills (patient_id, admission_id, bill_date, status)\n    VALUES (v_patient_id, p_admission_id, NOW(), 'PENDING');\n\n    SET v_bill_id = LAST_INSERT_ID();\n\n    -- Generic consultation fee; total_price is quantity * unit_price.\n    INSERT INTO bill_items (bill_id, description, category, quantity, unit_price)\n    VALUES (v_bill_id, 'Base Consultation Fee', 'CONSULTATION', 1, 500.00);\n\n    SELECT SUM(total_price) INTO v_total FROM bill_items WHERE bill_id = v_bill_id;\n\n    UPDATE bills SET total_amount = v_total WHERE bill_id = v_bill_id;\nEND",
+  "sp_get_emergency_queue": "CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_get_emergency_queue`()\nBEGIN\n    SELECT * FROM emergency_queue_view;\nEND"
+ }
+}

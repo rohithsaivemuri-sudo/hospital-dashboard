@@ -1,0 +1,27 @@
+% Overview: the six modules and every relationship between two modules (labels: figures/er/overview-labels.tex,
+% generated from gen/er-model.js). Module 2 sits inside the triangle 1-5-6 and Module 4 outside it, so no
+% two module links cross.
+\input{figures/er/overview-labels.tex}
+\input{figures/er/overview-modules.tex}
+\begin{tikzpicture}[x=1cm,y=0.78cm,
+  mod/.style={draw, line width=0.9pt, rounded corners=3pt, fill=#1, align=center, text width=3.7cm, inner sep=4pt, font=\sffamily\scriptsize, execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+  link/.style={line width=0.7pt, gray!70!black},
+  lab/.style={fill=white, draw=gray!60, rounded corners=1pt, align=center, font=\sffamily\tiny, inner sep=1.5pt}]
+  \node[mod=blue!8]   (M1) at (8.5, 0)     {\ovmA};
+  \node[mod=orange!10] (M2) at (8.5, -8.3)  {\ovmB};
+  \node[mod=yellow!12] (M3) at (8.3, -12.9) {\ovmC};
+  \node[mod=violet!8]  (M4) at (14.4, -4.6) {\ovmD};
+  \node[mod=green!9]   (M5) at (14.0, -16.4) {\ovmE};
+  \node[mod=gray!12]   (M6) at (3.0, -16.4)  {\ovmF};
+  \draw[link] (M1) -- node[lab, pos=0.5] {\ovlAB} (M2);
+  \draw[link] (M1) -- node[lab, pos=0.42] {\ovlAF} (M6);
+  \draw[link] (M1) -- node[lab, pos=0.47] {\ovlAE} (M5);
+  \draw[link] (M1) -- node[lab, pos=0.5] {\ovlAD} (M4);
+  \draw[link] (M2) -- node[lab, pos=0.55] {\ovlBE} (M5);
+  \draw[link] (M2) -- node[lab, pos=0.5] {\ovlBF} (M6);
+  \draw[link] (M2) -- node[lab, pos=0.5] {\ovlBC} (M3);
+  \draw[link] (M3) -- node[lab, pos=0.5] {\ovlCF} (M6);
+  \draw[link] (M4) -- node[lab, pos=0.45] {\ovlDE} (M5);
+  \draw[link] (M5) -- node[lab, pos=0.5] {\ovlEF} (M6);
+  \draw[link] (M4.east) -- ++(0.5,0) |- node[lab, pos=0.75] {\ovlDF} ($(M6.south)+(0,-1.2)$) -- (M6.south);
+\end{tikzpicture}

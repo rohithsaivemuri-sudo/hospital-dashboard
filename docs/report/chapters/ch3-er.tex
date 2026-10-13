@@ -1,0 +1,165 @@
+\chapter{Entity--Relationship (ER) Modeling}
+
+\section{Identification of Entities}
+The model has 30 entity types in six modules. Each becomes one table (Chapter 4); the two M:N and
+ternary relationships with attributes become the other two tables, and \tbl{schema\_migrations} records applied
+schema versions and is not part of the domain. Table~\ref{tab:entities} lists every entity with its identifier;
+the diagrams show each entity's principal attributes, and Section~4.3 lists all 341 columns.
+Four entities are \textbf{weak} (Section~3.4).
+
+{\scriptsize
+\begin{longtable}{@{}llllp{4.2cm}@{}}
+\caption{Entities, their module, table and identifier}\label{tab:entities}\\
+\toprule
+\textbf{Entity} & \textbf{Mod.} & \textbf{Table} & \textbf{Type} & \textbf{Identifier (key / partial key)} \\\midrule\endfirsthead
+\toprule\textbf{Entity} & \textbf{Mod.} & \textbf{Table} & \textbf{Type} & \textbf{Identifier} \\\midrule\endhead
+\rows{figures/er/entity-table.tex}
+\bottomrule
+\end{longtable}}
+
+\section{Identification of Relationships}
+There are 69 relationship types. 64 are binary 1:N, three are binary 1:1 (\textsc{becomes},
+\textsc{yields}, \textsc{is\_doctor}) and two carry attributes: \textsc{filled\_from} is M:N (a prescription line can be filled
+from several batches, and a batch fills many lines) and \textsc{occupies} is ternary (bed, admission, patient).
+Together they account for every one of the 72 relationship foreign keys of the schema; a script checks this,
+and checks each participation and cardinality below against the column's nullability and unique keys.
+In Table~\ref{tab:rels} the ratio and participation are given in the order the entities are listed
+(T = total, P = partial); $^{\ast}$ marks an identifying relationship.
+
+{\tiny\setlength{\tabcolsep}{2.2pt}
+\begin{longtable}{@{}llll|llll@{}}
+\caption{Relationships, cardinality ratios and participation}\label{tab:rels}\\
+\toprule
+\textbf{Relationship} & \textbf{Entities} & \textbf{Ratio} & \textbf{Part.} & \textbf{Relationship} & \textbf{Entities} & \textbf{Ratio} & \textbf{Part.} \\\midrule\endfirsthead
+\toprule\textbf{Relationship} & \textbf{Entities} & \textbf{Ratio} & \textbf{Part.} & \textbf{Relationship} & \textbf{Entities} & \textbf{Ratio} & \textbf{Part.} \\\midrule\endhead
+\rows{figures/er/rel-table.tex}
+\bottomrule
+\end{longtable}}
+
+\section{ER Diagram}
+The diagrams use Chen notation (legend in Figure~\ref{fig:legend}). Figure~\ref{fig:overview} shows the six
+modules and the 39 relationships between modules. Figures~\ref{fig:m1a}--\ref{fig:m6b} show the modules one
+page at a time; three modules take two pages. An entity drawn in another module appears as a dashed reference box
+(``see Module $n$''), and every relationship between two modules is drawn in both, with the same name and cardinality.
+
+\begin{figure}[p]
+\centering
+\input{figures/er/er-legend.tex}
+\caption{Legend of the Chen notation used in all ER diagrams}\label{fig:legend}
+\vspace{6mm}
+\input{figures/er/er-overview.tex}
+\caption{Overview: the six modules and every relationship that crosses between two modules (name and cardinality ratio)}\label{fig:overview}
+\end{figure}
+
+\begin{figure}[p]\centering
+\input{figures/er/er-1a.tex}\minilegend
+\caption{Module 1, Patients and visits (page 1 of 2): patients, appointments and encounters}\label{fig:m1a}
+\end{figure}
+
+\begin{figure}[p]\centering
+\input{figures/er/er-1b.tex}\minilegend
+\caption{Module 1, Patients and visits (page 2 of 2): vital signs and consultations}\label{fig:m1b}
+\vspace{5mm}
+\input{figures/er/er-3.tex}\minilegend
+\caption{Module 3, Pharmacy: medicines, batches and stock movements}\label{fig:m3}
+\end{figure}
+
+\begin{figure}[p]\centering
+\input{figures/er/er-2.tex}\minilegend
+\caption{Module 2, Clinical orders: prescriptions, prescription lines, medication administration and surgery requests}\label{fig:m2}
+\end{figure}
+
+\begin{figure}[p]\centering
+\input{figures/er/er-4.tex}\minilegend
+\caption{Module 4, Laboratory: tests, orders, results and report files}\label{fig:m4}
+\end{figure}
+
+\begin{figure}[p]\centering
+\input{figures/er/er-5a.tex}\minilegend
+\caption{Module 5, Beds and admissions (page 1 of 2): wards, beds, admissions, emergencies and ambulances}\label{fig:m5a}
+\end{figure}
+
+\begin{figure}[p]\centering
+\input{figures/er/er-5b.tex}\minilegend
+\caption{Module 5, Beds and admissions (page 2 of 2): what an admission covers, and billing}\label{fig:m5b}
+\end{figure}
+
+\begin{figure}[p]\centering
+\input{figures/er/er-6a.tex}\minilegend
+\caption{Module 6, Staff and audit (page 1 of 2): accounts, doctors, departments, assignments, schedules and the audit log}\label{fig:m6a}
+\end{figure}
+
+\begin{figure}[p]\centering
+\input{figures/er/er-6b.tex}\minilegend
+\caption{Module 6, Staff and audit (page 2 of 2): the records each doctor and each staff account is linked to}\label{fig:m6b}
+\end{figure}
+
+\section{Explanation of the ER Diagram}
+\textbf{Reading the diagrams.} A line ends at an entity with the cardinality that entity has in the
+relationship. For example, \textsc{books} reads ``one PATIENT books N APPOINTMENTs''. A double line means
+every instance of that entity takes part: every appointment is for a patient (\tbl{appointments.patient\_id}
+is NOT NULL), while a patient need not have an appointment (single line). Optional links, such as a
+prescription written outside a visit, are partial on both sides.
+
+\textbf{Weak entities.} An entity is weak here only when the schema identifies it within its owner, that is,
+its natural identifier is unique only together with the owner's key and the owner is mandatory:
+\begin{itemize}
+\item \textbf{BED} (owner WARD, partial key \dashuline{bed\_number}): bed numbers are unique only within a ward, UNIQUE (\tbl{ward\_id, bed\_number}).
+\item \textbf{MEDICINE\_BATCH} (owner MEDICINE, partial key \dashuline{batch\_number}): a supplier's batch number is unique only for one medicine, UNIQUE (\tbl{medicine\_id, batch\_number}).
+\item \textbf{DOCTOR\_SCHEDULE} (owner DOCTOR, partial key \dashuline{day\_of\_week}, \dashuline{start\_time}): a slot exists only as a slot of one doctor, UNIQUE (\tbl{doctor\_id, day\_of\_week, start\_time}), deleted with the doctor (ON DELETE CASCADE).
+\item \textbf{DAILY\_ANALYTICS} (owner DOCTOR, partial key \dashuline{analytics\_date}): one statistics row per doctor per day, UNIQUE (\tbl{doctor\_id, analytics\_date}), deleted with the doctor.
+\end{itemize}
+In the tables each also has a surrogate integer key, added during mapping (Section~4.2). Line items such as
+BILL\_ITEM are \emph{not} modelled as weak: nothing in the schema identifies them within their bill, so their own
+key identifies them.
+
+\textbf{Module 1, Patients and visits} (Figures~\ref{fig:m1a}, \ref{fig:m1b}). PATIENT books APPOINTMENTs and has
+ENCOUNTERs (visits). An appointment \textsc{becomes} at most one encounter and an encounter comes from at most one
+appointment (1:1, both partial: walk-ins and emergencies have no appointment). VITAL\_SIGN readings and
+CONSULTATION notes always name their patient (total) and are filed under a visit (\textsc{taken\_in},
+\textsc{note\_in}) or, for inpatients, an admission (\textsc{taken\_on}, \textsc{stay\_note}). A consultation may
+also refer to its appointment (\textsc{note\_for}). Attributes show the derived \emph{age} (computed from
+\emph{date\_of\_birth}, never stored), the multivalued \emph{allergies}, and the composite \emph{slot},
+\emph{timeline} and \emph{blood\_pressure}. Links to other modules: DOCTOR \textsc{attends} appointments,
+\textsc{conducts} encounters and \textsc{writes} notes; USER \textsc{opens} an encounter and \textsc{records} vitals
+(Module~6); PATIENT is \textsc{admitted}, \textsc{arrives} as an emergency, is \textsc{billed}, and appears in
+\textsc{occupies} (Module~5); PATIENT, ENCOUNTER and CONSULTATION are linked to prescriptions and surgery requests
+(Module~2) and lab orders (Module~4).
+
+\textbf{Module 2, Clinical orders} (Figure~\ref{fig:m2}). A PRESCRIPTION \textsc{lists} its PRESCRIPTION\_ITEMs
+(total on the item side). Each item is \textsc{of\_drug} one MEDICINE and is \textsc{filled\_from} one or more
+MEDICINE\_BATCHes (M:N, with the relationship attribute \emph{quantity}). Every MED\_ADMINISTRATION (a dose on the
+MAR) is \textsc{given\_as} part of one item (total) and optionally belongs to an admission and to the nurse who
+recorded it. A prescription and a SURGERY\_REQUEST each belong to a patient and a doctor (total) and optionally to
+the visit, note or admission they were written in.
+
+\textbf{Module 3, Pharmacy} (Figure~\ref{fig:m3}). MEDICINE \textsc{has\_batch} MEDICINE\_BATCHes through an
+identifying relationship. Every STOCK\_MOVEMENT \textsc{moves} one medicine (total) and, when it touched a batch,
+comes \textsc{from\_batch} it; movements from before batches existed have none (partial). The medicine's
+\emph{stock\_quantity} is drawn as derived: it is the sum of its batches, stored for speed and kept equal in the
+same transaction (Section~6.6). USER links: \textsc{receives} (batches) and \textsc{performs} (movements).
+
+\textbf{Module 4, Laboratory} (Figure~\ref{fig:m4}). A LAB\_ORDER is \textsc{of\_test} one LAB\_TEST, and
+\textsc{yields} at most one LAB\_RESULT (1:1; every result has its order, total). A result has any number of
+LAB\_ATTACHMENTs. Orders link to the patient and doctor (total) and optionally to the visit, note and admission;
+tests to the DEPARTMENT that \textsc{offers} them; results and files to the USER who \textsc{analyses} and
+\textsc{uploads} them.
+
+\textbf{Module 5, Beds and admissions} (Figures~\ref{fig:m5a}, \ref{fig:m5b}). A WARD \textsc{has\_bed} BEDs
+(identifying). An ADMISSION is \textsc{allocated} one bed, is \textsc{admitted} for one patient by one doctor
+(\textsc{admits}) to one department (\textsc{admitted\_to}), all total. \textsc{occupies} is ternary: each row of
+the bed history joins one bed, one admission and its patient, with the attributes \emph{assigned\_at},
+\emph{released\_at} and \emph{status}; every admission takes part (total), because a trigger writes the row.
+An EMERGENCY\_CASE may be \textsc{carried} by an AMBULANCE, \textsc{assigned} a doctor and \textsc{given\_bed}, and
+\textsc{results\_in} an admission; all partial, because cases wait in a queue first. Figure~\ref{fig:m5b} shows the
+six records an admission can cover (Modules 1, 2 and 4) and billing: a BILL is \textsc{billed} to one patient
+(total), optionally for an admission, and \textsc{itemises} BILL\_ITEMs whose \emph{total\_price} is derived
+(quantity $\times$ unit price); the bill's \emph{total\_amount} is the stored sum of its items.
+
+\textbf{Module 6, Staff and audit} (Figures~\ref{fig:m6a}, \ref{fig:m6b}). A USER account \textsc{is\_doctor} for at
+most one DOCTOR (1:1; every doctor has an account). A doctor \textsc{works\_in} one DEPARTMENT and has
+DOCTOR\_SCHEDULE slots and DAILY\_ANALYTICS rows (both weak). A WARD\_ASSIGNMENT joins a nurse
+(\textsc{nurse\_of}, total) to a ward (\textsc{covers}, total) for a period, and records the administrator who
+\textsc{assigns} it. Every AUDIT\_LOG row \textsc{logs} the user who acted, when known (failed logins have none).
+Figure~\ref{fig:m6b} gathers, for DOCTOR and USER, every relationship that enters them from Modules~1 to~5, so the
+two pages of Module~6 together show all 15 links of these two entities.

@@ -1,0 +1,694 @@
+[
+ {
+  "id": "q1",
+  "cat": "Simple SELECT with conditions",
+  "purpose": "Medicines whose stock has fallen to or below their reorder level (the low-stock alert).",
+  "sql": "SELECT medicine_id, name, stock_quantity, reorder_level\nFROM medicines\nWHERE stock_quantity <= reorder_level AND requires_prescription = 1;",
+  "results": [
+   {
+    "count": 1,
+    "cols": [
+     "medicine_id",
+     "name",
+     "stock_quantity",
+     "reorder_level"
+    ],
+    "rows": [
+     {
+      "medicine_id": 21,
+      "name": "Morphine Sulphate 10mg",
+      "stock_quantity": 50,
+      "reorder_level": 50
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "q2",
+  "cat": "ORDER BY",
+  "purpose": "Available ICU and ventilator beds, ordered by ward and bed number (what the emergency desk looks at first).",
+  "sql": "SELECT b.bed_number, b.bed_type, w.name AS ward, w.floor\nFROM beds b JOIN wards w ON w.ward_id = b.ward_id\nWHERE b.status = 'AVAILABLE' AND b.bed_type IN ('ICU', 'VENTILATOR_ICU')\nORDER BY w.name, b.bed_number;",
+  "results": [
+   {
+    "count": 2,
+    "cols": [
+     "bed_number",
+     "bed_type",
+     "ward",
+     "floor"
+    ],
+    "rows": [
+     {
+      "bed_number": "ICU-04",
+      "bed_type": "ICU",
+      "ward": "ICU Ward",
+      "floor": 3
+     },
+     {
+      "bed_number": "VICU-02",
+      "bed_type": "VENTILATOR_ICU",
+      "ward": "ICU Ward",
+      "floor": 3
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "q3",
+  "cat": "Aggregates: COUNT, SUM, AVG, MIN, MAX",
+  "purpose": "Billing summary: how many bills, how much billed and paid, and the smallest, average and largest bill.",
+  "sql": "SELECT COUNT(*) AS bills, SUM(total_amount) AS billed, SUM(paid_amount) AS paid,\n       MIN(total_amount) AS smallest, ROUND(AVG(total_amount), 2) AS average,\n       MAX(total_amount) AS largest\nFROM bills;",
+  "results": [
+   {
+    "count": 1,
+    "cols": [
+     "bills",
+     "billed",
+     "paid",
+     "smallest",
+     "average",
+     "largest"
+    ],
+    "rows": [
+     {
+      "bills": 4,
+      "billed": "246500.00",
+      "paid": "86500.00",
+      "smallest": "1500.00",
+      "average": "61625.00",
+      "largest": "125000.00"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "q4",
+  "cat": "GROUP BY with HAVING",
+  "purpose": "Departments that have more than one doctor, with their doctor count and combined capacity.",
+  "sql": "SELECT dep.name AS department, COUNT(*) AS doctors,\n       SUM(doc.max_workload) AS capacity\nFROM doctors doc JOIN departments dep ON dep.department_id = doc.department_id\nGROUP BY dep.department_id, dep.name\nHAVING COUNT(*) > 1\nORDER BY doctors DESC, department;",
+  "results": [
+   {
+    "count": 5,
+    "cols": [
+     "department",
+     "doctors",
+     "capacity"
+    ],
+    "rows": [
+     {
+      "department": "Cardiology",
+      "doctors": 2,
+      "capacity": "10"
+     },
+     {
+      "department": "Emergency",
+      "doctors": 2,
+      "capacity": "16"
+     },
+     {
+      "department": "General Medicine",
+      "doctors": 2,
+      "capacity": "10"
+     },
+     {
+      "department": "ICU",
+      "doctors": 2,
+      "capacity": "8"
+     },
+     {
+      "department": "Neurology",
+      "doctors": 2,
+      "capacity": "10"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "q5",
+  "cat": "INNER JOIN",
+  "purpose": "Today's appointments with patient and doctor names; the department comes from the doctor through the view v_appointments.",
+  "sql": "SELECT a.appointment_time, p.name AS patient, d.name AS doctor,\n       dep.name AS department, a.status\nFROM v_appointments a\nINNER JOIN patients p     ON p.patient_id = a.patient_id\nINNER JOIN doctors d      ON d.doctor_id = a.doctor_id\nINNER JOIN departments dep ON dep.department_id = a.department_id\nWHERE a.appointment_date = CURDATE()\nORDER BY a.appointment_time;",
+  "results": [
+   {
+    "count": 9,
+    "cols": [
+     "appointment_time",
+     "patient",
+     "doctor",
+     "department",
+     "status"
+    ],
+    "rows": [
+     {
+      "appointment_time": "09:00:00",
+      "patient": "Aarav Sharma",
+      "doctor": "Dr. John Smith",
+      "department": "Cardiology",
+      "status": "BOOKED"
+     },
+     {
+      "appointment_time": "09:30:00",
+      "patient": "Rohan Mehta",
+      "doctor": "Dr. Lakshmi Reddy",
+      "department": "Pediatrics",
+      "status": "COMPLETED"
+     },
+     {
+      "appointment_time": "10:00:00",
+      "patient": "Diya Patel",
+      "doctor": "Dr. Vikram Sharma",
+      "department": "Orthopedics",
+      "status": "BOOKED"
+     },
+     {
+      "appointment_time": "10:30:00",
+      "patient": "Ananya Gupta",
+      "doctor": "Dr. Priya Patel",
+      "department": "Neurology",
+      "status": "CHECKED_IN"
+     },
+     {
+      "appointment_time": "11:00:00",
+      "patient": "Kavya Joshi",
+      "doctor": "Dr. John Smith",
+      "department": "Cardiology",
+      "status": "BOOKED"
+     },
+     {
+      "appointment_time": "11:30:00",
+      "patient": "Sanya Bhatia",
+      "doctor": "Dr. Arjun Singh",
+      "department": "ICU",
+      "status": "BOOKED"
+     },
+     {
+      "appointment_time": "14:00:00",
+      "patient": "Priya Verma",
+      "doctor": "Dr. Vikram Sharma",
+      "department": "Orthopedics",
+      "status": "BOOKED"
+     },
+     {
+      "appointment_time": "23:20:00",
+      "patient": "Journey Patient mv6rtsi0",
+      "doctor": "Dr. John Smith",
+      "department": "Cardiology",
+      "status": "COMPLETED"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "q6",
+  "cat": "LEFT JOIN",
+  "purpose": "Every doctor with the number of ACTIVE admissions they hold, including doctors with none (LEFT JOIN keeps them, COUNT gives 0).",
+  "sql": "SELECT d.name, d.current_workload, d.max_workload,\n       COUNT(a.admission_id) AS active_admissions\nFROM doctors d\nLEFT JOIN admissions a ON a.doctor_id = d.doctor_id AND a.status = 'ACTIVE'\nGROUP BY d.doctor_id, d.name, d.current_workload, d.max_workload\nORDER BY active_admissions DESC, d.name\nLIMIT 6;",
+  "results": [
+   {
+    "count": 6,
+    "cols": [
+     "name",
+     "current_workload",
+     "max_workload",
+     "active_admissions"
+    ],
+    "rows": [
+     {
+      "name": "Dr. Neha Mehta",
+      "current_workload": 3,
+      "max_workload": 5,
+      "active_admissions": 3
+     },
+     {
+      "name": "Dr. John Smith",
+      "current_workload": 2,
+      "max_workload": 5,
+      "active_admissions": 2
+     },
+     {
+      "name": "Dr. Arjun Singh",
+      "current_workload": 1,
+      "max_workload": 4,
+      "active_admissions": 1
+     },
+     {
+      "name": "Dr. Lakshmi Reddy",
+      "current_workload": 1,
+      "max_workload": 6,
+      "active_admissions": 1
+     },
+     {
+      "name": "Dr. Rajesh Kumar",
+      "current_workload": 1,
+      "max_workload": 8,
+      "active_admissions": 1
+     },
+     {
+      "name": "Dr. Vikram Sharma",
+      "current_workload": 1,
+      "max_workload": 5,
+      "active_admissions": 1
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "q7",
+  "cat": "Self join (another join type)",
+  "purpose": "Pairs of doctors who share a specialization: the doctors table joined to itself.",
+  "sql": "SELECT d1.specialization, d1.name AS doctor, d2.name AS colleague\nFROM doctors d1\nJOIN doctors d2 ON d2.specialization = d1.specialization\n               AND d2.doctor_id > d1.doctor_id\nORDER BY d1.specialization;",
+  "results": [
+   {
+    "count": 5,
+    "cols": [
+     "specialization",
+     "doctor",
+     "colleague"
+    ],
+    "rows": [
+     {
+      "specialization": "Cardiology",
+      "doctor": "Dr. John Smith",
+      "colleague": "Dr. Neha Mehta"
+     },
+     {
+      "specialization": "Critical Care",
+      "doctor": "Dr. Arjun Singh",
+      "colleague": "Dr. Ritu Agarwal"
+     },
+     {
+      "specialization": "Emergency Medicine",
+      "doctor": "Dr. Rajesh Kumar",
+      "colleague": "Dr. Sunil Joshi"
+     },
+     {
+      "specialization": "General Medicine",
+      "doctor": "Dr. Anita Gupta",
+      "colleague": "Dr. Amit Das"
+     },
+     {
+      "specialization": "Neurology",
+      "doctor": "Dr. Priya Patel",
+      "colleague": "Dr. Kavitha Rao"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "q8",
+  "cat": "Nested query (subquery in WHERE)",
+  "purpose": "Medicines priced above the average price of all medicines.",
+  "sql": "SELECT name, category, unit_price\nFROM medicines\nWHERE unit_price > (SELECT AVG(unit_price) FROM medicines)\nORDER BY unit_price DESC\nLIMIT 6;",
+  "results": [
+   {
+    "count": 3,
+    "cols": [
+     "name",
+     "category",
+     "unit_price"
+    ],
+    "rows": [
+     {
+      "name": "Insulin Glargine",
+      "category": "Insulin",
+      "unit_price": "850.00"
+     },
+     {
+      "name": "Heparin 5000IU",
+      "category": "Anticoagulant",
+      "unit_price": "180.00"
+     },
+     {
+      "name": "Salbutamol Inhaler",
+      "category": "Bronchodilator",
+      "unit_price": "120.00"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "q9",
+  "cat": "Correlated subquery",
+  "purpose": "Each admitted patient with the time of their latest vital-signs reading (NULL: not taken yet). The subquery runs once per admission.",
+  "sql": "SELECT p.name, a.admission_date,\n       (SELECT MAX(v.recorded_at_utc) FROM vital_signs v\n         WHERE v.admission_id = a.admission_id) AS last_vitals_utc\nFROM admissions a JOIN patients p ON p.patient_id = a.patient_id\nWHERE a.status = 'ACTIVE'\nORDER BY a.admission_date DESC\nLIMIT 6;",
+  "results": [
+   {
+    "count": 6,
+    "cols": [
+     "name",
+     "admission_date",
+     "last_vitals_utc"
+    ],
+    "rows": [
+     {
+      "name": "Shruti Menon",
+      "admission_date": "2026-10-13 13:53:17",
+      "last_vitals_utc": null
+     },
+     {
+      "name": "Arjun Nair",
+      "admission_date": "2026-10-12 19:53:17",
+      "last_vitals_utc": null
+     },
+     {
+      "name": "Rajendra Mishra",
+      "admission_date": "2026-10-12 19:53:17",
+      "last_vitals_utc": null
+     },
+     {
+      "name": "Deepak Choudhary",
+      "admission_date": "2026-10-12 19:53:17",
+      "last_vitals_utc": null
+     },
+     {
+      "name": "Vihaan Reddy",
+      "admission_date": "2026-10-11 19:53:17",
+      "last_vitals_utc": null
+     },
+     {
+      "name": "Tanvi Kapoor",
+      "admission_date": "2026-10-11 19:53:17",
+      "last_vitals_utc": null
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "q10",
+  "cat": "IN and EXISTS",
+  "purpose": "Patients with an ACTIVE admission (EXISTS) who also have a lab order that is not yet completed (IN).",
+  "sql": "SELECT p.patient_id, p.name\nFROM patients p\nWHERE EXISTS (SELECT 1 FROM admissions a\n              WHERE a.patient_id = p.patient_id AND a.status = 'ACTIVE')\n  AND p.patient_id IN (SELECT o.patient_id FROM lab_orders o\n                       WHERE o.status <> 'COMPLETED');",
+  "results": [
+   {
+    "count": 1,
+    "cols": [
+     "patient_id",
+     "name"
+    ],
+    "rows": [
+     {
+      "patient_id": 7,
+      "name": "Arjun Nair"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "q11",
+  "cat": "ALL and ANY",
+  "purpose": "Medicines dearer than every antibiotic (> ALL), and antacids dearer than at least one antiplatelet (> ANY).",
+  "sql": "SELECT name, category, unit_price FROM medicines\nWHERE unit_price > ALL (SELECT unit_price FROM medicines WHERE category = 'Antibiotic')\nORDER BY unit_price DESC;\nSELECT name, unit_price FROM medicines\nWHERE category = 'Antacid'\n  AND unit_price > ANY (SELECT unit_price FROM medicines WHERE category = 'Antiplatelet');",
+  "results": [
+   {
+    "count": 5,
+    "cols": [
+     "name",
+     "category",
+     "unit_price"
+    ],
+    "rows": [
+     {
+      "name": "Insulin Glargine",
+      "category": "Insulin",
+      "unit_price": "850.00"
+     },
+     {
+      "name": "Heparin 5000IU",
+      "category": "Anticoagulant",
+      "unit_price": "180.00"
+     },
+     {
+      "name": "Salbutamol Inhaler",
+      "category": "Bronchodilator",
+      "unit_price": "120.00"
+     },
+     {
+      "name": "Diclofenac Gel",
+      "category": "Topical NSAID",
+      "unit_price": "65.00"
+     },
+     {
+      "name": "Morphine Sulphate 10mg",
+      "category": "Opioid Analgesic",
+      "unit_price": "45.00"
+     }
+    ]
+   },
+   {
+    "count": 2,
+    "cols": [
+     "name",
+     "unit_price"
+    ],
+    "rows": [
+     {
+      "name": "Omeprazole 20mg",
+      "unit_price": "12.00"
+     },
+     {
+      "name": "Pantoprazole 40mg",
+      "unit_price": "14.00"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "q12",
+  "cat": "Multiple tables (five-table join)",
+  "purpose": "Current inpatients with ward, bed, admitting doctor and department.",
+  "sql": "SELECT p.name AS patient, w.name AS ward, b.bed_number,\n       d.name AS doctor, dep.name AS department\nFROM admissions a\nJOIN patients p      ON p.patient_id = a.patient_id\nJOIN beds b          ON b.bed_id = a.bed_id\nJOIN wards w         ON w.ward_id = b.ward_id\nJOIN doctors d       ON d.doctor_id = a.doctor_id\nJOIN departments dep ON dep.department_id = a.department_id\nWHERE a.status = 'ACTIVE'\nORDER BY w.name, b.bed_number\nLIMIT 6;",
+  "results": [
+   {
+    "count": 6,
+    "cols": [
+     "patient",
+     "ward",
+     "bed_number",
+     "doctor",
+     "department"
+    ],
+    "rows": [
+     {
+      "patient": "Rajendra Mishra",
+      "ward": "Cardiac Ward",
+      "bed_number": "CARD-02",
+      "doctor": "Dr. John Smith",
+      "department": "Cardiology"
+     },
+     {
+      "patient": "Sneha Rao",
+      "ward": "Cardiac Ward",
+      "bed_number": "CARD-04",
+      "doctor": "Dr. Lakshmi Reddy",
+      "department": "General Medicine"
+     },
+     {
+      "patient": "Deepak Choudhary",
+      "ward": "Emergency Observation",
+      "bed_number": "ISO-02",
+      "doctor": "Dr. Rajesh Kumar",
+      "department": "Emergency"
+     },
+     {
+      "patient": "Vihaan Reddy",
+      "ward": "General Ward A",
+      "bed_number": "GEN-A03",
+      "doctor": "Dr. John Smith",
+      "department": "Cardiology"
+     },
+     {
+      "patient": "Suresh Pillai",
+      "ward": "General Ward B",
+      "bed_number": "GEN-B04",
+      "doctor": "Dr. Vikram Sharma",
+      "department": "General Medicine"
+     },
+     {
+      "patient": "Isha Singh",
+      "ward": "ICU Ward",
+      "bed_number": "ICU-01",
+      "doctor": "Dr. Neha Mehta",
+      "department": "ICU"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "q13",
+  "cat": "Business question: bed occupancy",
+  "purpose": "Occupancy by bed type: how full is the hospital? (CASE inside SUM.)",
+  "sql": "SELECT bed_type, COUNT(*) AS beds,\n       SUM(status = 'OCCUPIED') AS occupied,\n       ROUND(100 * SUM(status = 'OCCUPIED') / COUNT(*), 1) AS occupancy_pct\nFROM beds\nGROUP BY bed_type\nORDER BY occupancy_pct DESC;",
+  "results": [
+   {
+    "count": 5,
+    "cols": [
+     "bed_type",
+     "beds",
+     "occupied",
+     "occupancy_pct"
+    ],
+    "rows": [
+     {
+      "bed_type": "ICU",
+      "beds": 4,
+      "occupied": "2",
+      "occupancy_pct": "50.0"
+     },
+     {
+      "bed_type": "VENTILATOR_ICU",
+      "beds": 2,
+      "occupied": "1",
+      "occupancy_pct": "50.0"
+     },
+     {
+      "bed_type": "NICU",
+      "beds": 3,
+      "occupied": "1",
+      "occupancy_pct": "33.3"
+     },
+     {
+      "bed_type": "ISOLATION",
+      "beds": 4,
+      "occupied": "1",
+      "occupancy_pct": "25.0"
+     },
+     {
+      "bed_type": "GENERAL",
+      "beds": 22,
+      "occupied": "4",
+      "occupancy_pct": "18.2"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "q14",
+  "cat": "Business question: stock that expires soonest",
+  "purpose": "For each medicine with stock, its usable quantity and next expiry, from the batches (view v_current_stock).",
+  "sql": "SELECT name, stock_quantity, usable_quantity, next_expiry\nFROM v_current_stock\nWHERE usable_quantity > 0\nORDER BY next_expiry, name\nLIMIT 6;",
+  "results": [
+   {
+    "count": 6,
+    "cols": [
+     "name",
+     "stock_quantity",
+     "usable_quantity",
+     "next_expiry"
+    ],
+    "rows": [
+     {
+      "name": "Amlodipine 5mg",
+      "stock_quantity": 400,
+      "usable_quantity": "400",
+      "next_expiry": "2027-03-10"
+     },
+     {
+      "name": "Morphine Sulphate 10mg",
+      "stock_quantity": 50,
+      "usable_quantity": "50",
+      "next_expiry": "2027-04-20"
+     },
+     {
+      "name": "Pantoprazole 40mg",
+      "stock_quantity": 450,
+      "usable_quantity": "450",
+      "next_expiry": "2027-05-15"
+     },
+     {
+      "name": "Insulin Glargine",
+      "stock_quantity": 100,
+      "usable_quantity": "100",
+      "next_expiry": "2027-06-15"
+     },
+     {
+      "name": "Amoxicillin 250mg",
+      "stock_quantity": 500,
+      "usable_quantity": "500",
+      "next_expiry": "2027-06-30"
+     },
+     {
+      "name": "Heparin 5000IU",
+      "stock_quantity": 79,
+      "usable_quantity": "79",
+      "next_expiry": "2027-07-10"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "q15",
+  "cat": "View",
+  "purpose": "The view current_admissions_view joins admissions with patients, doctors, beds, wards and departments; callers select from it like a table.",
+  "sql": "SELECT patient_name, ward_name, bed_number, doctor_name, department_name\nFROM current_admissions_view\nORDER BY ward_name, bed_number\nLIMIT 6;",
+  "results": [
+   {
+    "count": 6,
+    "cols": [
+     "patient_name",
+     "ward_name",
+     "bed_number",
+     "doctor_name",
+     "department_name"
+    ],
+    "rows": [
+     {
+      "patient_name": "Rajendra Mishra",
+      "ward_name": "Cardiac Ward",
+      "bed_number": "CARD-02",
+      "doctor_name": "Dr. John Smith",
+      "department_name": "Cardiology"
+     },
+     {
+      "patient_name": "Sneha Rao",
+      "ward_name": "Cardiac Ward",
+      "bed_number": "CARD-04",
+      "doctor_name": "Dr. Lakshmi Reddy",
+      "department_name": "General Medicine"
+     },
+     {
+      "patient_name": "Deepak Choudhary",
+      "ward_name": "Emergency Observation",
+      "bed_number": "ISO-02",
+      "doctor_name": "Dr. Rajesh Kumar",
+      "department_name": "Emergency"
+     },
+     {
+      "patient_name": "Vihaan Reddy",
+      "ward_name": "General Ward A",
+      "bed_number": "GEN-A03",
+      "doctor_name": "Dr. John Smith",
+      "department_name": "Cardiology"
+     },
+     {
+      "patient_name": "Suresh Pillai",
+      "ward_name": "General Ward B",
+      "bed_number": "GEN-B04",
+      "doctor_name": "Dr. Vikram Sharma",
+      "department_name": "General Medicine"
+     },
+     {
+      "patient_name": "Isha Singh",
+      "ward_name": "ICU Ward",
+      "bed_number": "ICU-01",
+      "doctor_name": "Dr. Neha Mehta",
+      "department_name": "ICU"
+     }
+    ]
+   }
+  ]
+ }
+]

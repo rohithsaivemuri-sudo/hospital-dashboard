@@ -1,0 +1,52 @@
+\chapter{Functional Dependencies}
+
+\section{Identification of Functional Dependencies}
+A functional dependency $X \to Y$ holds when any two rows with the same $X$ have the same $Y$. Each one listed here
+comes from a business rule that the schema or the code enforces: a primary or UNIQUE key, a foreign key whose
+value is copied from its parent when a row is written, or a computed value. A pattern that merely happens to hold
+in today's rows is not listed. For a nullable left side (for example \tbl{encounter\_id}), the dependency applies to
+the rows where it is not NULL, as in SQL's treatment of UNIQUE. Examples:
+\[ \textit{patient\_id} \to \textit{name, date\_of\_birth, gender, blood\_group, phone, \dots, abha\_number} \]
+\[ \textit{doctor\_id, appointment\_date, appointment\_time} \to \textit{appointment\_id} \]
+\[ \textit{encounter\_id} \to \textit{patient\_id, doctor\_id} \quad (\text{in } \tbl{lab\_orders}) \]
+
+\section{Candidate Keys and Attribute Classification}
+Table~\ref{tab:fds} gives, for every relation, its dependencies, its candidate keys, its prime attributes (those
+in some candidate key) and the number of non-prime attributes (all the others). A UNIQUE column that allows NULL
+(such as \tbl{abha\_number}) identifies a row only when present; it is listed as a key because MySQL enforces it.
+
+{\scriptsize\setlength{\tabcolsep}{3pt}
+\begin{longtable}{@{}R{2.8cm}R{5.8cm}R{3.5cm}R{2.8cm}c@{}}
+\caption{Functional dependencies, candidate keys and attribute classification}\label{tab:fds}\\
+\toprule
+\textbf{Relation} & \textbf{Functional dependencies} & \textbf{Candidate keys} & \textbf{Prime attributes} & \textbf{Non-prime} \\\midrule\endfirsthead
+\toprule\textbf{Relation} & \textbf{Functional dependencies} & \textbf{Candidate keys} & \textbf{Prime attributes} & \textbf{Non-prime} \\\midrule\endhead
+\rows{generated/fd-table.tex}
+\bottomrule
+\end{longtable}}
+
+\section{FD Analysis}
+\begin{itemize}
+\item \textbf{Keys.} Each primary key determines its row. Each UNIQUE key is a business identifier with its own
+dependency: a doctor's slot (\tbl{doctor\_id, appointment\_date, appointment\_time}) identifies one appointment,
+because a doctor cannot be in two places; a ward and bed number identify one bed; a medicine and supplier batch
+number identify one batch; an order identifies its single result.
+\item \textbf{Copied context.} \tbl{lab\_orders}, \tbl{prescriptions}, \tbl{consultations}, \tbl{surgery\_requests}
+and \tbl{vital\_signs} store the patient (and doctor) of the visit, admission or note they are filed under. The
+code copies these from the parent and checks them (\tbl{resolveEncounterForRecord}, \tbl{resolveOrderContext}),
+and composite foreign keys now enforce them, so \tbl{encounter\_id} $\to$ \tbl{patient\_id, doctor\_id} is a real
+dependency in those tables. In \tbl{pharmacy\_stock\_movements}, \tbl{batch\_id} $\to$ \tbl{medicine\_id} for the same reason.
+\item \textbf{Flags.} In \tbl{prescription\_items} the single dispensing statement sets
+\tbl{dispensed\_at = NOW()} and \tbl{dispensed = TRUE} together, so \tbl{dispensed\_at} $\to$ \tbl{dispensed}.
+\item \textbf{Removed by normalization.} Three dependencies held in the schema before this work and were removed
+by decomposition (Chapter~6): \tbl{ward\_id} $\to$ \tbl{floor} in \tbl{beds}, \tbl{doctor\_id} $\to$
+\tbl{department\_id} in \tbl{appointments}, \tbl{prescription\_item\_id} $\to$ \tbl{patient\_id} in
+\tbl{medication\_administrations}; a fourth, (\tbl{quantity, unit\_price}) $\to$ \tbl{total\_price} in
+\tbl{bill\_items}, now holds by definition of a generated column.
+\item \textbf{Not dependencies.} Some patterns look like dependencies but are not rules, so they are not listed:
+\tbl{wards.department\_id} $\not\to$ \tbl{floor} (a department may span floors; each ward's floor is entered);
+\tbl{admissions.bed\_id} $\not\to$ \tbl{department\_id} (staff choose the department on the form);
+\tbl{emergency\_cases.required\_bed\_type} $\not\to$ \tbl{ventilator\_required} (an ICU case may or may not need one);
+\tbl{audit\_logs.user\_id} $\not\to$ \tbl{role} (a seed migration logs the role MIGRATION); and the order's admission
+is a snapshot taken when the order was placed, not a function of its visit.
+\end{itemize}

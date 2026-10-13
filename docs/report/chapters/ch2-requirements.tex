@@ -1,0 +1,43 @@
+\chapter{System Requirements and Analysis}
+
+\section{Functional Requirements}
+The system must support these operations (the role that performs each is in brackets):
+\begin{itemize}
+\item \textbf{Patients:} register, search (name, phone, MRN, ABHA), view and edit a patient; record an age when the date of birth is unknown [Receptionist, Administrator].
+\item \textbf{Appointments and visits:} book an appointment with a doctor's slot, mark arrival, triage, start and finish the visit, or cancel it [Receptionist, Nurse, Doctor].
+\item \textbf{Clinical records:} record vital signs [Nurse]; write consultation notes, order lab tests, prescribe, request surgery [Doctor].
+\item \textbf{Laboratory:} move an order to processing, record the result (auto-flagged against reference ranges), attach the report file [Laboratory].
+\item \textbf{Pharmacy:} dispense a prescription from non-expired batches, earliest expiry first; receive and adjust stock by batch; low-stock and expiry views [Pharmacy].
+\item \textbf{Ward care:} see assigned wards and beds, record each scheduled dose as given, refused or missed [Nurse].
+\item \textbf{Beds, admissions and emergencies:} admit to a free bed, discharge, register emergencies and allocate a bed and doctor [Doctor, Receptionist, Administrator].
+\item \textbf{Billing:} create bills, add line items, record payments [Receptionist, Administrator].
+\item \textbf{Administration:} manage staff accounts and nurse ward assignments; read the audit log; dashboards and reports [Administrator].
+\end{itemize}
+
+\section{Business Rules}
+Every rule below is enforced by the schema or by the application code, as stated in the last column.
+
+{\small
+\begin{longtable}{@{}R{0.5cm}R{8.2cm}R{7.6cm}@{}}
+\toprule
+& \textbf{Rule} & \textbf{Enforced by} \\\midrule\endhead
+1 & Every patient has a unique MRN (the patient id); an ABHA number, when given, is 14 digits and unique. & PK \tbl{patients.patient\_id}; UNIQUE \tbl{uq\_patients\_abha}; CHECK \tbl{chk\_patients\_abha\_format} \\
+2 & A date of birth cannot be in the future. & API validation (\tbl{POST/PUT /api/patients}, 400) \\
+3 & A doctor cannot be booked twice for the same date and time. & UNIQUE (\tbl{doctor\_id, appointment\_date, appointment\_time}) \\
+4 & A visit moves only ARRIVED $\to$ (TRIAGED) $\to$ IN\_PROGRESS $\to$ FINISHED; it can be CANCELLED before it starts or marked ENTERED\_IN\_ERROR before it finishes; its appointment's status follows it. & State machine in \tbl{utils/encounters.js}, in one transaction with the appointment row locked \\
+5 & A patient has at most one ACTIVE admission, and a bed holds at most one. & Locking reads (\tbl{SELECT \dots{} FOR UPDATE}) in the admission and emergency services; triggers mark the bed OCCUPIED / AVAILABLE \\
+6 & A doctor's workload counts their ACTIVE admissions and never exceeds their maximum. & Trigger \tbl{after\_admission\_insert} / \tbl{after\_admission\_discharge}; CHECK \tbl{doctors\_chk\_1} \\
+7 & Stock can never become negative. & CHECK on \tbl{medicines} and \tbl{medicine\_batches}; trigger \tbl{before\_medicine\_stock\_update} \\
+8 & A medicine's stock is the sum of its batches; dispensing takes non-expired batches, earliest expiry first. & Same-transaction updates with rows locked in medicine-id order (\tbl{dispenseService}) \\
+9 & A prescription item is dispensed at most once, and a dispense time implies it was dispensed. & Guard \tbl{AND dispensed = FALSE} (409 on a second dispense); CHECK \tbl{chk\_prescription\_items\_dispensed} \\
+10 & A record filed under a visit, admission, note or batch belongs to the same patient (or medicine). & Composite foreign keys \tbl{fk\_ctx\_*} (15) and API checks (400) \\
+11 & A bill's paid amount never exceeds its total; a line's total is quantity $\times$ unit price. & CHECK \tbl{bills\_chk\_2}; generated column \tbl{bill\_items.total\_price} \\
+12 & An order has at most one result. & UNIQUE \tbl{lab\_results.order\_id} \\
+13 & A dose recorded as given has a time; a scheduled dose exists once per order and slot. & CHECK \tbl{chk\_mar\_given}; UNIQUE (\tbl{prescription\_item\_id, scheduled\_at\_utc}) \\
+14 & Vital signs are within physiological ranges and belong to a visit or an admission. & Eleven CHECKs \tbl{chk\_vitals\_*} \\
+15 & Discharge is not before admission; a visit does not end before it starts. & CHECK \tbl{admissions\_chk\_1}, \tbl{chk\_encounters\_times} \\
+16 & A user account has at most one doctor profile. & UNIQUE \tbl{uq\_doctors\_user\_id} \\
+17 & Each action is limited to the roles that may perform it; a doctor sees only patients in their care. & \tbl{authorize(...)} middleware on every route; care-set check in \tbl{utils/patientAccess.js} \\
+18 & The audit log can only grow. & Triggers \tbl{audit\_logs\_no\_update} and \tbl{audit\_logs\_no\_delete} \\
+\bottomrule
+\end{longtable}}

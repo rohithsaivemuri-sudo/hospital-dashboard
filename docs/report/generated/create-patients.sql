@@ -1,0 +1,20 @@
+CREATE TABLE `patients` (
+  `patient_id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `date_of_birth` date NOT NULL,
+  `dob_estimated` tinyint(1) NOT NULL DEFAULT '0',
+  `gender` enum('MALE','FEMALE','OTHER') NOT NULL,
+  `blood_group` enum('A+','A-','B+','B-','AB+','AB-','O+','O-') DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `address` text,
+  `emergency_contact` varchar(100) DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `allergies` text,
+  `abha_number` char(14) DEFAULT NULL,
+  PRIMARY KEY (`patient_id`),
+  UNIQUE KEY `uq_patients_abha` (`abha_number`),
+  KEY `idx_patients_name` (`name`),
+  KEY `idx_patients_phone` (`phone`),
+  CONSTRAINT `chk_patients_abha_format` CHECK (((`abha_number` is null) or regexp_like(`abha_number`,_utf8mb4'^[0-9]{14}$')))
+) ENGINE=InnoDB;

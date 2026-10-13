@@ -1,0 +1,138 @@
+% DBMS project report: Smart Hospital Management System.
+% Build (from docs/report):  node gen/gen-er.js && node gen/gen-tables.js && tectonic -X compile main.tex
+% The structure follows the course template (DBMS_Project.pdf): title page, contents, general instructions,
+% chapters 1-11, references, appendices A-D and the evaluation scheme.
+\documentclass[10pt,a4paper,oneside]{report}
+\usepackage[a4paper,left=2cm,right=2cm,top=1.9cm,bottom=1.9cm,footskip=0.9cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[english]{babel}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs,longtable,tabularx,array,multirow}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{float}
+\usepackage[normalem]{ulem}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,positioning,calc,arrows.meta,fit}
+\usepackage{etoolbox}
+% chapters follow on from the previous one (after a gap) instead of always starting a new page; this keeps the
+% report within its page budget. Chapter 1 and the appendices start on a new page explicitly.
+\makeatletter\patchcmd{\chapter}{\if@openright\cleardoublepage\else\clearpage\fi}{\par\addvspace{16pt}}{}{\PackageWarning{report}{chapter patch failed}}\makeatother
+\usepackage[hidelinks]{hyperref}
+\usepackage{xurl}
+\usepackage{adjustbox}
+\newcolumntype{R}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\graphicspath{{figures/}}
+\input{er-style.tex}
+
+% ---- layout: compact chapter heads in the template's "Chapter N / Title" form
+\titleformat{\chapter}[display]{\normalfont\bfseries}{\Large\chaptertitlename\ \thechapter}{4pt}{\LARGE}
+\titlespacing*{\chapter}{0pt}{0pt}{10pt}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{0.6em}{}
+\titlespacing*{\section}{0pt}{9pt plus 2pt}{4pt}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\subsection}{0pt}{6pt plus 2pt}{2pt}
+\setlength{\parskip}{3pt}
+\setlength{\parindent}{0pt}
+\setlist{nosep, leftmargin=1.3em}
+\captionsetup{font=small, labelfont=bf, skip=4pt}
+\captionsetup[lstlisting]{font=small, labelfont=bf, skip=2pt}
+\renewcommand{\lstlistingname}{Listing}
+\setcounter{tocdepth}{1}
+\renewcommand{\arraystretch}{1.12}
+
+\lstdefinestyle{sql}{language=SQL, basicstyle=\ttfamily\scriptsize, keywordstyle=\bfseries, columns=fullflexible,
+  breaklines=true, breakatwhitespace=false, frame=single, framerule=0.4pt, rulecolor=\color{gray!60},
+  xleftmargin=2pt, xrightmargin=2pt, aboveskip=4pt, belowskip=4pt, showstringspaces=false, upquote=true,
+  morekeywords={REFERENCES, ENGINE, AUTO_INCREMENT, ENUM, CONSTRAINT, CHECK, IF, SIGNAL, TRIGGER, EACH, ROW, BEGIN, END, GENERATED, ALWAYS, VIRTUAL, LIMIT, ANY, ALL, EXISTS, CURDATE, ROLLBACK, COMMIT}}
+\lstset{style=sql}
+
+% ---- macros used by the generated files
+\newcommand{\placeholder}[1]{\fbox{\textcolor{red!70!black}{\textit{[#1]}}}}
+\newcommand{\fk}[2]{\textit{#1}\textsuperscript{\tiny FK\ifx\relax#2\relax\else$\to$#2\fi}}
+\newcommand{\gen}{\textsuperscript{\tiny G}}
+\newcommand{\relation}[3]{\noindent\textbf{\texttt{#1}}(#2)\ifx\relax#3\relax\else{} \textsc{uk} #3\fi\par\vspace{1.5pt}}
+\newcommand{\tbl}[1]{\texttt{#1}}
+% generated table rows are read with TeX's primitive \input, which works between rows of a table
+\makeatletter\newcommand{\rows}[1]{\@@input #1 }\makeatother
+% one query of section 8.6: SQL on the left, its real output (hospital_db_test) on the right
+\newcommand{\query}[4]{\par\noindent\begin{minipage}[t]{0.5\textwidth}\vspace{0pt}
+  \captionof{lstlisting}{Query #1 (#2). #3}\lstinputlisting{generated/#4.sql}\end{minipage}\hfill
+  \begin{minipage}[t]{0.47\textwidth}\vspace{2pt}\captionof{table}{Output of Query #1}\centering\begin{adjustbox}{max width=\linewidth}\begin{tabular}{@{}c@{}}\input{generated/#4-out.tex}\end{tabular}\end{adjustbox}\end{minipage}\par\medskip}
+
+% long identifiers (table and column names) may break after an underscore; a little extra stretch avoids overfull lines
+\makeatletter\let\hms@us\_\renewcommand{\_}{\hms@us\allowbreak}\makeatother
+\setlength{\emergencystretch}{2.5em}
+\hypersetup{pdftitle={Smart Hospital Management System: DBMS Project Report}, pdfauthor={}}
+
+\begin{document}
+\pagenumbering{roman}
+% ================= title page
+\begin{titlepage}
+\centering
+\vspace*{2.2cm}
+{\Large\bfseries Database Management Systems (DBMS)\par}
+\vspace{2cm}
+{\huge\bfseries Project Report\par}
+\vspace{0.8cm}
+{\LARGE Smart Hospital Management System\par}
+\vspace{2.2cm}
+\begin{tabular}{@{}p{4.3cm}p{8cm}@{}}
+\textbf{Student Name(s):} & \placeholder{to be filled in} \\[14pt]
+\textbf{Roll Number(s):} & \placeholder{to be filled in} \\[14pt]
+\textbf{Branch \& Section:} & \placeholder{to be filled in} \\[14pt]
+\textbf{Course Instructor:} & Priyankar \\[14pt]
+\textbf{Academic Session:} & 2026-2027 (Monsoon Semester) \\
+\end{tabular}
+\vfill
+{\large Department of Computer Science\\ Indian Institute of Information Technology Bhopal\par}
+\vspace{1cm}
+\end{titlepage}
+
+% ================= contents
+\tableofcontents
+
+% ================= general instructions (from the template, with where this report meets each one)
+\chapter*{General Instructions}
+\addcontentsline{toc}{chapter}{General Instructions}
+The course template sets these instructions. The right-hand column says where this report and its submission meet each one.
+
+\begin{tabularx}{\textwidth}{@{}rYY@{}}
+\toprule
+& \textbf{Instruction} & \textbf{In this project} \\\midrule
+1 & The front end may use any language or framework. & React 18 single-page app with a Node.js/Express API (Chapter 9). \\
+2 & MySQL is mandatory for creation, storage and queries. & MySQL 9.7.1 (InnoDB) is the only database; every table, constraint, view, trigger and procedure is in MySQL (Chapters 7, 8). \\
+3 & Design the database before the application. & ER model (Chapter 3), mapping (Chapter 4), dependencies and normalization (Chapters 5, 6) precede the implementation chapters; schema changes are versioned migrations. \\
+4 & Demonstrate the DBMS concepts of the course. & Keys, constraints, joins, subqueries, views, triggers, transactions and locking (Chapters 7, 8). \\
+5 & Include diagrams, dependencies, normalization steps, SQL and results. & All outputs shown are from real runs on the test database. \\
+6 & Submit the report, source code and a complete MySQL script. & Appendix A (\texttt{hospital\_db\_full.sql}) and Appendix B (repository). \\
+7 & Every member must understand the design. & Chapter 3.4 and Chapter 6 explain every design decision in words. \\
+\bottomrule
+\end{tabularx}
+
+\cleardoublepage
+\pagenumbering{arabic}
+\input{chapters/ch1-introduction}
+\input{chapters/ch2-requirements}
+\input{chapters/ch3-er}
+\input{chapters/ch4-mapping}
+\input{chapters/ch5-fds}
+\input{chapters/ch6-normalization}
+\input{chapters/ch7-integrity}
+\input{chapters/ch8-mysql}
+\input{chapters/ch9-application}
+\input{chapters/ch10-testing}
+\input{chapters/ch11-conclusion}
+\input{chapters/references}
+\clearpage
+\appendix
+\input{chapters/appendices}
+\end{document}

@@ -1,0 +1,207 @@
+{
+ "insert": {
+  "affected": 1,
+  "id": 37,
+  "row": {
+   "patient_id": 37,
+   "name": "Meera Iyer",
+   "date_of_birth": "1992-07-14",
+   "gender": "FEMALE",
+   "blood_group": "B+",
+   "abha_number": "12345678901234"
+  }
+ },
+ "insertItem": {
+  "item_id": 20,
+  "description": "Dressing change",
+  "quantity": 3,
+  "unit_price": "150.00",
+  "total_price": "450.00"
+ },
+ "updateItem": {
+  "affected": 1,
+  "row": {
+   "quantity": 4,
+   "unit_price": "150.00",
+   "total_price": "600.00"
+  }
+ },
+ "updateBed": {
+  "bed": "GEN-A01",
+  "affected": 1,
+  "after": "MAINTENANCE"
+ },
+ "deleteBill": {
+  "bill": 1,
+  "itemsBefore": 8,
+  "affected": 1,
+  "itemsAfter": 0
+ },
+ "deletePatient": "ER_ROW_IS_REFERENCED_2 (1451): Cannot delete or update a parent row: a foreign key constraint fails (`bed_assignment_log`, CONSTRAINT `bed_assignment_log_ibfk_2` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE RESTRICT)",
+ "patients": [
+  {
+   "patient_id": 1,
+   "name": "Aarav Sharma",
+   "date_of_birth": "1985-03-15",
+   "gender": "MALE",
+   "blood_group": "O+"
+  },
+  {
+   "patient_id": 2,
+   "name": "Diya Patel",
+   "date_of_birth": "1990-07-22",
+   "gender": "FEMALE",
+   "blood_group": "A+"
+  },
+  {
+   "patient_id": 3,
+   "name": "Vihaan Reddy",
+   "date_of_birth": "1978-11-30",
+   "gender": "MALE",
+   "blood_group": "B+"
+  },
+  {
+   "patient_id": 4,
+   "name": "Ananya Gupta",
+   "date_of_birth": "1995-05-10",
+   "gender": "FEMALE",
+   "blood_group": "AB+"
+  },
+  {
+   "patient_id": 5,
+   "name": "Aditya Kumar",
+   "date_of_birth": "1960-01-20",
+   "gender": "MALE",
+   "blood_group": "O-"
+  }
+ ],
+ "departments": [
+  {
+   "department_id": 1,
+   "name": "Emergency",
+   "floor": 1
+  },
+  {
+   "department_id": 2,
+   "name": "Cardiology",
+   "floor": 2
+  },
+  {
+   "department_id": 3,
+   "name": "Neurology",
+   "floor": 3
+  },
+  {
+   "department_id": 4,
+   "name": "Orthopedics",
+   "floor": 2
+  },
+  {
+   "department_id": 5,
+   "name": "General Medicine",
+   "floor": 1
+  },
+  {
+   "department_id": 6,
+   "name": "Pediatrics",
+   "floor": 1
+  }
+ ],
+ "beds": [
+  {
+   "ward": "General Ward A",
+   "beds": 10,
+   "available": "8"
+  },
+  {
+   "ward": "General Ward B",
+   "beds": 8,
+   "available": "7"
+  },
+  {
+   "ward": "Cardiac Ward",
+   "beds": 4,
+   "available": "2"
+  },
+  {
+   "ward": "Pediatric Ward",
+   "beds": 3,
+   "available": "2"
+  },
+  {
+   "ward": "ICU Ward",
+   "beds": 6,
+   "available": "2"
+  },
+  {
+   "ward": "Emergency Observation",
+   "beds": 4,
+   "available": "3"
+  }
+ ],
+ "labTests": [
+  {
+   "test_id": 1,
+   "name": "Complete Blood Count (CBC)",
+   "cost": "400.00",
+   "normal_range": "4500-11000",
+   "unit": "cells/mcL"
+  },
+  {
+   "test_id": 2,
+   "name": "Lipid Profile",
+   "cost": "800.00",
+   "normal_range": "Varies",
+   "unit": "mg/dL"
+  },
+  {
+   "test_id": 5,
+   "name": "Blood Glucose Fasting",
+   "cost": "150.00",
+   "normal_range": "70-100",
+   "unit": "mg/dL"
+  }
+ ],
+ "medicines": [
+  {
+   "medicine_id": 1,
+   "name": "Paracetamol 500mg",
+   "unit_price": "5.00"
+  },
+  {
+   "medicine_id": 2,
+   "name": "Amoxicillin 250mg",
+   "unit_price": "15.00"
+  },
+  {
+   "medicine_id": 3,
+   "name": "Ibuprofen 400mg",
+   "unit_price": "8.00"
+  },
+  {
+   "medicine_id": 4,
+   "name": "Omeprazole 20mg",
+   "unit_price": "12.00"
+  },
+  {
+   "medicine_id": 5,
+   "name": "Aspirin 75mg",
+   "unit_price": "3.00"
+  },
+  {
+   "medicine_id": 6,
+   "name": "Metformin 500mg",
+   "unit_price": "6.00"
+  },
+  {
+   "medicine_id": 7,
+   "name": "Amlodipine 5mg",
+   "unit_price": "7.50"
+  },
+  {
+   "medicine_id": 8,
+   "name": "Cetirizine 10mg",
+   "unit_price": "4.00"
+  }
+ ]
+}

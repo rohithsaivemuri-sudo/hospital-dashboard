@@ -1,0 +1,61 @@
+\chapter{Introduction}
+
+\section{Project Overview}
+The \textbf{Smart Hospital Management System} is a web application that runs the daily work of a hospital
+on one MySQL database. It covers the path of a patient from registration to discharge: appointments and
+visits, triage vital signs, doctors' notes, laboratory orders and results, prescriptions dispensed from a
+batch-tracked pharmacy, medication given on the ward, bed and emergency allocation, admissions, billing and
+an audit trail of who did what.
+
+Its users are the hospital's staff, each with a role that decides what they may see and do:
+\begin{itemize}
+\item \textbf{Receptionist:} registers patients, books appointments, marks arrivals, raises bills.
+\item \textbf{Nurse:} works the wards they are assigned to: triage, vital signs, the medication administration record (MAR).
+\item \textbf{Doctor:} sees the patients in their care, writes notes, orders tests, prescribes, admits and discharges.
+\item \textbf{Laboratory staff:} process lab orders and record results with optional report files.
+\item \textbf{Pharmacy staff:} dispense prescriptions and receive or adjust stock by batch.
+\item \textbf{Administrator:} manages staff accounts, nurse assignments, and reads the audit log and reports.
+\end{itemize}
+
+\section{Problem Statement}
+In many hospitals these records live on paper or in separate systems: a register at the front desk, a ward
+book, a pharmacy stock ledger and a lab file. This causes problems that a shared database prevents:
+\begin{itemize}
+\item \textbf{Inconsistent copies:} a patient's details are written several times and drift apart.
+\item \textbf{Unsafe concurrent use:} two clerks can allocate the same last ICU bed, or two pharmacists dispense the same stock.
+\item \textbf{No integrity checks:} a dose can be recorded for the wrong patient, stock can go negative, a result can be filed without an order.
+\item \textbf{No accountability:} it is hard to tell who changed or viewed a record.
+\end{itemize}
+
+\section{Objectives}
+\begin{enumerate}
+\item Design a normalized relational schema (BCNF where sound) for hospital operations, from an ER model.
+\item Enforce the hospital's rules in the database itself: keys, foreign keys, CHECK constraints, triggers and transactions.
+\item Keep concurrent operations correct: bed allocation, dispensing and status changes use row locks in a fixed order.
+\item Give each role a web front end that reads and writes the database only through a restricted MySQL account.
+\item Record every data change and refused access in an append-only audit log.
+\item Verify all of this with automated tests that run against a separate test database.
+\end{enumerate}
+
+\section{Scope of the Project}
+\textbf{Covered:} patient registration (including the 14-digit ABHA number), appointments, the encounter (visit)
+lifecycle, vital signs, consultations, surgery requests, laboratory orders and results with attachments,
+prescriptions with structured dosing, a batch-level pharmacy with first-expiry-first-out dispensing, the MAR,
+wards, beds, admissions and discharges, emergency cases with ambulances and automatic bed and doctor allocation,
+billing, staff accounts, nurse ward assignments, doctor schedules and daily statistics, and the audit log.
+\textbf{Not covered:} payments through a gateway, insurance claims, live integration with the national ABDM
+health-record network, and multi-hospital operation (Section 11.2).
+
+\section{Software and Hardware Requirements}
+\begin{tabularx}{\textwidth}{@{}lY@{}}
+\toprule
+\textbf{Item} & \textbf{Used in this project} \\\midrule
+Database & MySQL 9.7.1, InnoDB, isolation level REPEATABLE READ, \texttt{utf8mb4\_0900\_ai\_ci}, strict SQL mode \\
+Back end & Node.js 25 with Express 4, \texttt{mysql2} (promise API, connection pool), JSON Web Tokens, bcrypt, Multer (uploads), Socket.IO 4 \\
+Front end & React 18, React Router 6, Vite 4, Axios, Socket.IO client \\
+Testing & Node's built-in test runner (\texttt{node:test}); Puppeteer for browser tests \\
+Tools & Git and GitHub, Visual Studio Code, MySQL command-line client and \texttt{mysqldump}, draw.io, \LaTeX{} \\
+Deployment & Docker Compose on an Azure B2als\_v2 virtual machine (2 vCPU, 4 GiB RAM), Caddy for HTTPS \\
+Minimum hardware & 2 CPU cores, 4 GB RAM and 2 GB of disk for MySQL, the API and the browser client; any modern browser for users \\
+\bottomrule
+\end{tabularx}

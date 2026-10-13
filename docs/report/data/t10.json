@@ -1,0 +1,106 @@
+[
+ {
+  "id": "T1",
+  "operation": "Register a patient",
+  "input": "Valid name, DOB 1990-04-12, gender",
+  "expected": "Patient created",
+  "actual": "HTTP 201, patient 34 created",
+  "status": "Pass"
+ },
+ {
+  "id": "T2",
+  "operation": "Duplicate key",
+  "input": "users.username = 'admin' (exists)",
+  "expected": "Rejected by UNIQUE",
+  "actual": "ER_DUP_ENTRY (1062): Duplicate entry 'admin' for key 'users.username'",
+  "status": "Pass"
+ },
+ {
+  "id": "T3",
+  "operation": "Invalid foreign key",
+  "input": "lab_orders.test_id = 9999 (no such test)",
+  "expected": "Rejected by FOREIGN KEY",
+  "actual": "ER_NO_REFERENCED_ROW_2 (1452): Cannot add or update a child row: a foreign key constraint fails (`hospital_db_test`.`lab_orders`, CONSTRAINT `lab_orders_ibfk_4` FOREIGN KEY (`test_id`) REFERENCES `lab_tests` (`test_id`) ON DELETE RESTRICT)",
+  "status": "Pass"
+ },
+ {
+  "id": "T4",
+  "operation": "Negative stock",
+  "input": "medicines.stock_quantity = -5",
+  "expected": "Rejected (trigger and CHECK)",
+  "actual": "ER_SIGNAL_EXCEPTION (1644): Error: Medicine stock cannot be negative.",
+  "status": "Pass"
+ },
+ {
+  "id": "T5",
+  "operation": "Future date of birth",
+  "input": "date_of_birth = 2026-11-12",
+  "expected": "Rejected with 400",
+  "actual": "HTTP 400: Date of birth cannot be in the future",
+  "status": "Pass"
+ },
+ {
+  "id": "T6",
+  "operation": "Duplicate ABHA number",
+  "input": "Second patient with the same 14-digit ABHA",
+  "expected": "Rejected with 409",
+  "actual": "HTTP 201 then 409: ABHA number 91-0000-0062-3238 is already registered to another patient",
+  "status": "Pass"
+ },
+ {
+  "id": "T7",
+  "operation": "Double dispense",
+  "input": "Dispense prescription 2 again (already DISPENSED)",
+  "expected": "Rejected, stock unchanged",
+  "actual": "HTTP 409: Prescription is not available for dispensing",
+  "status": "Pass"
+ },
+ {
+  "id": "T8",
+  "operation": "Cross-role access",
+  "input": "Receptionist reads a patient's clinical history",
+  "expected": "Refused with 403",
+  "actual": "HTTP 403: Forbidden: this is available to doctors, nurses only",
+  "status": "Pass"
+ },
+ {
+  "id": "T9",
+  "operation": "Wrong role for an action",
+  "input": "Doctor tries to dispense a prescription",
+  "expected": "Refused with 403",
+  "actual": "HTTP 403: Forbidden: this is available to pharmacy staff only",
+  "status": "Pass"
+ },
+ {
+  "id": "T10",
+  "operation": "Copy disagrees with its link",
+  "input": "Bill for patient 34 on another patient's admission 1",
+  "expected": "Rejected with 400",
+  "actual": "HTTP 400: That admission belongs to a different patient",
+  "status": "Pass"
+ },
+ {
+  "id": "T11",
+  "operation": "CHECK constraint",
+  "input": "Dispense time on an item not marked dispensed",
+  "expected": "Rejected by CHECK",
+  "actual": "ER_CHECK_CONSTRAINT_VIOLATED (3819): Check constraint 'chk_prescription_items_dispensed' is violated.",
+  "status": "Pass"
+ },
+ {
+  "id": "T12",
+  "operation": "Tamper with the audit log",
+  "input": "UPDATE audit_logs",
+  "expected": "Rejected by trigger",
+  "actual": "ER_SIGNAL_EXCEPTION (1644): audit_logs is append-only: rows cannot be updated",
+  "status": "Pass"
+ },
+ {
+  "id": "T13",
+  "operation": "Double booking",
+  "input": "Same doctor, date and time twice",
+  "expected": "Second refused with 409",
+  "actual": "HTTP 201 then 409: Double booking detected",
+  "status": "Pass"
+ }
+]

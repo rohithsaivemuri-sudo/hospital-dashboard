@@ -1,0 +1,15 @@
+\query{1}{Simple SELECT with conditions}{Medicines whose stock has fallen to or below their reorder level (the low-stock alert).}{q1}
+\query{2}{ORDER BY}{Available ICU and ventilator beds, ordered by ward and bed number (what the emergency desk looks at first).}{q2}
+\query{3}{Aggregates: COUNT, SUM, AVG, MIN, MAX}{Billing summary: how many bills, how much billed and paid, and the smallest, average and largest bill.}{q3}
+\query{4}{GROUP BY with HAVING}{Departments that have more than one doctor, with their doctor count and combined capacity.}{q4}
+\query{5}{INNER JOIN}{Today's appointments with patient and doctor names; the department comes from the doctor through the view v\_appointments.}{q5}
+\query{6}{LEFT JOIN}{Every doctor with the number of ACTIVE admissions they hold, including doctors with none (LEFT JOIN keeps them, COUNT gives 0).}{q6}
+\query{7}{Self join (another join type)}{Pairs of doctors who share a specialization: the doctors table joined to itself.}{q7}
+\query{8}{Nested query (subquery in WHERE)}{Medicines priced above the average price of all medicines.}{q8}
+\query{9}{Correlated subquery}{Each admitted patient with the time of their latest vital-signs reading (NULL: not taken yet). The subquery runs once per admission.}{q9}
+\query{10}{IN and EXISTS}{Patients with an ACTIVE admission (EXISTS) who also have a lab order that is not yet completed (IN).}{q10}
+\query{11}{ALL and ANY}{Medicines dearer than every antibiotic (> ALL), and antacids dearer than at least one antiplatelet (> ANY).}{q11}
+\query{12}{Multiple tables (five-table join)}{Current inpatients with ward, bed, admitting doctor and department.}{q12}
+\query{13}{Business question: bed occupancy}{Occupancy by bed type: how full is the hospital? (CASE inside SUM.)}{q13}
+\query{14}{Business question: stock that expires soonest}{For each medicine with stock, its usable quantity and next expiry, from the batches (view v\_current\_stock).}{q14}
+\query{15}{View}{The view current\_admissions\_view joins admissions with patients, doctors, beds, wards and departments; callers select from it like a table.}{q15}

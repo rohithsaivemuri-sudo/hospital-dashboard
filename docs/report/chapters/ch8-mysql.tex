@@ -1,0 +1,104 @@
+\chapter{MySQL Database Implementation}
+All outputs in this chapter are real: they were produced on \tbl{hospital\_db\_test}, a database built from the seed
+data and every migration (same schema as \tbl{hospital\_db}, checked by a schema-diff script). Statements that change
+data were run inside a transaction that was then rolled back.
+
+\section{Database Creation}
+The schema is built by numbered migration files (\path{database/migrations/000} to \path{023}), applied in order by
+\path{server/scripts/migrate.js}, which backs up the database first and records each file in
+\tbl{schema\_migrations}. The database and the restricted account the application runs as:
+\begin{lstlisting}[caption={Creating the database and the application's restricted account}]
+CREATE DATABASE hospital_db CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+CREATE USER 'hospital_app'@'127.0.0.1' IDENTIFIED BY RANDOM PASSWORD;
+GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON `hospital_db`.* TO 'hospital_app'@'127.0.0.1';
+\end{lstlisting}
+The application account cannot create, alter or drop tables or triggers; migrations use a separate administrative account.
+
+\section{Table Creation}
+Six key tables are shown below, exactly as MySQL reports them (\tbl{SHOW CREATE TABLE}); all 33 are in the complete
+script (Appendix~A).
+
+\lstinputlisting[caption={\tbl{patients}: unique ABHA number with a format CHECK}]{generated/create-patients.sql}
+\lstinputlisting[caption={\tbl{encounters}: the visit, with its 1:1 link to an appointment and the parent key used by consistency keys}]{generated/create-encounters.sql}
+\lstinputlisting[caption={\tbl{admissions}: five foreign keys with RESTRICT, SET NULL and a composite parent key}]{generated/create-admissions.sql}
+\lstinputlisting[caption={\tbl{prescription\_items}: structured dosing and the dispensed CHECK}]{generated/create-prescription_items.sql}
+\lstinputlisting[caption={\tbl{medicine\_batches}: a weak entity (UNIQUE owner + batch number)}]{generated/create-medicine_batches.sql}
+\lstinputlisting[caption={\tbl{bill\_items}: the generated total and CASCADE from its bill}]{generated/create-bill_items.sql}
+
+\section{Data Insertion}
+\begin{lstlisting}[caption={Inserting a patient and a bill line (results below)}]
+INSERT INTO patients (name, date_of_birth, gender, blood_group, phone, abha_number)
+VALUES ('Meera Iyer', '1992-07-14', 'FEMALE', 'B+', '9810012345', '12345678901234');
+INSERT INTO bill_items (bill_id, description, category, quantity, unit_price)
+VALUES (1, 'Dressing change', 'PROCEDURE', 3, 150.00);
+\end{lstlisting}
+\textbf{Result:} 1 row each. The patient got \tbl{patient\_id = 37}. The bill line got \tbl{total\_price = 450.00}
+without the statement supplying it (generated column). The seed data (\tbl{database/seed.sql}) inserts 17 staff
+accounts, 12 doctors, 9 departments, 6 wards, 35 beds, 32 patients, 22 medicines, 15 lab tests and their activity.
+
+\section{Data Modification and Deletion}
+\begin{lstlisting}[caption={UPDATE and DELETE, including a cascade and a refused delete (results below)}]
+UPDATE bill_items SET quantity = 4 WHERE item_id = 20;
+UPDATE beds SET status = 'MAINTENANCE' WHERE bed_id = 1 AND status = 'AVAILABLE';
+DELETE FROM bills WHERE bill_id = 1;          -- its bill_items go with it (ON DELETE CASCADE)
+DELETE FROM patients WHERE patient_id = 1;    -- refused: the patient is referenced (RESTRICT)
+\end{lstlisting}
+\textbf{Results:} the bill line's total became 600.00 (4 $\times$ 150.00); bed GEN-A01 became MAINTENANCE (1 row);
+deleting bill 1 removed 1 bill and its 8 items (8 $\to$ 0); deleting patient 1 failed with
+\tbl{ER\_ROW\_IS\_REFERENCED\_2 (1451)}: foreign key \tbl{bed\_assignment\_log\_ibfk\_2} (\tbl{ON DELETE RESTRICT}).
+
+\section{Sample Database Contents}
+\begin{table}[H]\centering
+\caption{Sample contents of \tbl{patients}, \tbl{departments} and beds per ward (\tbl{SELECT} on the test database)}\label{tab:sample}
+\input{generated/demo-patients.tex}\hfill\input{generated/demo-departments.tex}\hfill\input{generated/demo-beds.tex}
+\end{table}
+
+\section{SQL Query Implementation}
+The fifteen queries below cover the ten required kinds, and most are the queries the application itself runs or
+reports on. Each gives its SQL, purpose and real output.
+\input{generated/queries.tex}
+
+\section{Advanced DBMS Features}
+\textbf{Views (10).} \tbl{v\_appointments} returns appointments with the department taken from the doctor
+(Section~6.3), so reads keep their columns after the decomposition; \tbl{v\_current\_stock} shows each medicine's
+total, usable and expired quantities and next expiry from its batches (Query~14); \tbl{current\_admissions\_view}
+(Query~15), \tbl{available\_beds\_view}, \tbl{bed\_status\_summary\_view}, \tbl{hospital\_occupancy\_view},
+\tbl{available\_doctors\_view}, \tbl{doctor\_workload\_view}, \tbl{emergency\_queue\_view} and
+\tbl{pending\_bills\_view} give reporting summaries.
+
+\textbf{Triggers (7).} \tbl{after\_admission\_insert} (Listing~\ref{lst:trigger}) and \tbl{after\_admission\_discharge}
+keep beds, doctor workload and the bed history in step with admissions;
+\tbl{after\_prescription\_dispense} takes a dispensed quantity off \tbl{medicines.stock\_quantity};
+\tbl{before\_medicine\_stock\_update} refuses a negative total; \tbl{audit\_logs\_no\_update} and
+\tbl{audit\_logs\_no\_delete} make the audit log append-only; \tbl{after\_bed\_assignment\_log} is an empty
+placeholder from the original schema.
+\lstinputlisting[caption={Trigger \tbl{after\_admission\_insert} (since migration 020, workload counts only ACTIVE admissions)},label={lst:trigger}]{generated/trigger-admission.sql}
+
+\textbf{Stored procedures (5)}, from the original schema: \tbl{sp\_admit\_patient}, \tbl{sp\_discharge\_patient},
+\tbl{sp\_allocate\_emergency}, \tbl{sp\_generate\_bill} and \tbl{sp\_get\_emergency\_queue}.
+
+\textbf{Transactions and locking.} Every change runs in a transaction (\tbl{withTransaction} in
+\tbl{server/utils/audit.js}): the change and its audit row commit together or not at all. InnoDB runs at REPEATABLE
+READ, and operations that read a value and then change it lock the rows first (\tbl{SELECT \dots{} FOR UPDATE}).
+To prevent deadlocks, rows are always locked in the same order. Dispensing, for example, locks the prescription,
+then its medicines in ascending id, then each medicine's batches by expiry date:
+\begin{lstlisting}[caption={Lock order in one dispensing transaction (\tbl{dispenseService})}]
+START TRANSACTION;
+SELECT status, patient_id FROM prescriptions WHERE prescription_id = ? FOR UPDATE;
+SELECT medicine_id, stock_quantity FROM medicines WHERE medicine_id = ? FOR UPDATE;  -- each, ascending id
+SELECT batch_id, quantity, expiry_date FROM medicine_batches
+WHERE medicine_id = ? AND quantity > 0 AND expiry_date >= CURDATE()
+ORDER BY expiry_date, batch_id FOR UPDATE;                                          -- first expiry first out
+UPDATE prescription_items SET dispensed = TRUE, dispensed_at = NOW()
+WHERE item_id IN (?) AND dispensed = FALSE;              -- trigger after_prescription_dispense lowers the total
+UPDATE medicine_batches SET quantity = quantity - ? WHERE batch_id = ?;                -- each batch taken
+INSERT INTO prescription_item_batches (item_id, batch_id, quantity) VALUES (?, ?, ?);
+INSERT INTO pharmacy_stock_movements (medicine_id, movement_type, quantity, reason, reference_id, performed_by, batch_id)
+VALUES (?, 'DISPENSE', ?, 'Dispense Prescription', ?, ?, ?);
+UPDATE prescriptions SET status = 'DISPENSED' WHERE prescription_id = ?;
+COMMIT;
+\end{lstlisting}
+The stress test runs 300 rounds of competing prescribing and dispensing on the same two medicines in opposite
+orders, and 300 rounds of mixed writers: 0 deadlocks, and every medicine's total equals the sum of its batches.
+Bed allocation locks the chosen bed and then the doctor (\tbl{FOR UPDATE}), so two clerks cannot give the same
+last ICU bed to two patients.

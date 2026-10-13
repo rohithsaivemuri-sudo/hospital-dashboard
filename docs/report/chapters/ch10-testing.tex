@@ -1,0 +1,41 @@
+\chapter{Testing and Results}
+
+\section{Test Cases}
+Each case was run against the API and database of the test environment; the actual result is the response or
+MySQL error that came back.
+
+{\scriptsize\setlength{\tabcolsep}{3pt}
+\begin{longtable}{@{}R{0.55cm}R{2.2cm}R{3.6cm}R{2.3cm}R{6.9cm}R{0.6cm}@{}}
+\caption{Test cases with their actual results}\label{tab:tests}\\
+\toprule
+\textbf{Test ID} & \textbf{Operation} & \textbf{Input} & \textbf{Expected Result} & \textbf{Actual Result} & \textbf{Status} \\\midrule\endfirsthead
+\toprule\textbf{ID} & \textbf{Operation} & \textbf{Input} & \textbf{Expected} & \textbf{Actual} & \textbf{Status} \\\midrule\endhead
+\rows{generated/test-cases.tex}
+\bottomrule
+\end{longtable}}
+
+\section{Query Testing}
+Each query of Section~8.6 was run on the test database and its output checked against the data. For example, the bed
+totals agree (35 beds both by type in Query~13 and by ward in Table~\ref{tab:sample}), Query~6's LEFT JOIN
+returns doctors with no active admission as 0 rather than dropping them, and Query~11's \tbl{> ALL} returns exactly
+the medicines dearer than the most expensive antibiotic (25.00). The automated suite also tests the application's
+own queries: for instance, that a doctor's patient list contains only patients in their care, and that every
+medicine's total equals the sum of its batches after each stock test.
+
+\section{Constraint Testing}
+Cases T2 to T4, T6, T11 and T12 show the database refusing invalid data on its own (duplicate key, missing parent,
+negative stock, duplicate ABHA, a dispense time without the flag, editing the audit log). T10 shows a composite
+foreign key and the matching API check refusing a bill whose patient differs from its admission's patient.
+The server suite contains a test for every constraint added in this work, run on the database itself.
+
+\section{Results and Discussion}
+\begin{itemize}
+\item \textbf{Server suite:} 282 tests in 42 files (\texttt{node:test}) against a server on \tbl{hospital\_db\_test}, which is rebuilt from the migrations for every run: all pass.
+\item \textbf{Browser suite:} 121 tests in 29 files (Puppeteer) driving every role's screens: all pass.
+\item \textbf{Stress test:} 300 rounds of competing prescribing and dispensing, and 300 rounds of mixed writers: 0 deadlocks, stock consistent.
+\item \textbf{Patient journey:} 13 steps from registration to discharge across five roles (every role but laboratory): all pass, locally and against the deployed site.
+\end{itemize}
+One defect was found while preparing this report: \tbl{POST /api/patients} answers HTTP 500 instead of saving
+when the request omits the optional fields (blood group, phone, address, emergency contact), because the missing
+values reach MySQL as \texttt{undefined}. The registration form always sends them, so users are not affected; it is
+listed as a limitation and was not changed for this report.

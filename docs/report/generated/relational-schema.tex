@@ -1,0 +1,33 @@
+\relation{patients}{\underline{patient\_id}, name, date\_of\_birth, dob\_estimated, gender, blood\_group, phone, address, emergency\_contact, created\_at, updated\_at, allergies, abha\_number}{(abha\_number)}
+\relation{appointments}{\underline{appointment\_id}, \fk{patient\_id}{}, \fk{doctor\_id}{}, appointment\_date, appointment\_time, status, reason, notes, created\_at, updated\_at}{(doctor\_id, appointment\_date, appointment\_time)}
+\relation{encounters}{\underline{encounter\_id}, \fk{patient\_id}{}, \fk{doctor\_id}{}, \fk{appointment\_id}{}, \fk{admission\_id}{}, encounter\_type, status, arrived\_at, triaged\_at, start\_timestamp, end\_timestamp, \fk{created\_by}{users}, backfilled\_from, created\_at, updated\_at}{(appointment\_id); (backfilled\_from)}
+\relation{consultations}{\underline{consultation\_id}, \fk{appointment\_id}{}, \fk{patient\_id}{}, \fk{doctor\_id}{}, \fk{admission\_id}{}, symptoms, diagnosis, assessment, plan, notes, consultation\_time, created\_at, \fk{encounter\_id}{}}{}
+\relation{vital\_signs}{\underline{vital\_id}, \fk{patient\_id}{}, \fk{encounter\_id}{}, \fk{admission\_id}{}, recorded\_at\_utc, \fk{recorded\_by}{users}, temperature\_c, pulse\_bpm, resp\_rate, bp\_systolic, bp\_diastolic, spo2\_pct, pain\_score, notes, created\_at}{}
+\relation{surgery\_requests}{\underline{request\_id}, \fk{patient\_id}{}, \fk{doctor\_id}{}, procedure\_name, diagnosis, priority, requested\_date, status, notes, created\_at, updated\_at, \fk{encounter\_id}{}}{}
+\relation{departments}{\underline{department\_id}, name, description, floor, phone, is\_active}{(name)}
+\relation{wards}{\underline{ward\_id}, name, \fk{department\_id}{}, floor, capacity, ward\_type}{}
+\relation{beds}{\underline{bed\_id}, \fk{ward\_id}{}, bed\_number, bed\_type, status, has\_ventilator}{(ward\_id, bed\_number)}
+\relation{admissions}{\underline{admission\_id}, \fk{patient\_id}{}, \fk{doctor\_id}{}, \fk{bed\_id}{}, \fk{department\_id}{}, \fk{emergency\_id}{}, admission\_date, discharge\_date, status, diagnosis, notes, created\_at, updated\_at}{}
+\relation{bed\_assignment\_log}{\underline{log\_id}, \fk{bed\_id}{}, \fk{patient\_id}{}, \fk{admission\_id}{}, assigned\_at, released\_at, status}{}
+\relation{emergency\_cases}{\underline{emergency\_id}, \fk{patient\_id}{}, \fk{ambulance\_id}{}, severity, symptoms, arrival\_time, required\_specialization, required\_bed\_type, ventilator\_required, status, \fk{assigned\_doctor\_id}{doctors}, \fk{assigned\_bed\_id}{beds}, notes, created\_at, updated\_at}{}
+\relation{ambulances}{\underline{ambulance\_id}, vehicle\_number, driver\_name, driver\_phone, current\_location, status}{(vehicle\_number)}
+\relation{medicines}{\underline{medicine\_id}, name, category, manufacturer, stock\_quantity, reorder\_level, unit\_price, expiry\_date, requires\_prescription, created\_at, updated\_at}{}
+\relation{medicine\_batches}{\underline{batch\_id}, \fk{medicine\_id}{}, batch\_number, quantity, expiry\_date, received\_date, \fk{received\_by}{users}, created\_at, updated\_at}{(medicine\_id, batch\_number)}
+\relation{prescriptions}{\underline{prescription\_id}, \fk{consultation\_id}{}, \fk{patient\_id}{}, \fk{doctor\_id}{}, prescription\_date, status, notes, created\_at, \fk{encounter\_id}{}, \fk{admission\_id}{}}{}
+\relation{prescription\_items}{\underline{item\_id}, \fk{prescription\_id}{}, \fk{medicine\_id}{}, dosage, frequency, duration, quantity, dispensed, dispensed\_at, frequency\_code, duration\_days, route, units\_per\_dose}{}
+\relation{prescription\_item\_batches}{\underline{id}, \fk{item\_id}{}, \fk{batch\_id}{}, quantity, created\_at}{(item\_id, batch\_id)}
+\relation{pharmacy\_stock\_movements}{\underline{movement\_id}, \fk{medicine\_id}{}, movement\_type, quantity, reason, notes, \fk{performed\_by}{users}, created\_at, reference\_id, \fk{batch\_id}{}}{}
+\relation{medication\_administrations}{\underline{administration\_id}, \fk{prescription\_item\_id}{prescription\_items}, \fk{admission\_id}{}, scheduled\_at\_utc, status, administered\_at\_utc, dose\_given, route\_given, reason, \fk{recorded\_by}{users}, recorded\_at\_utc, created\_at, updated\_at}{(prescription\_item\_id, scheduled\_at\_utc)}
+\relation{lab\_tests}{\underline{test\_id}, name, category, \fk{department\_id}{}, normal\_range, unit, cost, reference\_low, reference\_high, critical\_low, critical\_high}{}
+\relation{lab\_orders}{\underline{order\_id}, \fk{consultation\_id}{}, \fk{patient\_id}{}, \fk{doctor\_id}{}, \fk{test\_id}{}, order\_date, status, priority, notes, created\_at, updated\_at, \fk{encounter\_id}{}, \fk{admission\_id}{}}{}
+\relation{lab\_results}{\underline{result\_id}, \fk{order\_id}{}, result\_value, unit, reference\_range, interpretation, result\_date, technician\_notes, \fk{performed\_by}{users}, reviewed\_by\_doctor, reviewed\_at, created\_at, numeric\_value, reference\_low, reference\_high, interpretation\_source}{(order\_id)}
+\relation{lab\_result\_attachments}{\underline{attachment\_id}, \fk{result\_id}{}, original\_filename, stored\_filename, mime\_type, file\_size, \fk{uploaded\_by}{users}, uploaded\_at}{(stored\_filename)}
+\relation{users}{\underline{user\_id}, username, password\_hash, role, full\_name, email, phone, is\_active, created\_at, updated\_at}{(email); (username)}
+\relation{doctors}{\underline{doctor\_id}, \fk{user\_id}{}, \fk{department\_id}{}, name, specialization, phone, status, shift, current\_workload, max\_workload, created\_at, updated\_at}{(user\_id)}
+\relation{doctor\_schedules}{\underline{schedule\_id}, \fk{doctor\_id}{}, day\_of\_week, start\_time, end\_time, is\_available}{(doctor\_id, day\_of\_week, start\_time)}
+\relation{doctor\_daily\_analytics}{\underline{analytics\_id}, \fk{doctor\_id}{}, analytics\_date, patients\_seen, emergency\_cases, appointment\_patients, patients\_treated, cases\_solved, cases\_postponed, cases\_cancelled, cases\_pending, created\_at, updated\_at}{(doctor\_id, analytics\_date)}
+\relation{nurse\_ward\_assignments}{\underline{assignment\_id}, \fk{nurse\_user\_id}{users}, \fk{ward\_id}{}, start\_date, end\_date, \fk{assigned\_by}{users}, created\_at, updated\_at}{}
+\relation{bills}{\underline{bill\_id}, \fk{patient\_id}{}, \fk{admission\_id}{}, bill\_date, total\_amount, paid\_amount, status, payment\_method, notes, created\_at, updated\_at}{}
+\relation{bill\_items}{\underline{item\_id}, \fk{bill\_id}{}, description, category, quantity, unit\_price, total\_price\gen, created\_at}{}
+\relation{audit\_logs}{\underline{audit\_id}, \fk{user\_id}{}, role, action, entity\_type, entity\_id, patient\_id, outcome, status\_code, method, path, ip\_address, details, created\_at}{}
+\relation{schema\_migrations}{\underline{version}, applied\_at, note}{}

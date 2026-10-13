@@ -1,0 +1,22 @@
+% Full legend of the Chen notation used in Figures 3.2 to 3.11.
+\begin{tikzpicture}[x=1cm,y=1cm, every node/.append style={}]
+  \def\row#1#2#3{\node[anchor=west, font=\footnotesize] at (#1+2.35, #2) {#3};}
+  % column 1
+  \node[ent] at (1,0) {PATIENT};                         \row{0}{0}{Entity (strong): own primary key}
+  \node[weakent] at (1,-0.9) {BED};                      \row{0}{-0.9}{Weak entity: identified only with its owner}
+  \node[refent] at (1,-1.85) {DOCTOR\\[-1pt]{\tiny see Module 6}}; \row{0}{-1.85}{Entity drawn in another module (reference)}
+  \node[rel] at (1,-2.85) {BOOKS};                       \row{0}{-2.85}{Relationship}
+  \node[idrel] at (1,-3.8) {HAS\_BED};                   \row{0}{-3.8}{Identifying relationship of a weak entity}
+  \node[att] at (1,-4.6) {name};                         \row{0}{-4.6}{Attribute}
+  \node[att] at (1,-5.3) {\underline{patient\_id}};      \row{0}{-5.3}{Key attribute (underlined)}
+  % column 2
+  \node[att] at (9.0,0) {\dashuline{bed\_number}};       \row{8.4}{0}{Partial key of a weak entity (dashed underline)}
+  \node[att] (c) at (9.0,-0.75) {blood\_pressure};
+  \node[att] (c1) at (8.3,-1.45) {bp\_systolic}; \node[att] (c2) at (9.7,-1.45) {bp\_diastolic}; \draw (c)--(c1) (c)--(c2);
+                                                          \row{8.4}{-1.05}{Composite attribute and its components}
+  \node[att,double,double distance=0.8pt] at (9.0,-2.25) {allergies}; \row{8.4}{-2.25}{Multivalued attribute (double ellipse)}
+  \node[att,dashed] at (9.0,-3.0) {age};                 \row{8.4}{-3.0}{Derived attribute (dashed ellipse)}
+  \draw[total] (8.2,-3.75) -- (9.8,-3.75);              \row{8.4}{-3.75}{Total participation: every instance takes part}
+  \draw[partial] (8.2,-4.5) -- (9.8,-4.5);              \row{8.4}{-4.5}{Partial participation: some instances take part}
+  \draw[partial] (8.2,-5.3) -- node[card,pos=0.2]{1} node[card,pos=0.8]{N} (9.8,-5.3); \row{8.4}{-5.3}{Cardinality written at each end: 1:1, 1:N, M:N}
+\end{tikzpicture}

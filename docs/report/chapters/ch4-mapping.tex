@@ -1,0 +1,40 @@
+\chapter{ER-to-Relational Mapping}
+
+\section{Mapping Rules}
+The standard rules were applied, with one project-wide convention: every entity gets a surrogate integer
+primary key (\tbl{AUTO\_INCREMENT}), and natural identifiers become UNIQUE keys. Names, phone numbers and batch
+numbers are not reliable identifiers, and narrow integer keys keep foreign keys and InnoDB's clustered index small.
+\begin{enumerate}
+\item \textbf{Strong entity} $\to$ a table with its simple attributes; its key becomes the primary key.
+\item \textbf{Weak entity} $\to$ a table holding the owner's key as a foreign key (NOT NULL) plus the partial key; (owner key, partial key) is a UNIQUE key. A surrogate primary key is added.
+\item \textbf{1:1} $\to$ the foreign key goes on the side that may be missing, with a UNIQUE constraint.
+\item \textbf{1:N} $\to$ the foreign key goes on the N side; NOT NULL when the N side's participation is total.
+\item \textbf{M:N and ternary} $\to$ a new table with a foreign key to each participant and the relationship's attributes.
+\item \textbf{Composite attribute} $\to$ its components become columns. \textbf{Multivalued attribute} $\to$ a separate table (owner key, value), or (as here, Section~4.2) one column when the value is never searched element by element. \textbf{Derived attribute} $\to$ not stored, or a generated column, or a stored copy kept up to date.
+\end{enumerate}
+
+\section{Step-by-Step Conversion}
+\begin{tabularx}{\textwidth}{@{}R{3.1cm}Y@{}}
+\toprule
+\textbf{ER construct} & \textbf{Relation in hospital\_db (real example)} \\\midrule
+Strong entity & PATIENT $\to$ \tbl{patients(\underline{patient\_id}, name, date\_of\_birth, gender, \dots, abha\_number)}; ABHA becomes UNIQUE \tbl{uq\_patients\_abha}. Likewise for the 25 other strong entities. \\
+Weak entity & BED (owner WARD) $\to$ \tbl{beds(\underline{bed\_id}, ward\_id\textsuperscript{FK}, bed\_number, \dots)} with UNIQUE (\tbl{ward\_id, bed\_number}); MEDICINE\_BATCH $\to$ \tbl{medicine\_batches} with UNIQUE (\tbl{medicine\_id, batch\_number}); DOCTOR\_SCHEDULE and DAILY\_ANALYTICS likewise, with ON DELETE CASCADE from \tbl{doctors}. \\
+1:1 & \textsc{becomes}: \tbl{encounters.appointment\_id} (NULL for walk-ins) with UNIQUE \tbl{uq\_encounters\_appointment}; \textsc{is\_doctor}: \tbl{doctors.user\_id} NOT NULL UNIQUE (\tbl{uq\_doctors\_user\_id}); \textsc{yields}: \tbl{lab\_results.order\_id} NOT NULL UNIQUE. \\
+1:N & \textsc{books}: \tbl{appointments.patient\_id} NOT NULL (total); \textsc{carries}: \tbl{emergency\_cases.ambulance\_id} NULL (partial). 64 relationships are mapped this way. \\
+M:N with attribute & \textsc{filled\_from} $\to$ \tbl{prescription\_item\_batches(\underline{id}, item\_id\textsuperscript{FK}, batch\_id\textsuperscript{FK}, quantity)}, UNIQUE (\tbl{item\_id, batch\_id}). \\
+Ternary with attributes & \textsc{occupies} $\to$ \tbl{bed\_assignment\_log(\underline{log\_id}, bed\_id\textsuperscript{FK}, patient\_id\textsuperscript{FK}, admission\_id\textsuperscript{FK}, assigned\_at, released\_at, status)}. \\
+Composite & \emph{blood\_pressure} $\to$ \tbl{bp\_systolic, bp\_diastolic} (CHECK: both or neither, systolic > diastolic); \emph{slot} $\to$ \tbl{appointment\_date, appointment\_time}. \\
+Multivalued & \emph{allergies} is stored as one text column \tbl{patients.allergies}: the application only displays it on the chart and never queries one allergy, so a separate \tbl{patient\_allergies} table was not created (a limitation, Section~11.2). \\
+Derived & \emph{age}: not stored, computed as \tbl{TIMESTAMPDIFF(YEAR, date\_of\_birth, CURDATE())}; \emph{total\_price}: generated column \tbl{quantity * unit\_price}; \emph{stock\_quantity}, \emph{total\_amount}, \emph{current\_workload}: stored copies kept equal by transactions and triggers (Section~6.6). \\
+\bottomrule
+\end{tabularx}
+
+\section{Final Relational Schema}
+All 33 relations, with columns in table order. \underline{Underlined}: primary key. \textit{Italic}\textsuperscript{FK}:
+foreign key (with its target when the name does not say it). \textsuperscript{G}: generated column. \textsc{uk}: other
+candidate keys (UNIQUE). Not shown: the 15 composite consistency keys of Section~6.5, which re-check pairs of
+these foreign keys.
+
+\begin{footnotesize}
+\input{generated/relational-schema.tex}
+\end{footnotesize}
