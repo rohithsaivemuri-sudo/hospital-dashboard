@@ -4,6 +4,7 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
 const { diagnoseFailures, login, db, closeDb, open, call, tokenOf } = require('./lib/harness');
+const { daysFromToday } = require('./lib/dates');
 
 let browser, page, patient, patel;
 diagnoseFailures(() => page);
@@ -45,8 +46,7 @@ test('find the patient by name, pick the doctor from the list, and book', async 
   assert.match(rowText, new RegExp(`${patel.current_workload} of ${patel.max_workload} patients`));
   await (await doctorRow.$('input[type="radio"]')).click();
 
-  const d = new Date(Date.now() + 3 * 864e5);
-  const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const date = daysFromToday(3);
   await setValue('input[name="date"]', date);
   await setValue('input[name="time"]', '11:45');
   const [res] = await Promise.all([

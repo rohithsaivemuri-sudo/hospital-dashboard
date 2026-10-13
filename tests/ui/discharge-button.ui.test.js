@@ -4,6 +4,7 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
 const { diagnoseFailures, login, db, closeDb, open, call, tokenOf } = require('./lib/harness');
+const { daysFromToday } = require('./lib/dates');
 
 let browser, page, patient, admission;
 diagnoseFailures(() => page);
@@ -13,7 +14,7 @@ before(async () => {
   const [[bed]] = await (await db()).query("SELECT b.bed_id FROM beds b JOIN wards w ON w.ward_id = b.ward_id WHERE w.name = 'ICU Ward' AND b.status = 'AVAILABLE' ORDER BY b.bed_id LIMIT 1");
   admission = (await call('POST', '/admissions', rec, { patient_id: patient, doctor_id: 1, bed_id: bed.bed_id, department_id: 1, diagnosis: 'Discharge button' })).body.data.id;
   const [[patel]] = await (await db()).query("SELECT d.doctor_id FROM doctors d JOIN users u ON u.user_id = d.user_id WHERE u.username = 'dr.patel'");
-  const d = new Date(Date.now() + 864e5); const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const iso = daysFromToday(1);
   await call('POST', '/appointments', rec, { patient_id: patient, doctor_id: patel.doctor_id, appointment_date: iso, appointment_time: '09:05:00' }); // dr.patel's patient too
   browser = await launch();
 });

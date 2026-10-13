@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { launch, violations } = require('./lib/readable');
 const { diagnoseFailures, APP, login, db, closeDb, open } = require('./lib/harness');
+const { today } = require('./lib/dates');
 
 let browser, page;
 diagnoseFailures(() => page);
@@ -63,9 +64,7 @@ test('the time is taken when the link is clicked', async () => {
     a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
     return a.href;
   });
-  const now = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  assert.ok(params(href).time.startsWith(`${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`), href);
+  assert.ok(params(href).time.startsWith(today()) && params(href).time.endsWith('(UTC+05:30)'), href); // the browser runs in IST
   assert.ok(!href.includes('stale'));
 });
 

@@ -4,10 +4,11 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
 const { diagnoseFailures, login, db, closeDb, open, call, tokenOf } = require('./lib/harness');
+const { today } = require('./lib/dates');
 
 let browser, page, admission, encounter;
 diagnoseFailures(() => page);
-const d = new Date(); const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const iso = today();
 before(async () => {
   const rec = await tokenOf('reception1');
   const [[joshi]] = await (await db()).query("SELECT d.doctor_id, d.department_id FROM doctors d JOIN users u ON u.user_id = d.user_id WHERE u.username = 'dr.joshi'");

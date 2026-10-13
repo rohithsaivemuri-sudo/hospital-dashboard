@@ -6,14 +6,13 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
 const { diagnoseFailures, login, db, closeDb, open, call, tokenOf, clickButton, selectOption, waitForText } = require('./lib/harness');
+const { today, daysFromToday, ageOn } = require('./lib/dates');
 
 let browser, page;
 diagnoseFailures(() => page);
 const stamp = Date.now().toString(36);
 const NAME = `Journey Patient ${stamp}`;
-const now = new Date();
-const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const TODAY = iso(now);
+const TODAY = today();
 const j = {}; // patient, encounters, admission, bed, patel
 
 before(async () => {
@@ -56,10 +55,10 @@ test('reception registers the patient: a future date of birth is refused [14]; t
   await go('/patients/new');
   await page.type('input[name="name"]', NAME);
   assert.deepEqual(await page.$eval('input[name="date_of_birth"]', el => [el.value, el.required]), ['', true], '[age] starts empty and required');
-  await setValue('input[name="date_of_birth"]', iso(new Date(Date.now() + 3 * 864e5)));
+  await setValue('input[name="date_of_birth"]', daysFromToday(3));
   await waitForText(page, 'Date of birth cannot be in the future');
   await setValue('input[name="date_of_birth"]', '1984-04-14');
-  const age = now.getFullYear() - 1984 - (TODAY.slice(5) < '04-14' ? 1 : 0);
+  const age = ageOn('1984-04-14');
   assert.equal(await text('[data-testid="age-preview"]'), `Age: ${age} yrs`, '[age] shown as soon as the date is entered');
   await page.select('select[name="gender"]', 'FEMALE');
   await Promise.all([page.waitForNavigation(), page.click('form button[type="submit"]')]);

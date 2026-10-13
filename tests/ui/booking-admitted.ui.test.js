@@ -4,6 +4,7 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
 const { diagnoseFailures, login, db, closeDb, open, call, tokenOf } = require('./lib/harness');
+const { daysFromToday } = require('./lib/dates');
 
 let browser, page, patient, admission, bed, requests = 0;
 diagnoseFailures(() => page);
@@ -36,8 +37,7 @@ test('selecting an admitted patient shows where they are admitted, and the booki
   assert.ok(text.includes(`${bed.ward} · Bed ${bed.bed_number}`) && text.includes('Dr. John Smith'), text);
 
   await (await page.waitForSelector('[data-testid="doctor-option"] input[type="radio"]')).click();
-  const d = new Date(Date.now() + 2 * 864e5);
-  await setValue('input[name="date"]', `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+  await setValue('input[name="date"]', daysFromToday(2));
   await setValue('input[name="time"]', '10:35');
   await page.click('form button[type="submit"]');
   await new Promise(r => setTimeout(r, 500));

@@ -5,7 +5,7 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
-const { USERS, LAB_REPORT_DIR, api, rawRequest, login, db, closeDb } = require('./helpers');
+const { USERS, LAB_REPORT_DIR, api, rawRequest, login, db, closeDb, visitInProgress } = require('./helpers');
 const { todayIst, addDays } = require('../utils/clock');
 
 after(closeDb);
@@ -296,7 +296,11 @@ test('doctors can change only their own availability status', async () => {
 // ---------------------------------------------------------------- data the screens need
 test('pharmacy prescription list and detail include patient name, age and allergies', async () => {
   await db().query("UPDATE patients SET allergies = 'Penicillin' WHERE patient_id = ?", [P]);
+  // Prescriptions are filed under a visit in progress. The visit is left open: P must keep an open
+  // visit for the nurse-scope tests below.
+  await visitInProgress(doctor, P);
   const rx = await api('POST', '/prescriptions', { token: doctor.token, body: { patient_id: P, doctor_id: doctor.user.doctor_id, items: [{ medicine_id: 1, dosage: '1 tablet', frequency: 'x', duration: '1', quantity: 1 }] } });
+  assert.equal(rx.status, 201, JSON.stringify(rx.body));
   const id = rx.body.data.id;
   const [[p]] = await db().query('SELECT name, TIMESTAMPDIFF(YEAR, date_of_birth, ?) age FROM patients WHERE patient_id = ?', [todayIst(), P]);
 

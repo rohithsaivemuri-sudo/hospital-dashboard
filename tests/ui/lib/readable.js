@@ -77,6 +77,7 @@ function journal(page) {
 
 async function guard(page) {
   journal(page);
+  await page.emulateTimezone('Asia/Kolkata'); // the hospital's browsers are in India, whatever this machine's zone
   require('./harness').pendingApi(page); // start tracking API requests before the first navigation
   await page.exposeFunction('__reportUnreadable', (info) => {
     violations.push(info);

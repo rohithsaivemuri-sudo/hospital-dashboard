@@ -4,19 +4,19 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
 const { diagnoseFailures, login, db, closeDb, open, call, tokenOf } = require('./lib/harness');
+const { today, daysFromToday } = require('./lib/dates');
 
 let browser, page, openId, futureDay;
 diagnoseFailures(() => page);
-const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 before(async () => {
   const rec = await tokenOf('reception1');
   const [[d]] = await (await db()).query("SELECT d.doctor_id FROM doctors d JOIN users u ON u.user_id = d.user_id WHERE u.username = 'dr.das'");
   const [ps] = await (await db()).query(`SELECT patient_id FROM patients WHERE patient_id NOT IN (SELECT patient_id FROM encounters WHERE status IN ('ARRIVED','TRIAGED','IN_PROGRESS'))
     AND patient_id NOT IN (SELECT patient_id FROM admissions WHERE status = 'ACTIVE') ORDER BY patient_id DESC LIMIT 3`);
   const book = async (p, date, time) => (await call('POST', '/appointments', rec, { patient_id: p, doctor_id: d.doctor_id, appointment_date: date, appointment_time: time })).body.data.id;
-  openId = await book(ps[0].patient_id, iso(new Date(Date.now() - 3 * 864e5)), '09:35:00');
+  openId = await book(ps[0].patient_id, daysFromToday(-3), '09:35:00');
   await call('POST', '/encounters', rec, { appointment_id: openId });
-  futureDay = iso(new Date(Date.now() + 11 * 864e5));
+  futureDay = daysFromToday(11);
   await book(ps[1].patient_id, futureDay, '16:50:00');
   await book(ps[2].patient_id, futureDay, '08:25:00');
   browser = await launch();
@@ -30,7 +30,7 @@ const rows = (sel) => page.$$eval(sel, rs => rs.map(r => [...r.cells].map(c => c
 test('defaults to today, with times without seconds and statuses in plain words', async () => {
   await open(page, '/appointments');
   await page.waitForSelector('input[name="appointment-date"]');
-  assert.equal(await page.$eval('input[name="appointment-date"]', el => el.value), iso(new Date()));
+  assert.equal(await page.$eval('input[name="appointment-date"]', el => el.value), today());
   const text = await page.$eval('[data-testid="appointments-day"]', el => el.innerText);
   assert.ok(!/\b\d{2}:\d{2}:\d{2}\b/.test(text), 'no seconds');
   assert.ok(!/\b(BOOKED|CHECKED_IN|IN_PROGRESS|COMPLETED|NO_SHOW|CANCELLED|ARRIVED|TRIAGED|FINISHED)\b/.test(text), 'no raw status codes');

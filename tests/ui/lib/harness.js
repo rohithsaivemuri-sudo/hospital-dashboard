@@ -11,6 +11,7 @@ const ROOT = path.join(__dirname, '..', '..', '..');
 const mysql = require(path.join(ROOT, 'server', 'node_modules', 'mysql2', 'promise'));
 require(path.join(ROOT, 'server', 'node_modules', 'dotenv')).config({ path: path.join(ROOT, 'server', '.env') });
 const { adminCredentials } = require(path.join(ROOT, 'server', 'scripts', 'lib', 'admin-credentials'));
+const { UTC_OPTIONS, utcSession } = require(path.join(ROOT, 'server', 'config', 'dbTime'));
 
 const APP_PORT = Number(process.env.UI_APP_PORT || 5174);
 const API_PORT = Number(process.env.UI_API_PORT || 5100);
@@ -48,9 +49,10 @@ async function login(page, username) {
 
 let connection;
 async function db() {
-  if (!connection) connection = await mysql.createConnection(LIVE
+  // UTC like the app (server/config/dbTime.js), so NOW() here matches what the server writes.
+  if (!connection) connection = await utcSession(await mysql.createConnection({ ...(LIVE
     ? { host: process.env.UI_DB_HOST || '127.0.0.1', port: Number(process.env.UI_DB_PORT || 3306), user: process.env.UI_DB_USER, password: process.env.UI_DB_PASSWORD, database: TEST_DB }
-    : { host: process.env.DB_HOST, port: process.env.DB_PORT || 3306, ...adminCredentials(), database: TEST_DB });
+    : { host: process.env.DB_HOST, port: process.env.DB_PORT || 3306, ...adminCredentials(), database: TEST_DB }), ...UTC_OPTIONS }));
   return connection;
 }
 // Orders need a visit in progress (or an admission). Starts one for the doctor with the patient
