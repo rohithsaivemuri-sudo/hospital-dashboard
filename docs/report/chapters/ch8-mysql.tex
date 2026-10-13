@@ -4,7 +4,7 @@ data and every migration (same schema as \tbl{hospital\_db}, checked by a schema
 data were run inside a transaction that was then rolled back.
 
 \section{Database Creation}
-The schema is built by numbered migration files (\path{database/migrations/000} to \path{023}), applied in order by
+The schema is built by numbered migration files (\path{database/migrations/000} to \path{025}), applied in order by
 \path{server/scripts/migrate.js}, which backs up the database first and records each file in
 \tbl{schema\_migrations}. The database and the restricted account the application runs as:
 \begin{lstlisting}[caption={Creating the database and the application's restricted account}]
@@ -32,7 +32,7 @@ VALUES ('Meera Iyer', '1992-07-14', 'FEMALE', 'B+', '9810012345', '1234567890123
 INSERT INTO bill_items (bill_id, description, category, quantity, unit_price)
 VALUES (1, 'Dressing change', 'PROCEDURE', 3, 150.00);
 \end{lstlisting}
-\textbf{Result:} 1 row each. The patient got \tbl{patient\_id = 37}. The bill line got \tbl{total\_price = 450.00}
+\textbf{Result:} 1 row each. The patient got \tbl{patient\_id = 33}. The bill line got \tbl{total\_price = 450.00}
 without the statement supplying it (generated column). The seed data (\tbl{database/seed.sql}) inserts 17 staff
 accounts, 12 doctors, 9 departments, 6 wards, 35 beds, 32 patients, 22 medicines, 15 lab tests and their activity.
 
@@ -61,7 +61,7 @@ reports on. Each gives its SQL, purpose and real output.
 \section{Advanced DBMS Features}
 \textbf{Views (10).} \tbl{v\_appointments} returns appointments with the department taken from the doctor
 (Section~6.3), so reads keep their columns after the decomposition; \tbl{v\_current\_stock} shows each medicine's
-total, usable and expired quantities and next expiry from its batches (Query~14); \tbl{current\_admissions\_view}
+total, usable and expired quantities and next expiry from its batches (Query~14), with ``today'' taken as the date in India (migration 024); \tbl{current\_admissions\_view}
 (Query~15), \tbl{available\_beds\_view}, \tbl{bed\_status\_summary\_view}, \tbl{hospital\_occupancy\_view},
 \tbl{available\_doctors\_view}, \tbl{doctor\_workload\_view}, \tbl{emergency\_queue\_view} and
 \tbl{pending\_bills\_view} give reporting summaries.
@@ -87,7 +87,7 @@ START TRANSACTION;
 SELECT status, patient_id FROM prescriptions WHERE prescription_id = ? FOR UPDATE;
 SELECT medicine_id, stock_quantity FROM medicines WHERE medicine_id = ? FOR UPDATE;  -- each, ascending id
 SELECT batch_id, quantity, expiry_date FROM medicine_batches
-WHERE medicine_id = ? AND quantity > 0 AND expiry_date >= CURDATE()
+WHERE medicine_id = ? AND quantity > 0 AND expiry_date >= ?    -- today's date in India
 ORDER BY expiry_date, batch_id FOR UPDATE;                                          -- first expiry first out
 UPDATE prescription_items SET dispensed = TRUE, dispensed_at = NOW()
 WHERE item_id IN (?) AND dispensed = FALSE;              -- trigger after_prescription_dispense lowers the total

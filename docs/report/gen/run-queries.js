@@ -24,14 +24,14 @@ FROM doctors doc JOIN departments dep ON dep.department_id = doc.department_id
 GROUP BY dep.department_id, dep.name
 HAVING COUNT(*) > 1
 ORDER BY doctors DESC, department;` },
- { id: 'q5', cat: 'INNER JOIN', purpose: "Today's appointments with patient and doctor names; the department comes from the doctor through the view v_appointments.",
+ { id: 'q5', cat: 'INNER JOIN', purpose: "Today's appointments with patient and doctor names; the department comes from the doctor through the view v_appointments. Today is the date in India: UTC plus 5 h 30 min, whatever the server's time zone (the application passes the same date as a parameter).",
    sql: `SELECT a.appointment_time, p.name AS patient, d.name AS doctor,
        dep.name AS department, a.status
 FROM v_appointments a
 INNER JOIN patients p     ON p.patient_id = a.patient_id
 INNER JOIN doctors d      ON d.doctor_id = a.doctor_id
 INNER JOIN departments dep ON dep.department_id = a.department_id
-WHERE a.appointment_date = CURDATE()
+WHERE a.appointment_date = DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE)
 ORDER BY a.appointment_time;` },
  { id: 'q6', cat: 'LEFT JOIN', purpose: 'Every doctor with the number of ACTIVE admissions they hold, including doctors with none (LEFT JOIN keeps them, COUNT gives 0).',
    sql: `SELECT d.name, d.current_workload, d.max_workload,

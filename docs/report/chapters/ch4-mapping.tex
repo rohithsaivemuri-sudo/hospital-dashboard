@@ -25,7 +25,7 @@ M:N with attribute & \textsc{filled\_from} $\to$ \tbl{prescription\_item\_batche
 Ternary with attributes & \textsc{occupies} $\to$ \tbl{bed\_assignment\_log(\underline{log\_id}, bed\_id\textsuperscript{FK}, patient\_id\textsuperscript{FK}, admission\_id\textsuperscript{FK}, assigned\_at, released\_at, status)}. \\
 Composite & \emph{blood\_pressure} $\to$ \tbl{bp\_systolic, bp\_diastolic} (CHECK: both or neither, systolic > diastolic); \emph{slot} $\to$ \tbl{appointment\_date, appointment\_time}. \\
 Multivalued & \emph{allergies} is stored as one text column \tbl{patients.allergies}: the application only displays it on the chart and never queries one allergy, so a separate \tbl{patient\_allergies} table was not created (a limitation, Section~11.2). \\
-Derived & \emph{age}: not stored, computed as \tbl{TIMESTAMPDIFF(YEAR, date\_of\_birth, CURDATE())}; \emph{total\_price}: generated column \tbl{quantity * unit\_price}; \emph{stock\_quantity}, \emph{total\_amount}, \emph{current\_workload}: stored copies kept equal by transactions and triggers (Section~6.6). \\
+Derived & \emph{age}: not stored, computed as \tbl{TIMESTAMPDIFF(YEAR, date\_of\_birth, ?)} with today's date in India as the parameter; \emph{total\_price}: generated column \tbl{quantity * unit\_price}; \emph{stock\_quantity}, \emph{total\_amount}, \emph{current\_workload}: stored copies kept equal by transactions and triggers (Section~6.6). \\
 \bottomrule
 \end{tabularx}
 

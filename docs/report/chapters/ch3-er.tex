@@ -4,7 +4,7 @@
 The model has 30 entity types in six modules. Each becomes one table (Chapter 4); the two M:N and
 ternary relationships with attributes become the other two tables, and \tbl{schema\_migrations} records applied
 schema versions and is not part of the domain. Table~\ref{tab:entities} lists every entity with its identifier;
-the diagrams show each entity's principal attributes, and Section~4.3 lists all 341 columns.
+the diagrams show each entity's principal attributes, and Section~4.3 lists all 342 columns.
 Four entities are \textbf{weak} (Section~3.4).
 
 {\scriptsize
@@ -159,7 +159,7 @@ six records an admission can cover (Modules 1, 2 and 4) and billing: a BILL is \
 \textbf{Module 6, Staff and audit} (Figures~\ref{fig:m6a}, \ref{fig:m6b}). A USER account \textsc{is\_doctor} for at
 most one DOCTOR (1:1; every doctor has an account). A doctor \textsc{works\_in} one DEPARTMENT and has
 DOCTOR\_SCHEDULE slots and DAILY\_ANALYTICS rows (both weak). A WARD\_ASSIGNMENT joins a nurse
-(\textsc{nurse\_of}, total) to a ward (\textsc{covers}, total) for a period, and records the administrator who
-\textsc{assigns} it. Every AUDIT\_LOG row \textsc{logs} the user who acted, when known (failed logins have none).
+(\textsc{nurse\_of}, total) to a ward (\textsc{covers}, total) for a period of days, ended early at the moment an
+administrator ends it (\emph{ended\_at}), and records the administrator who \textsc{assigns} it. Every AUDIT\_LOG row \textsc{logs} the user who acted, when known (failed logins have none).
 Figure~\ref{fig:m6b} gathers, for DOCTOR and USER, every relationship that enters them from Modules~1 to~5, so the
 two pages of Module~6 together show all 15 links of these two entities.

@@ -8,7 +8,11 @@ const APP = 'http://localhost:5174';
 (async () => {
   const c = await mysql.createConnection({ host: process.env.DB_HOST, port: process.env.DB_PORT, user: process.env.DB_ADMIN_USER, password: process.env.DB_ADMIN_PASSWORD, database: 'hospital_db_test' });
   const [[db]] = await c.query('SELECT DATABASE() d'); if (db.d !== 'hospital_db_test') throw new Error('not the test db');
-  const [[journey]] = await c.query('SELECT patient_id FROM patients ORDER BY patient_id DESC LIMIT 1');
+  // Dr. Smith's patient with the most visits, notes and orders (in his care, so the chart opens).
+  const [[journey]] = await c.query(`SELECT r.patient_id FROM (
+      SELECT patient_id FROM encounters WHERE doctor_id = d.doctor_id UNION ALL SELECT patient_id FROM consultations WHERE doctor_id = d.doctor_id
+      UNION ALL SELECT patient_id FROM lab_orders WHERE doctor_id = d.doctor_id UNION ALL SELECT patient_id FROM prescriptions WHERE doctor_id = d.doctor_id
+    ) r GROUP BY r.patient_id ORDER BY COUNT(*) DESC, r.patient_id LIMIT 1`.replaceAll('d.doctor_id', "(SELECT d.doctor_id FROM doctors d JOIN users u ON u.user_id = d.user_id WHERE u.username = 'dr.smith')"));
   const [[mar]] = await c.query("SELECT patient_id FROM prescriptions WHERE notes = 'Demo MAR seed (migration 008)'");
   await c.end();
   const shots = [
@@ -30,6 +34,7 @@ const APP = 'http://localhost:5174';
   for (const [user, path, name] of shots) {
     const ctx = await browser.createBrowserContext();
     const page = await ctx.newPage();
+    await page.emulateTimezone('Asia/Kolkata'); // as the hospital's browsers
     await page.setViewport({ width: 1366, height: 820, deviceScaleFactor: 1.5 });
     if (user) {
       await page.goto(`${APP}/login`);

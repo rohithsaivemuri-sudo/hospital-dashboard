@@ -36,6 +36,10 @@ The API has 24 routers under \texttt{/api}. They map to the ER modules:
 \begin{itemize}
 \item \textbf{Pool:} \texttt{server/config/db.js} creates a \texttt{mysql2} connection pool (20 connections) from
 \texttt{server/.env}. All SQL uses placeholders (\texttt{?}), so user input is never spliced into a statement.
+\item \textbf{Time:} every connection stores and reads date-times in UTC (\texttt{SET time\_zone = '+00:00'}),
+whatever the time zone of the MySQL server or the API process. ``Today'' (today's appointments, ages, expiry, who is
+on a ward) is the date in India, decided by the API (\texttt{server/utils/clock.js}) and passed to SQL as a
+parameter, never \texttt{CURDATE()}.
 \item \textbf{Restricted account:} the running API connects as \texttt{hospital\_app}, which can read and write rows
 and call procedures but cannot change the schema; migrations use a separate administrative account.
 \item \textbf{Transactions:} \texttt{withTransaction(req, fn)} takes a connection, begins a transaction, runs the
@@ -74,7 +78,11 @@ Dispense (pharmacy) & Listing in Section~8.7: locks, \tbl{UPDATE} items and batc
 Admit, discharge (doctor) & \tbl{INSERT INTO admissions} / \tbl{UPDATE admissions SET status = 'DISCHARGED'}; triggers update the bed, the workload and \tbl{bed\_assignment\_log} \\
 Edit a patient's details & \tbl{UPDATE patients}; the audit row names the changed fields, never their values \\
 Cancel a prescription & \tbl{UPDATE prescriptions SET status = 'CANCELLED'}; pending doses \tbl{UPDATE medication\_administrations SET status = 'CANCELLED'} \\
+Assign a nurse to a ward (admin) & \tbl{SELECT \dots{} FOR UPDATE} on the nurse's account, then on any assignment sharing a day (409 if one exists); \tbl{INSERT INTO nurse\_ward\_assignments} \\
+End an assignment & \tbl{UPDATE nurse\_ward\_assignments SET end\_date = ?, ended\_at = ?}: the nurse loses the ward at once \\
+Cancel an assignment not yet started & \tbl{DELETE FROM nurse\_ward\_assignments}, refused (409) once it has started \\
 \bottomrule
 \end{tabularx}}
-Rows are not deleted through the application: clinical records are kept, and corrections are recorded as new states
-(for example a visit marked ENTERED\_IN\_ERROR), which the audit log requires.
+Clinical records are not deleted through the application: they are kept, and corrections are recorded as new
+states (for example a visit marked ENTERED\_IN\_ERROR), which the audit log requires. The one delete is cancelling a
+nurse assignment before its first day, which never gave access to anything; the audit log keeps its dates.

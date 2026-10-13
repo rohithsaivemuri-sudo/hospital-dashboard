@@ -3,7 +3,7 @@ T2 & Duplicate key & users.username = 'admin' (exists) & Rejected by UNIQUE & ER
 T3 & Invalid foreign key & lab\_orders.test\_id = 9999 (no such test) & Rejected by FOREIGN KEY & ER\_NO\_REFERENCED\_ROW\_2 (1452): FK fails (constraint lab\_orders\_ibfk\_4) & Pass \\
 T4 & Negative stock & medicines.stock\_quantity = -5 & Rejected (trigger and CHECK) & ER\_SIGNAL\_EXCEPTION (1644): Error: Medicine stock cannot be negative. & Pass \\
 T5 & Future date of birth & date\_of\_birth = 2026-11-12 & Rejected with 400 & HTTP 400: Date of birth cannot be in the future & Pass \\
-T6 & Duplicate ABHA number & Second patient with the same 14-digit ABHA & Rejected with 409 & HTTP 201 then 409: ABHA number 91-0000-0062-3238 is already registered to another patient & Pass \\
+T6 & Duplicate ABHA number & Second patient with the same 14-digit ABHA & Rejected with 409 & HTTP 201 then 409: ABHA number 91-0000-0098-3116 is already registered to another patient & Pass \\
 T7 & Double dispense & Dispense prescription 2 again (already DISPENSED) & Rejected, stock unchanged & HTTP 409: Prescription is not available for dispensing & Pass \\
 T8 & Cross-role access & Receptionist reads a patient's clinical history & Refused with 403 & HTTP 403: Forbidden: this is available to doctors, nurses only & Pass \\
 T9 & Wrong role for an action & Doctor tries to dispense a prescription & Refused with 403 & HTTP 403: Forbidden: this is available to pharmacy staff only & Pass \\

@@ -44,7 +44,7 @@
   "operation": "Duplicate ABHA number",
   "input": "Second patient with the same 14-digit ABHA",
   "expected": "Rejected with 409",
-  "actual": "HTTP 201 then 409: ABHA number 91-0000-0062-3238 is already registered to another patient",
+  "actual": "HTTP 201 then 409: ABHA number 91-0000-0098-3116 is already registered to another patient",
   "status": "Pass"
  },
  {

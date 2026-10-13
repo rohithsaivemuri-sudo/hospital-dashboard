@@ -2,7 +2,7 @@
 \query{2}{ORDER BY}{Available ICU and ventilator beds, ordered by ward and bed number (what the emergency desk looks at first).}{q2}
 \query{3}{Aggregates: COUNT, SUM, AVG, MIN, MAX}{Billing summary: how many bills, how much billed and paid, and the smallest, average and largest bill.}{q3}
 \query{4}{GROUP BY with HAVING}{Departments that have more than one doctor, with their doctor count and combined capacity.}{q4}
-\query{5}{INNER JOIN}{Today's appointments with patient and doctor names; the department comes from the doctor through the view v\_appointments.}{q5}
+\query{5}{INNER JOIN}{Today's appointments with patient and doctor names; the department comes from the doctor through the view v\_appointments. Today is the date in India: UTC plus 5 h 30 min, whatever the server's time zone (the application passes the same date as a parameter).}{q5}
 \query{6}{LEFT JOIN}{Every doctor with the number of ACTIVE admissions they hold, including doctors with none (LEFT JOIN keeps them, COUNT gives 0).}{q6}
 \query{7}{Self join (another join type)}{Pairs of doctors who share a specialization: the doctors table joined to itself.}{q7}
 \query{8}{Nested query (subquery in WHERE)}{Medicines priced above the average price of all medicines.}{q8}

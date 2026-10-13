@@ -1,7 +1,7 @@
 \chapter{Complete MySQL Script}
 The complete script is supplied as a separate file with this report: \textbf{\texttt{docs/report/hospital\_db\_full.sql}}
 (about 130 KB). It was exported with \texttt{mysqldump} from a database built from \texttt{database/seed.sql} and
-migrations 000--023, the same schema as \texttt{hospital\_db}, and contains, in order:
+migrations 000--025, the same schema as \texttt{hospital\_db}, and contains, in order:
 \begin{itemize}
 \item \texttt{CREATE DATABASE hospital\_db} (utf8mb4) and \texttt{USE hospital\_db};
 \item the 33 \texttt{CREATE TABLE} statements with every primary key, foreign key (including the 15 composite consistency keys), UNIQUE key, CHECK constraint, index and the generated column;
