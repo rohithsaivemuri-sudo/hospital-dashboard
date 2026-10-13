@@ -40,7 +40,7 @@ DROP PROCEDURE mig003_add_allergies;
 -- Seed: the demo nurse covers the ICU and General Ward B from today, so the Nurse Station is never empty.
 START TRANSACTION;
 INSERT INTO nurse_ward_assignments (nurse_user_id, ward_id, start_date)
-SELECT u.user_id, w.ward_id, CURDATE()
+SELECT u.user_id, w.ward_id, DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE) -- today in India
 FROM users u
 JOIN wards w ON w.name IN ('ICU Ward', 'General Ward B')
 WHERE u.username = 'nurse1' AND u.role = 'NURSE'
