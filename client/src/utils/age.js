@@ -1,4 +1,4 @@
-import { calendarDate, istToday } from './istDate';
+import { calendarDate, istToday } from './istDate.js';
 
 // Age shown to staff, counted on today's date in India whatever the browser's time zone. Dates of
 // birth arrive as "YYYY-MM-DD" (forms) or as UTC-midnight ISO timestamps (MySQL DATE values); both
