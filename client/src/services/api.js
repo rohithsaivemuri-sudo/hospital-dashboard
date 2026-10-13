@@ -119,6 +119,7 @@ export const getNurseStation = () => api.get('/nurse/station');
 export const getNurseAssignments = () => api.get('/nurse-assignments');
 export const createNurseAssignment = (data) => api.post('/nurse-assignments', data);
 export const endNurseAssignment = (id, data = {}) => api.put(`/nurse-assignments/${id}`, data);
+export const cancelNurseAssignment = (id) => api.delete(`/nurse-assignments/${id}`);
 export const getWards = () => api.get('/wards');
 
 // Medication administration record
@@ -163,7 +164,7 @@ export default {
   getEncounterQueue, checkInAppointment, encounterAction,
   getPatientMar, administerDose, refuseDose, missDose, giveAsNeeded, cancelPrescription,
   getUsers, registerUser, deactivateUser, reactivateUser,
-  getNurseStation, getNurseAssignments, createNurseAssignment, endNurseAssignment, getWards,
+  getNurseStation, getNurseAssignments, createNurseAssignment, endNurseAssignment, cancelNurseAssignment, getWards,
   getPatientAdmissions, getPatientAppointments,
   createSurgeryRequest,
   getBills, getBill, createBill, addBillItem, payBill, generateBill

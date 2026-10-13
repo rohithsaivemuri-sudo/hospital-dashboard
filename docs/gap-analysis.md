@@ -182,7 +182,7 @@ Changes from the proposal, per the confirmation:
 Also added:
 - GET /users, plus PUT /users/:id/deactivate and /reactivate (AD; not on yourself). Deactivated tokens are rejected immediately.
 - GET /nurse/station (NU).
-- GET/POST/PUT /nurse-assignments (AD; NU reads own).
+- GET/POST/PUT/DELETE /nurse-assignments (AD; NU reads own). DELETE cancels an assignment that has not started yet.
 
 Route gates live in `server/routes/*.js` (`authorize`). Patient scope (DR\*, NU\*) lives in `server/utils/patientAccess.js`. `server/tests/rbac.test.js` checks every route against every role.
 AD=Admin, DR=Doctor (care set), NU=Nurse (assigned), RC=Reception, LB=Lab, PH=Pharmacy.

@@ -46,6 +46,7 @@ const matrix = () => [
   ['GET', '/nurse-assignments', [AD, NU]],
   ['POST', '/nurse-assignments', [AD], {}],
   ['PUT', '/nurse-assignments/999999', [AD], {}],
+  ['DELETE', '/nurse-assignments/999999', [AD]],
   ['GET', '/nurse/station', [NU]],
 
   ['GET', '/patients', STAFF],

@@ -18,15 +18,22 @@ const ASSIGNMENT_VIEW = `
   JOIN users u ON u.user_id = a.nurse_user_id
   JOIN wards w ON w.ward_id = a.ward_id`;
 
+// status on `today` (IST): UPCOMING (not started yet; can be cancelled), CURRENT or ENDED.
+function present(row, today) {
+  const status = today < row.start_date ? 'UPCOMING' : row.end_date && row.end_date < today ? 'ENDED' : 'CURRENT';
+  return { ...row, is_current: status === 'CURRENT', status };
+}
+
 // GET /api/nurse-assignments — admins see all; nurses see their own.
 exports.listAssignments = async (req, res) => {
   try {
     const own = req.user.role === 'NURSE';
+    const today = todayIst();
     const [rows] = await pool.execute(
-      `${ASSIGNMENT_VIEW} ${own ? 'WHERE a.nurse_user_id = ?' : ''} ORDER BY is_current DESC, u.full_name, w.name`,
-      own ? [todayIst(), req.user.user_id] : [todayIst()]
+      `${ASSIGNMENT_VIEW} ${own ? 'WHERE a.nurse_user_id = ?' : ''} ORDER BY is_current DESC, a.start_date > ? DESC, u.full_name, w.name`,
+      own ? [today, req.user.user_id, today] : [today, today]
     );
-    res.json({ success: true, data: rows.map(r => ({ ...r, is_current: Boolean(r.is_current) })) });
+    res.json({ success: true, data: rows.map(r => present(r, today)) });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 
@@ -41,17 +48,22 @@ exports.createAssignment = async (req, res) => {
     if (end_date && end_date < start) return res.status(400).json({ success: false, message: 'end_date cannot be before start_date' });
 
     const result = await withTransaction(req, async (connection, audit) => {
-      const [[nurse]] = await connection.execute('SELECT user_id, role, is_active FROM users WHERE user_id = ?', [nurse_user_id]);
+      // Locking the nurse's account row serialises assignment changes for that nurse, so two
+      // overlapping requests at the same moment cannot both pass the overlap check below.
+      const [[nurse]] = await connection.execute('SELECT user_id, role, is_active FROM users WHERE user_id = ? FOR UPDATE', [nurse_user_id]);
       if (!nurse || nurse.role !== 'NURSE') return { status: 400, message: 'That user is not a nurse' };
       if (!nurse.is_active) return { status: 400, message: 'That nurse account is deactivated' };
       const [[ward]] = await connection.execute('SELECT ward_id FROM wards WHERE ward_id = ?', [ward_id]);
       if (!ward) return { status: 400, message: 'Ward not found' };
+      // Overlap: any day in common with an existing assignment of this nurse to this ward (dates
+      // inclusive; no end date = open-ended).
       const [[overlap]] = await connection.execute(
-        `SELECT assignment_id FROM nurse_ward_assignments WHERE nurse_user_id = ? AND ward_id = ?
-         AND (end_date IS NULL OR end_date >= ?) AND (? IS NULL OR start_date <= ?) FOR UPDATE`,
+        `SELECT assignment_id, DATE_FORMAT(start_date, '%d/%m/%Y') AS from_day, DATE_FORMAT(end_date, '%d/%m/%Y') AS until_day
+         FROM nurse_ward_assignments WHERE nurse_user_id = ? AND ward_id = ?
+         AND (end_date IS NULL OR end_date >= ?) AND (? IS NULL OR start_date <= ?) LIMIT 1 FOR UPDATE`, // locking read: sees rows committed while we waited
         [nurse_user_id, ward_id, start, end_date || null, end_date || null]
       );
-      if (overlap) return { status: 409, message: `This nurse already has an overlapping assignment to this ward (#${overlap.assignment_id})` };
+      if (overlap) return { status: 409, message: `This nurse is already assigned to this ward for some of those days (from ${overlap.from_day}${overlap.until_day ? ` until ${overlap.until_day}` : ', ongoing'}, #${overlap.assignment_id})` };
       const [ins] = await connection.execute(
         'INSERT INTO nurse_ward_assignments (nurse_user_id, ward_id, start_date, end_date, assigned_by) VALUES (?, ?, ?, ?, ?)',
         [nurse_user_id, ward_id, start, end_date || null, req.user.user_id]
@@ -60,8 +72,9 @@ exports.createAssignment = async (req, res) => {
       return { status: 201, id: ins.insertId };
     });
     if (result.status !== 201) return res.status(result.status).json({ success: false, message: result.message });
-    const [[row]] = await pool.execute(`${ASSIGNMENT_VIEW} WHERE a.assignment_id = ?`, [todayIst(), result.id]);
-    res.status(201).json({ success: true, data: { ...row, is_current: Boolean(row.is_current) } });
+    const today = todayIst();
+    const [[row]] = await pool.execute(`${ASSIGNMENT_VIEW} WHERE a.assignment_id = ?`, [today, result.id]);
+    res.status(201).json({ success: true, data: present(row, today) });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 
@@ -89,8 +102,30 @@ exports.endAssignment = async (req, res) => {
       return { status: 200 };
     });
     if (result.status !== 200) return res.status(result.status).json({ success: false, message: result.message });
-    const [[row]] = await pool.execute(`${ASSIGNMENT_VIEW} WHERE a.assignment_id = ?`, [todayIst(), req.params.id]);
-    res.json({ success: true, data: { ...row, is_current: Boolean(row.is_current) } });
+    const today = todayIst();
+    const [[row]] = await pool.execute(`${ASSIGNMENT_VIEW} WHERE a.assignment_id = ?`, [today, req.params.id]);
+    res.json({ success: true, data: present(row, today) });
+  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+};
+
+// DELETE /api/nurse-assignments/:id (ADMIN) — cancels an assignment that has not started yet
+// (starts after today, IST). One that has started is ended instead (PUT), which keeps its history.
+exports.cancelAssignment = async (req, res) => {
+  try {
+    if (!isId(req.params.id)) return res.status(400).json({ success: false, message: 'Invalid assignment id' });
+    const result = await withTransaction(req, async (connection, audit) => {
+      const [[a]] = await connection.execute(
+        `SELECT assignment_id, nurse_user_id, ward_id, DATE_FORMAT(start_date, '%Y-%m-%d') AS start_date, DATE_FORMAT(end_date, '%Y-%m-%d') AS end_date
+         FROM nurse_ward_assignments WHERE assignment_id = ? FOR UPDATE`, [req.params.id]);
+      if (!a) return { status: 404, message: 'Assignment not found' };
+      if (a.start_date <= todayIst()) return { status: 409, message: 'This assignment has already started; end it instead of cancelling it' };
+      await connection.execute('DELETE FROM nurse_ward_assignments WHERE assignment_id = ?', [a.assignment_id]);
+      await audit({ action: 'CANCEL_NURSE_ASSIGNMENT', entityType: 'nurse_ward_assignment', entityId: a.assignment_id,
+        details: { nurse_user_id: a.nurse_user_id, ward_id: a.ward_id, start_date: a.start_date, end_date: a.end_date } });
+      return { status: 200 };
+    });
+    if (result.status !== 200) return res.status(result.status).json({ success: false, message: result.message });
+    res.json({ success: true, data: { assignment_id: Number(req.params.id) } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 
