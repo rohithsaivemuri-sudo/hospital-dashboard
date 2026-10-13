@@ -130,11 +130,11 @@
  {
   "id": "q5",
   "cat": "INNER JOIN",
-  "purpose": "Today's appointments with patient and doctor names; the department comes from the doctor through the view v_appointments. Today is the date in India: UTC plus 5 h 30 min, whatever the server's time zone (the application passes the same date as a parameter).",
-  "sql": "SELECT a.appointment_time, p.name AS patient, d.name AS doctor,\n       dep.name AS department, a.status\nFROM v_appointments a\nINNER JOIN patients p     ON p.patient_id = a.patient_id\nINNER JOIN doctors d      ON d.doctor_id = a.doctor_id\nINNER JOIN departments dep ON dep.department_id = a.department_id\nWHERE a.appointment_date = DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE)\nORDER BY a.appointment_time;",
+  "purpose": "Today's appointments with patient and doctor names; the department comes from the doctor through the view v_appointments.",
+  "sql": "SELECT a.appointment_time, p.name AS patient, d.name AS doctor,\n       dep.name AS department, a.status\nFROM v_appointments a\nINNER JOIN patients p     ON p.patient_id = a.patient_id\nINNER JOIN doctors d      ON d.doctor_id = a.doctor_id\nINNER JOIN departments dep ON dep.department_id = a.department_id\nWHERE a.appointment_date = CURDATE()\nORDER BY a.appointment_time;",
   "results": [
    {
-    "count": 7,
+    "count": 9,
     "cols": [
      "appointment_time",
      "patient",
@@ -191,6 +191,13 @@
       "doctor": "Dr. Vikram Sharma",
       "department": "Orthopedics",
       "status": "BOOKED"
+     },
+     {
+      "appointment_time": "23:20:00",
+      "patient": "Journey Patient mv6rtsi0",
+      "doctor": "Dr. John Smith",
+      "department": "Cardiology",
+      "status": "COMPLETED"
      }
     ]
    }
@@ -343,32 +350,32 @@
     "rows": [
      {
       "name": "Shruti Menon",
-      "admission_date": "2026-10-13 14:23:01",
+      "admission_date": "2026-10-13 13:53:17",
       "last_vitals_utc": null
      },
      {
       "name": "Arjun Nair",
-      "admission_date": "2026-10-12 20:23:01",
+      "admission_date": "2026-10-12 19:53:17",
       "last_vitals_utc": null
      },
      {
       "name": "Rajendra Mishra",
-      "admission_date": "2026-10-12 20:23:01",
+      "admission_date": "2026-10-12 19:53:17",
       "last_vitals_utc": null
      },
      {
       "name": "Deepak Choudhary",
-      "admission_date": "2026-10-12 20:23:01",
+      "admission_date": "2026-10-12 19:53:17",
       "last_vitals_utc": null
      },
      {
       "name": "Vihaan Reddy",
-      "admission_date": "2026-10-11 20:23:01",
+      "admission_date": "2026-10-11 19:53:17",
       "last_vitals_utc": null
      },
      {
       "name": "Tanvi Kapoor",
-      "admission_date": "2026-10-11 20:23:01",
+      "admission_date": "2026-10-11 19:53:17",
       "last_vitals_utc": null
      }
     ]

@@ -26,7 +26,7 @@
 \relation{doctors}{\underline{doctor\_id}, \fk{user\_id}{}, \fk{department\_id}{}, name, specialization, phone, status, shift, current\_workload, max\_workload, created\_at, updated\_at}{(user\_id)}
 \relation{doctor\_schedules}{\underline{schedule\_id}, \fk{doctor\_id}{}, day\_of\_week, start\_time, end\_time, is\_available}{(doctor\_id, day\_of\_week, start\_time)}
 \relation{doctor\_daily\_analytics}{\underline{analytics\_id}, \fk{doctor\_id}{}, analytics\_date, patients\_seen, emergency\_cases, appointment\_patients, patients\_treated, cases\_solved, cases\_postponed, cases\_cancelled, cases\_pending, created\_at, updated\_at}{(doctor\_id, analytics\_date)}
-\relation{nurse\_ward\_assignments}{\underline{assignment\_id}, \fk{nurse\_user\_id}{users}, \fk{ward\_id}{}, start\_date, end\_date, ended\_at, \fk{assigned\_by}{users}, created\_at, updated\_at}{}
+\relation{nurse\_ward\_assignments}{\underline{assignment\_id}, \fk{nurse\_user\_id}{users}, \fk{ward\_id}{}, start\_date, end\_date, \fk{assigned\_by}{users}, created\_at, updated\_at}{}
 \relation{bills}{\underline{bill\_id}, \fk{patient\_id}{}, \fk{admission\_id}{}, bill\_date, total\_amount, paid\_amount, status, payment\_method, notes, created\_at, updated\_at}{}
 \relation{bill\_items}{\underline{item\_id}, \fk{bill\_id}{}, description, category, quantity, unit\_price, total\_price\gen, created\_at}{}
 \relation{audit\_logs}{\underline{audit\_id}, \fk{user\_id}{}, role, action, entity\_type, entity\_id, patient\_id, outcome, status\_code, method, path, ip\_address, details, created\_at}{}

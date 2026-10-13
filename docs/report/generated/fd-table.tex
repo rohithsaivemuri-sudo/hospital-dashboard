@@ -26,7 +26,7 @@
 \texttt{doctors} & doctor\_id $\to$ all attributes; user\_id $\to$ doctor\_id & \{doctor\_id\}, \{user\_id\} & doctor\_id, user\_id & 10 \\
 \texttt{doctor\_schedules} & schedule\_id $\to$ all attributes; (doctor\_id, day\_of\_week, start\_time) $\to$ schedule\_id & \{schedule\_id\}, \{doctor\_id, day\_of\_week, start\_time\} & schedule\_id, doctor\_id, day\_of\_week, start\_time & 2 \\
 \texttt{doctor\_daily\_analytics} & analytics\_id $\to$ all attributes; (doctor\_id, analytics\_date) $\to$ analytics\_id & \{analytics\_id\}, \{doctor\_id, analytics\_date\} & analytics\_id, doctor\_id, analytics\_date & 10 \\
-\texttt{nurse\_ward\_assignments} & assignment\_id $\to$ all attributes & \{assignment\_id\} & assignment\_id & 8 \\
+\texttt{nurse\_ward\_assignments} & assignment\_id $\to$ all attributes & \{assignment\_id\} & assignment\_id & 7 \\
 \texttt{bills} & bill\_id $\to$ all attributes; admission\_id $\to$ patient\_id & \{bill\_id\} & bill\_id & 10 \\
 \texttt{bill\_items} & item\_id $\to$ all attributes & \{item\_id\} & item\_id & 7 \\
 \texttt{audit\_logs} & audit\_id $\to$ all attributes & \{audit\_id\} & audit\_id & 13 \\

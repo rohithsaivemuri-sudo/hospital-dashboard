@@ -40,7 +40,7 @@ const ENTITIES = {
   DEPARTMENT: { module: 6, table: 'departments', attrs: [['department_id', 'key'], ['name'], ['floor'], ['phone']] },
   DOCTOR_SCHEDULE: { module: 6, table: 'doctor_schedules', weak: true, attrs: [['day_of_week', 'partial'], ['start_time', 'partial'], ['end_time'], ['is_available']] },
   DAILY_ANALYTICS: { module: 6, table: 'doctor_daily_analytics', weak: true, attrs: [['analytics_date', 'partial'], ['patients_seen'], ['cases_pending']] },
-  WARD_ASSIGNMENT: { module: 6, table: 'nurse_ward_assignments', attrs: [['assignment_id', 'key'], ['start_date'], ['end_date'], ['ended_at']] },
+  WARD_ASSIGNMENT: { module: 6, table: 'nurse_ward_assignments', attrs: [['assignment_id', 'key'], ['start_date'], ['end_date']] },
   AUDIT_LOG: { module: 6, table: 'audit_logs', attrs: [['audit_id', 'key'], ['action'], ['outcome'], ['created_at'], ['details']] },
 };
 

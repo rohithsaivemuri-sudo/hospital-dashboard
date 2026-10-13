@@ -22,7 +22,7 @@ Every rule below is enforced by the schema or by the application code, as stated
 \toprule
 & \textbf{Rule} & \textbf{Enforced by} \\\midrule\endhead
 1 & Every patient has a unique MRN (the patient id); an ABHA number, when given, is 14 digits and unique. & PK \tbl{patients.patient\_id}; UNIQUE \tbl{uq\_patients\_abha}; CHECK \tbl{chk\_patients\_abha\_format} \\
-2 & A date of birth cannot be in the future (after today's date in India). & API validation (\tbl{POST/PUT /api/patients}, 400) \\
+2 & A date of birth cannot be in the future. & API validation (\tbl{POST/PUT /api/patients}, 400) \\
 3 & A doctor cannot be booked twice for the same date and time. & UNIQUE (\tbl{doctor\_id, appointment\_date, appointment\_time}) \\
 4 & A visit moves only ARRIVED $\to$ (TRIAGED) $\to$ IN\_PROGRESS $\to$ FINISHED; it can be CANCELLED before it starts or marked ENTERED\_IN\_ERROR before it finishes; its appointment's status follows it. & State machine in \tbl{utils/encounters.js}, in one transaction with the appointment row locked \\
 5 & A patient has at most one ACTIVE admission, and a bed holds at most one. & Locking reads (\tbl{SELECT \dots{} FOR UPDATE}) in the admission and emergency services; triggers mark the bed OCCUPIED / AVAILABLE \\
@@ -37,8 +37,7 @@ Every rule below is enforced by the schema or by the application code, as stated
 14 & Vital signs are within physiological ranges and belong to a visit or an admission. & Eleven CHECKs \tbl{chk\_vitals\_*} \\
 15 & Discharge is not before admission; a visit does not end before it starts. & CHECK \tbl{admissions\_chk\_1}, \tbl{chk\_encounters\_times} \\
 16 & A user account has at most one doctor profile. & UNIQUE \tbl{uq\_doctors\_user\_id} \\
-17 & Each action is limited to the roles that may perform it; a doctor sees only patients in their care, a nurse only those on the wards assigned to them at that moment. & \tbl{authorize(...)} middleware on every route; care-set check in \tbl{utils/patientAccess.js} \\
+17 & Each action is limited to the roles that may perform it; a doctor sees only patients in their care. & \tbl{authorize(...)} middleware on every route; care-set check in \tbl{utils/patientAccess.js} \\
 18 & The audit log can only grow. & Triggers \tbl{audit\_logs\_no\_update} and \tbl{audit\_logs\_no\_delete} \\
-19 & A nurse's assignments to one ward never share a day; an assignment ends no earlier than it starts and, once an administrator ends it, gives no access from that moment; one that has not started can be cancelled. & CHECK \tbl{chk\_nwa\_dates}, \tbl{chk\_nwa\_ended\_at}; overlap check after locking the nurse's account row (409) \\
 \bottomrule
 \end{longtable}}

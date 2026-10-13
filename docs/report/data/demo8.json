@@ -1,9 +1,9 @@
 {
  "insert": {
   "affected": 1,
-  "id": 33,
+  "id": 37,
   "row": {
-   "patient_id": 33,
+   "patient_id": 37,
    "name": "Meera Iyer",
    "date_of_birth": "1992-07-14",
    "gender": "FEMALE",

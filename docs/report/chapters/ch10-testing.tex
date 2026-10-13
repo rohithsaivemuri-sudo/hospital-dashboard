@@ -30,11 +30,10 @@ The server suite contains a test for every constraint added in this work, run on
 
 \section{Results and Discussion}
 \begin{itemize}
-\item \textbf{Server suite:} 303 tests in 46 files (\texttt{node:test}) against a server on \tbl{hospital\_db\_test}, which is rebuilt from the migrations for every run: all pass.
-\item \textbf{Time of day:} the same checks run against servers whose clocks read 00:30 IST (when the UTC date is still the day before) and 06:00 IST: nurse assignment status, a nurse's access, today's appointments and counts, ages and expiry agree at both times.
-\item \textbf{Browser suite:} 121 tests in 29 files (Puppeteer) driving every role's screens: all pass, with the test machine's time zone set to India, UTC and Los Angeles in turn.
+\item \textbf{Server suite:} 282 tests in 42 files (\texttt{node:test}) against a server on \tbl{hospital\_db\_test}, which is rebuilt from the migrations for every run: all pass.
+\item \textbf{Browser suite:} 121 tests in 29 files (Puppeteer) driving every role's screens: all pass.
 \item \textbf{Stress test:} 300 rounds of competing prescribing and dispensing, and 300 rounds of mixed writers: 0 deadlocks, stock consistent.
-\item \textbf{Patient journey:} 13 steps from registration to discharge across five roles (every role but laboratory): all pass locally.
+\item \textbf{Patient journey:} 13 steps from registration to discharge across five roles (every role but laboratory): all pass, locally and against the deployed site.
 \end{itemize}
 One defect was found while preparing this report: \tbl{POST /api/patients} answers HTTP 500 instead of saving
 when the request omits the optional fields (blood group, phone, address, emergency contact), because the missing

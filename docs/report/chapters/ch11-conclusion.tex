@@ -4,7 +4,7 @@
 The project models a hospital's operations as 30 entities and 69 relationships, maps them to 33 MySQL tables, and
 normalizes them: 24 tables are in BCNF, and the 9 that keep a copied value have that copy enforced by composite
 foreign keys or a CHECK constraint. The rules of the hospital live in the database (87 foreign keys, 23 unique keys,
-31 CHECKs, 7 triggers, row locking in a fixed order), and a role-based React and Express application uses it through
+30 CHECKs, 7 triggers, row locking in a fixed order), and a role-based React and Express application uses it through
 a restricted account. Automated tests confirm the behaviour, including under concurrency.
 
 \section{Limitations}

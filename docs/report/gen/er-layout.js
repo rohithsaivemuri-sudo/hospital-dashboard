@@ -234,7 +234,7 @@ diagrams['6a'] = {
   module: 6,
   entities: {
     USER: { at: [5.0, -3.4], attrs: { user_id: [2.4, -1.4], username: [4.2, -0.8], role: [6.0, -0.8], full_name: [7.6, -1.4], email: [2.2, -4.6] } },
-    WARD_ASSIGNMENT: { at: [13.2, -3.4], attrs: { assignment_id: [15.4, -1.4], start_date: [12.4, -1.0], end_date: [15.6, -4.6], ended_at: [16.4, -3.0] } },
+    WARD_ASSIGNMENT: { at: [13.2, -3.4], attrs: { assignment_id: [15.4, -1.4], start_date: [12.4, -1.0], end_date: [15.6, -4.6] } },
     AUDIT_LOG: { at: [2.4, -10.6], attrs: { audit_id: [0.9, -12.4], action: [2.4, -13.0], outcome: [4.0, -12.6], created_at: [0.9, -8.8], details: [4.4, -9.2 + 0.2] } },
     DOCTOR: { at: [7.8, -10.6], attrs: { doctor_id: [6.0, -8.6], specialization: [9.6, -8.6], shift: [5.2, -11.9], max_workload: [6.4, -12.9], current_workload: [11.2, -10.6] } },
     DEPARTMENT: { at: [13.2, -14.6], attrs: { department_id: [15.6, -13.2], name: [15.8, -14.4], floor: [15.6, -15.6], phone: [13.6, -16.6] } },

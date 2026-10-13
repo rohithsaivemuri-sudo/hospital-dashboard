@@ -256,7 +256,7 @@
    "name": "schema_migrations",
    "type": "BASE TABLE",
    "engine": "InnoDB",
-   "approx_rows": 26,
+   "approx_rows": 24,
    "comment": ""
   },
   {
@@ -3845,20 +3845,8 @@
   },
   {
    "t": "nurse_ward_assignments",
-   "name": "ended_at",
-   "pos": 6,
-   "type": "datetime",
-   "nullable": "YES",
-   "dflt": null,
-   "k": "",
-   "extra": "",
-   "comment": "",
-   "gen": ""
-  },
-  {
-   "t": "nurse_ward_assignments",
    "name": "assigned_by",
-   "pos": 7,
+   "pos": 6,
    "type": "int",
    "nullable": "YES",
    "dflt": null,
@@ -3870,7 +3858,7 @@
   {
    "t": "nurse_ward_assignments",
    "name": "created_at",
-   "pos": 8,
+   "pos": 7,
    "type": "datetime",
    "nullable": "NO",
    "dflt": "CURRENT_TIMESTAMP",
@@ -3882,7 +3870,7 @@
   {
    "t": "nurse_ward_assignments",
    "name": "updated_at",
-   "pos": 9,
+   "pos": 8,
    "type": "datetime",
    "nullable": "NO",
    "dflt": "CURRENT_TIMESTAMP",
@@ -7067,11 +7055,6 @@
    "clause": "((`end_date` is null) or (`end_date` >= `start_date`))"
   },
   {
-   "t": "nurse_ward_assignments",
-   "name": "chk_nwa_ended_at",
-   "clause": "((`ended_at` is null) or (`end_date` is not null))"
-  },
-  {
    "t": "patients",
    "name": "chk_patients_abha_format",
    "clause": "((`abha_number` is null) or regexp_like(`abha_number`,_utf8mb4\\'^[0-9]{14}$\\'))"
@@ -7300,43 +7283,43 @@
  "views": [
   {
    "name": "available_beds_view",
-   "def": "select `b`.`bed_id` AS `bed_id`,`b`.`bed_number` AS `bed_number`,`w`.`floor` AS `floor`,`b`.`bed_type` AS `bed_type`,`b`.`has_ventilator` AS `has_ventilator`,`w`.`name` AS `ward_name`,`d`.`name` AS `department_name` from ((`beds` `b` join `wards` `w` on((`b`.`ward_id` = `w`.`ward_id`))) join `departments` `d` on((`w`.`department_id` = `d`.`department_id`))) where (`b`.`status` = 'AVAILABLE')"
+   "def": "select `b`.`bed_id` AS `bed_id`,`b`.`bed_number` AS `bed_number`,`w`.`floor` AS `floor`,`b`.`bed_type` AS `bed_type`,`b`.`has_ventilator` AS `has_ventilator`,`w`.`name` AS `ward_name`,`d`.`name` AS `department_name` from ((`hospital_db_test`.`beds` `b` join `hospital_db_test`.`wards` `w` on((`b`.`ward_id` = `w`.`ward_id`))) join `hospital_db_test`.`departments` `d` on((`w`.`department_id` = `d`.`department_id`))) where (`b`.`status` = 'AVAILABLE')"
   },
   {
    "name": "available_doctors_view",
-   "def": "select `doc`.`doctor_id` AS `doctor_id`,`doc`.`name` AS `doctor_name`,`doc`.`specialization` AS `specialization`,`doc`.`phone` AS `phone`,`doc`.`current_workload` AS `current_workload`,`doc`.`max_workload` AS `max_workload`,`dep`.`name` AS `department_name` from (`doctors` `doc` join `departments` `dep` on((`doc`.`department_id` = `dep`.`department_id`))) where ((`doc`.`status` = 'AVAILABLE') and (`doc`.`current_workload` < `doc`.`max_workload`))"
+   "def": "select `doc`.`doctor_id` AS `doctor_id`,`doc`.`name` AS `doctor_name`,`doc`.`specialization` AS `specialization`,`doc`.`phone` AS `phone`,`doc`.`current_workload` AS `current_workload`,`doc`.`max_workload` AS `max_workload`,`dep`.`name` AS `department_name` from (`hospital_db_test`.`doctors` `doc` join `hospital_db_test`.`departments` `dep` on((`doc`.`department_id` = `dep`.`department_id`))) where ((`doc`.`status` = 'AVAILABLE') and (`doc`.`current_workload` < `doc`.`max_workload`))"
   },
   {
    "name": "bed_status_summary_view",
-   "def": "select `w`.`name` AS `ward_name`,`d`.`name` AS `department_name`,`b`.`bed_type` AS `bed_type`,`b`.`status` AS `status`,count(`b`.`bed_id`) AS `count` from ((`beds` `b` join `wards` `w` on((`b`.`ward_id` = `w`.`ward_id`))) join `departments` `d` on((`w`.`department_id` = `d`.`department_id`))) group by `w`.`name`,`d`.`name`,`b`.`bed_type`,`b`.`status`"
+   "def": "select `w`.`name` AS `ward_name`,`d`.`name` AS `department_name`,`b`.`bed_type` AS `bed_type`,`b`.`status` AS `status`,count(`b`.`bed_id`) AS `count` from ((`hospital_db_test`.`beds` `b` join `hospital_db_test`.`wards` `w` on((`b`.`ward_id` = `w`.`ward_id`))) join `hospital_db_test`.`departments` `d` on((`w`.`department_id` = `d`.`department_id`))) group by `w`.`name`,`d`.`name`,`b`.`bed_type`,`b`.`status`"
   },
   {
    "name": "current_admissions_view",
-   "def": "select `a`.`admission_id` AS `admission_id`,`a`.`admission_date` AS `admission_date`,`a`.`diagnosis` AS `diagnosis`,`p`.`name` AS `patient_name`,`p`.`patient_id` AS `patient_id`,`doc`.`name` AS `doctor_name`,`doc`.`doctor_id` AS `doctor_id`,`b`.`bed_number` AS `bed_number`,`b`.`bed_type` AS `bed_type`,`w`.`name` AS `ward_name`,`dep`.`name` AS `department_name` from (((((`admissions` `a` join `patients` `p` on((`a`.`patient_id` = `p`.`patient_id`))) join `doctors` `doc` on((`a`.`doctor_id` = `doc`.`doctor_id`))) join `beds` `b` on((`a`.`bed_id` = `b`.`bed_id`))) join `wards` `w` on((`b`.`ward_id` = `w`.`ward_id`))) join `departments` `dep` on((`a`.`department_id` = `dep`.`department_id`))) where (`a`.`status` = 'ACTIVE')"
+   "def": "select `a`.`admission_id` AS `admission_id`,`a`.`admission_date` AS `admission_date`,`a`.`diagnosis` AS `diagnosis`,`p`.`name` AS `patient_name`,`p`.`patient_id` AS `patient_id`,`doc`.`name` AS `doctor_name`,`doc`.`doctor_id` AS `doctor_id`,`b`.`bed_number` AS `bed_number`,`b`.`bed_type` AS `bed_type`,`w`.`name` AS `ward_name`,`dep`.`name` AS `department_name` from (((((`hospital_db_test`.`admissions` `a` join `hospital_db_test`.`patients` `p` on((`a`.`patient_id` = `p`.`patient_id`))) join `hospital_db_test`.`doctors` `doc` on((`a`.`doctor_id` = `doc`.`doctor_id`))) join `hospital_db_test`.`beds` `b` on((`a`.`bed_id` = `b`.`bed_id`))) join `hospital_db_test`.`wards` `w` on((`b`.`ward_id` = `w`.`ward_id`))) join `hospital_db_test`.`departments` `dep` on((`a`.`department_id` = `dep`.`department_id`))) where (`a`.`status` = 'ACTIVE')"
   },
   {
    "name": "doctor_workload_view",
-   "def": "select `doc`.`doctor_id` AS `doctor_id`,`doc`.`name` AS `name`,`doc`.`specialization` AS `specialization`,`dep`.`name` AS `department`,`doc`.`status` AS `status`,`doc`.`shift` AS `shift`,`doc`.`current_workload` AS `current_workload`,`doc`.`max_workload` AS `max_workload`,(`doc`.`max_workload` - `doc`.`current_workload`) AS `available_capacity` from (`doctors` `doc` join `departments` `dep` on((`doc`.`department_id` = `dep`.`department_id`)))"
+   "def": "select `doc`.`doctor_id` AS `doctor_id`,`doc`.`name` AS `name`,`doc`.`specialization` AS `specialization`,`dep`.`name` AS `department`,`doc`.`status` AS `status`,`doc`.`shift` AS `shift`,`doc`.`current_workload` AS `current_workload`,`doc`.`max_workload` AS `max_workload`,(`doc`.`max_workload` - `doc`.`current_workload`) AS `available_capacity` from (`hospital_db_test`.`doctors` `doc` join `hospital_db_test`.`departments` `dep` on((`doc`.`department_id` = `dep`.`department_id`)))"
   },
   {
    "name": "emergency_queue_view",
-   "def": "select `e`.`emergency_id` AS `emergency_id`,`e`.`severity` AS `severity`,`e`.`arrival_time` AS `arrival_time`,`e`.`symptoms` AS `symptoms`,`e`.`required_specialization` AS `required_specialization`,`e`.`required_bed_type` AS `required_bed_type`,`e`.`ventilator_required` AS `ventilator_required`,`p`.`name` AS `patient_name`,`a`.`vehicle_number` AS `ambulance_number` from ((`emergency_cases` `e` left join `patients` `p` on((`e`.`patient_id` = `p`.`patient_id`))) left join `ambulances` `a` on((`e`.`ambulance_id` = `a`.`ambulance_id`))) where (`e`.`status` in ('WAITING','TRIAGED')) order by (case `e`.`severity` when 'CRITICAL' then 1 when 'VERY_SERIOUS' then 2 when 'SERIOUS' then 3 when 'MODERATE' then 4 when 'STABLE' then 5 end),`e`.`arrival_time`"
+   "def": "select `e`.`emergency_id` AS `emergency_id`,`e`.`severity` AS `severity`,`e`.`arrival_time` AS `arrival_time`,`e`.`symptoms` AS `symptoms`,`e`.`required_specialization` AS `required_specialization`,`e`.`required_bed_type` AS `required_bed_type`,`e`.`ventilator_required` AS `ventilator_required`,`p`.`name` AS `patient_name`,`a`.`vehicle_number` AS `ambulance_number` from ((`hospital_db_test`.`emergency_cases` `e` left join `hospital_db_test`.`patients` `p` on((`e`.`patient_id` = `p`.`patient_id`))) left join `hospital_db_test`.`ambulances` `a` on((`e`.`ambulance_id` = `a`.`ambulance_id`))) where (`e`.`status` in ('WAITING','TRIAGED')) order by (case `e`.`severity` when 'CRITICAL' then 1 when 'VERY_SERIOUS' then 2 when 'SERIOUS' then 3 when 'MODERATE' then 4 when 'STABLE' then 5 end),`e`.`arrival_time`"
   },
   {
    "name": "hospital_occupancy_view",
-   "def": "select `beds`.`bed_type` AS `bed_type`,count(0) AS `total_beds`,sum((case when (`beds`.`status` = 'OCCUPIED') then 1 else 0 end)) AS `occupied_beds`,sum((case when (`beds`.`status` = 'AVAILABLE') then 1 else 0 end)) AS `available_beds`,sum((case when (`beds`.`status` in ('MAINTENANCE','RESERVED')) then 1 else 0 end)) AS `unavailable_beds`,round(((sum((case when (`beds`.`status` = 'OCCUPIED') then 1 else 0 end)) / count(0)) * 100),2) AS `occupancy_rate` from `beds` group by `beds`.`bed_type`"
+   "def": "select `hospital_db_test`.`beds`.`bed_type` AS `bed_type`,count(0) AS `total_beds`,sum((case when (`hospital_db_test`.`beds`.`status` = 'OCCUPIED') then 1 else 0 end)) AS `occupied_beds`,sum((case when (`hospital_db_test`.`beds`.`status` = 'AVAILABLE') then 1 else 0 end)) AS `available_beds`,sum((case when (`hospital_db_test`.`beds`.`status` in ('MAINTENANCE','RESERVED')) then 1 else 0 end)) AS `unavailable_beds`,round(((sum((case when (`hospital_db_test`.`beds`.`status` = 'OCCUPIED') then 1 else 0 end)) / count(0)) * 100),2) AS `occupancy_rate` from `hospital_db_test`.`beds` group by `hospital_db_test`.`beds`.`bed_type`"
   },
   {
    "name": "pending_bills_view",
-   "def": "select `b`.`bill_id` AS `bill_id`,`b`.`bill_date` AS `bill_date`,`p`.`name` AS `patient_name`,`p`.`phone` AS `phone`,`b`.`total_amount` AS `total_amount`,`b`.`paid_amount` AS `paid_amount`,(`b`.`total_amount` - `b`.`paid_amount`) AS `balance_due`,`b`.`status` AS `status` from (`bills` `b` join `patients` `p` on((`b`.`patient_id` = `p`.`patient_id`))) where (`b`.`status` in ('PENDING','PARTIAL'))"
+   "def": "select `b`.`bill_id` AS `bill_id`,`b`.`bill_date` AS `bill_date`,`p`.`name` AS `patient_name`,`p`.`phone` AS `phone`,`b`.`total_amount` AS `total_amount`,`b`.`paid_amount` AS `paid_amount`,(`b`.`total_amount` - `b`.`paid_amount`) AS `balance_due`,`b`.`status` AS `status` from (`hospital_db_test`.`bills` `b` join `hospital_db_test`.`patients` `p` on((`b`.`patient_id` = `p`.`patient_id`))) where (`b`.`status` in ('PENDING','PARTIAL'))"
   },
   {
    "name": "v_appointments",
-   "def": "select `a`.`appointment_id` AS `appointment_id`,`a`.`patient_id` AS `patient_id`,`a`.`doctor_id` AS `doctor_id`,`d`.`department_id` AS `department_id`,`a`.`appointment_date` AS `appointment_date`,`a`.`appointment_time` AS `appointment_time`,`a`.`status` AS `status`,`a`.`reason` AS `reason`,`a`.`notes` AS `notes`,`a`.`created_at` AS `created_at`,`a`.`updated_at` AS `updated_at` from (`appointments` `a` join `doctors` `d` on((`d`.`doctor_id` = `a`.`doctor_id`)))"
+   "def": "select `a`.`appointment_id` AS `appointment_id`,`a`.`patient_id` AS `patient_id`,`a`.`doctor_id` AS `doctor_id`,`d`.`department_id` AS `department_id`,`a`.`appointment_date` AS `appointment_date`,`a`.`appointment_time` AS `appointment_time`,`a`.`status` AS `status`,`a`.`reason` AS `reason`,`a`.`notes` AS `notes`,`a`.`created_at` AS `created_at`,`a`.`updated_at` AS `updated_at` from (`hospital_db_test`.`appointments` `a` join `hospital_db_test`.`doctors` `d` on((`d`.`doctor_id` = `a`.`doctor_id`)))"
   },
   {
    "name": "v_current_stock",
-   "def": "select `m`.`medicine_id` AS `medicine_id`,`m`.`name` AS `name`,`m`.`stock_quantity` AS `stock_quantity`,coalesce(sum(`b`.`quantity`),0) AS `batch_total`,coalesce(sum((case when (`b`.`expiry_date` >= cast((utc_timestamp() + interval 330 minute) as date)) then `b`.`quantity` end)),0) AS `usable_quantity`,coalesce(sum((case when (`b`.`expiry_date` < cast((utc_timestamp() + interval 330 minute) as date)) then `b`.`quantity` end)),0) AS `expired_quantity`,min((case when ((`b`.`quantity` > 0) and (`b`.`expiry_date` >= cast((utc_timestamp() + interval 330 minute) as date))) then `b`.`expiry_date` end)) AS `next_expiry` from (`medicines` `m` left join `medicine_batches` `b` on((`b`.`medicine_id` = `m`.`medicine_id`))) group by `m`.`medicine_id`,`m`.`name`,`m`.`stock_quantity`"
+   "def": "select `m`.`medicine_id` AS `medicine_id`,`m`.`name` AS `name`,`m`.`stock_quantity` AS `stock_quantity`,coalesce(sum(`b`.`quantity`),0) AS `batch_total`,coalesce(sum((case when (`b`.`expiry_date` >= curdate()) then `b`.`quantity` end)),0) AS `usable_quantity`,coalesce(sum((case when (`b`.`expiry_date` < curdate()) then `b`.`quantity` end)),0) AS `expired_quantity`,min((case when ((`b`.`quantity` > 0) and (`b`.`expiry_date` >= curdate())) then `b`.`expiry_date` end)) AS `next_expiry` from (`hospital_db_test`.`medicines` `m` left join `hospital_db_test`.`medicine_batches` `b` on((`b`.`medicine_id` = `m`.`medicine_id`))) group by `m`.`medicine_id`,`m`.`name`,`m`.`stock_quantity`"
   }
  ],
  "routines": [
@@ -7458,7 +7441,7 @@
   "medication_administrations": "CREATE TABLE `medication_administrations` (\n  `administration_id` int NOT NULL AUTO_INCREMENT,\n  `prescription_item_id` int NOT NULL,\n  `admission_id` int DEFAULT NULL,\n  `scheduled_at_utc` datetime DEFAULT NULL,\n  `status` enum('PENDING','ADMINISTERED','REFUSED','MISSED','CANCELLED') NOT NULL DEFAULT 'PENDING',\n  `administered_at_utc` datetime DEFAULT NULL,\n  `dose_given` varchar(50) DEFAULT NULL,\n  `route_given` enum('ORAL','IV','IM','SC','SUBLINGUAL','INHALED','TOPICAL','RECTAL','OTHER') DEFAULT NULL,\n  `reason` varchar(255) DEFAULT NULL,\n  `recorded_by` int DEFAULT NULL,\n  `recorded_at_utc` datetime DEFAULT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`administration_id`),\n  UNIQUE KEY `uq_mar_item_slot` (`prescription_item_id`,`scheduled_at_utc`),\n  KEY `idx_mar_admission_status` (`admission_id`,`status`),\n  KEY `fk_mar_recorded_by` (`recorded_by`),\n  CONSTRAINT `fk_mar_admission` FOREIGN KEY (`admission_id`) REFERENCES `admissions` (`admission_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_mar_item` FOREIGN KEY (`prescription_item_id`) REFERENCES `prescription_items` (`item_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_mar_recorded_by` FOREIGN KEY (`recorded_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,\n  CONSTRAINT `chk_mar_given` CHECK (((`status` <> _utf8mb4'ADMINISTERED') or (`administered_at_utc` is not null)))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
   "medicine_batches": "CREATE TABLE `medicine_batches` (\n  `batch_id` int NOT NULL AUTO_INCREMENT,\n  `medicine_id` int NOT NULL,\n  `batch_number` varchar(50) NOT NULL,\n  `quantity` int NOT NULL,\n  `expiry_date` date NOT NULL,\n  `received_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `received_by` int DEFAULT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`batch_id`),\n  UNIQUE KEY `uq_medicine_batches_number` (`medicine_id`,`batch_number`),\n  UNIQUE KEY `uq_medicine_batches_id_medicine` (`batch_id`,`medicine_id`),\n  KEY `idx_medicine_batches_fefo` (`medicine_id`,`expiry_date`,`batch_id`),\n  KEY `fk_medicine_batches_received_by` (`received_by`),\n  CONSTRAINT `fk_medicine_batches_medicine` FOREIGN KEY (`medicine_id`) REFERENCES `medicines` (`medicine_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_medicine_batches_received_by` FOREIGN KEY (`received_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,\n  CONSTRAINT `chk_medicine_batches_quantity` CHECK ((`quantity` >= 0))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
   "medicines": "CREATE TABLE `medicines` (\n  `medicine_id` int NOT NULL AUTO_INCREMENT,\n  `name` varchar(150) NOT NULL,\n  `category` varchar(100) NOT NULL,\n  `manufacturer` varchar(150) DEFAULT NULL,\n  `stock_quantity` int DEFAULT '0',\n  `reorder_level` int NOT NULL DEFAULT '50',\n  `unit_price` decimal(10,2) NOT NULL,\n  `expiry_date` date NOT NULL,\n  `requires_prescription` tinyint(1) DEFAULT '1',\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`medicine_id`),\n  CONSTRAINT `medicines_chk_1` CHECK ((`stock_quantity` >= 0)),\n  CONSTRAINT `medicines_chk_2` CHECK ((`unit_price` >= 0))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
-  "nurse_ward_assignments": "CREATE TABLE `nurse_ward_assignments` (\n  `assignment_id` int NOT NULL AUTO_INCREMENT,\n  `nurse_user_id` int NOT NULL,\n  `ward_id` int NOT NULL,\n  `start_date` date NOT NULL,\n  `end_date` date DEFAULT NULL,\n  `ended_at` datetime DEFAULT NULL,\n  `assigned_by` int DEFAULT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`assignment_id`),\n  KEY `idx_nwa_nurse_dates` (`nurse_user_id`,`start_date`,`end_date`),\n  KEY `idx_nwa_ward` (`ward_id`),\n  KEY `fk_nwa_assigned_by` (`assigned_by`),\n  CONSTRAINT `fk_nwa_assigned_by` FOREIGN KEY (`assigned_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_nwa_nurse` FOREIGN KEY (`nurse_user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_nwa_ward` FOREIGN KEY (`ward_id`) REFERENCES `wards` (`ward_id`) ON DELETE RESTRICT,\n  CONSTRAINT `chk_nwa_dates` CHECK (((`end_date` is null) or (`end_date` >= `start_date`))),\n  CONSTRAINT `chk_nwa_ended_at` CHECK (((`ended_at` is null) or (`end_date` is not null)))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+  "nurse_ward_assignments": "CREATE TABLE `nurse_ward_assignments` (\n  `assignment_id` int NOT NULL AUTO_INCREMENT,\n  `nurse_user_id` int NOT NULL,\n  `ward_id` int NOT NULL,\n  `start_date` date NOT NULL,\n  `end_date` date DEFAULT NULL,\n  `assigned_by` int DEFAULT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`assignment_id`),\n  KEY `idx_nwa_nurse_dates` (`nurse_user_id`,`start_date`,`end_date`),\n  KEY `idx_nwa_ward` (`ward_id`),\n  KEY `fk_nwa_assigned_by` (`assigned_by`),\n  CONSTRAINT `fk_nwa_assigned_by` FOREIGN KEY (`assigned_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_nwa_nurse` FOREIGN KEY (`nurse_user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_nwa_ward` FOREIGN KEY (`ward_id`) REFERENCES `wards` (`ward_id`) ON DELETE RESTRICT,\n  CONSTRAINT `chk_nwa_dates` CHECK (((`end_date` is null) or (`end_date` >= `start_date`)))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
   "patients": "CREATE TABLE `patients` (\n  `patient_id` int NOT NULL AUTO_INCREMENT,\n  `name` varchar(100) NOT NULL,\n  `date_of_birth` date NOT NULL,\n  `dob_estimated` tinyint(1) NOT NULL DEFAULT '0',\n  `gender` enum('MALE','FEMALE','OTHER') NOT NULL,\n  `blood_group` enum('A+','A-','B+','B-','AB+','AB-','O+','O-') DEFAULT NULL,\n  `phone` varchar(20) DEFAULT NULL,\n  `address` text,\n  `emergency_contact` varchar(100) DEFAULT NULL,\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  `allergies` text,\n  `abha_number` char(14) DEFAULT NULL,\n  PRIMARY KEY (`patient_id`),\n  UNIQUE KEY `uq_patients_abha` (`abha_number`),\n  KEY `idx_patients_name` (`name`),\n  KEY `idx_patients_phone` (`phone`),\n  CONSTRAINT `chk_patients_abha_format` CHECK (((`abha_number` is null) or regexp_like(`abha_number`,_utf8mb4'^[0-9]{14}$')))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
   "pharmacy_stock_movements": "CREATE TABLE `pharmacy_stock_movements` (\n  `movement_id` int NOT NULL AUTO_INCREMENT,\n  `medicine_id` int NOT NULL,\n  `movement_type` enum('RECEIPT','ADJUSTMENT','DISPENSE') NOT NULL,\n  `quantity` int NOT NULL,\n  `reason` varchar(50) DEFAULT NULL,\n  `notes` text,\n  `performed_by` int NOT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `reference_id` int DEFAULT NULL,\n  `batch_id` int DEFAULT NULL,\n  PRIMARY KEY (`movement_id`),\n  KEY `performed_by` (`performed_by`),\n  KEY `idx_stock_movement_medicine` (`medicine_id`),\n  KEY `idx_stock_movement_batch` (`batch_id`),\n  KEY `fk_ctx_stock_movements_batch` (`batch_id`,`medicine_id`),\n  CONSTRAINT `fk_ctx_stock_movements_batch` FOREIGN KEY (`batch_id`, `medicine_id`) REFERENCES `medicine_batches` (`batch_id`, `medicine_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_stock_movement_batch` FOREIGN KEY (`batch_id`) REFERENCES `medicine_batches` (`batch_id`) ON DELETE RESTRICT,\n  CONSTRAINT `pharmacy_stock_movements_ibfk_1` FOREIGN KEY (`medicine_id`) REFERENCES `medicines` (`medicine_id`) ON DELETE RESTRICT,\n  CONSTRAINT `pharmacy_stock_movements_ibfk_2` FOREIGN KEY (`performed_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
   "prescription_item_batches": "CREATE TABLE `prescription_item_batches` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `item_id` int NOT NULL,\n  `batch_id` int NOT NULL,\n  `quantity` int NOT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uq_prescription_item_batches` (`item_id`,`batch_id`),\n  KEY `idx_prescription_item_batches_batch` (`batch_id`),\n  CONSTRAINT `fk_pib_batch` FOREIGN KEY (`batch_id`) REFERENCES `medicine_batches` (`batch_id`) ON DELETE RESTRICT,\n  CONSTRAINT `fk_pib_item` FOREIGN KEY (`item_id`) REFERENCES `prescription_items` (`item_id`) ON DELETE RESTRICT,\n  CONSTRAINT `chk_pib_quantity` CHECK ((`quantity` > 0))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
