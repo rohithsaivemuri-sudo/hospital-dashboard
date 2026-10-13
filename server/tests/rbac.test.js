@@ -438,10 +438,11 @@ test('nurse assignments: admin creates and ends standing assignments; access fol
   assert.ok(station.wards.some(w => w.ward_id === cardiac.ward_id));
   assert.ok(station.beds.some(b => b.patient_id === inpatient.patient_id));
 
-  // Ending today keeps today's access (inclusive); ending yesterday-equivalent is rejected.
+  // Ending takes the ward away at once; an end date before the start is rejected.
   const ended = await api('PUT', `/nurse-assignments/${future.body.data.assignment_id}`, { token: tokens.ADMIN, body: {} });
   assert.equal(ended.status, 200);
-  assert.ok(ended.body.data.end_date);
+  assert.ok(ended.body.data.end_date && ended.body.data.ended_at);
+  assert.equal(await see(), 403, 'ending cuts access immediately');
   const tooEarly = await api('PUT', `/nurse-assignments/${future.body.data.assignment_id}`, { token: tokens.ADMIN, body: { end_date: '2000-01-01' } });
   assert.equal(tooEarly.status, 400);
   await db().query('UPDATE nurse_ward_assignments SET start_date = ?, end_date = ? WHERE assignment_id = ?', [addDays(todayIst(), -2), addDays(todayIst(), -1), future.body.data.assignment_id]);

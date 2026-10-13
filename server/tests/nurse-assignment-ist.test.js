@@ -49,7 +49,8 @@ test('at 00:57 IST a new assignment starts today in India, is current at once an
   const ended = await server.api('PUT', `/nurse-assignments/${res.body.data.assignment_id}`, { token: admin.token, body: {} });
   assert.equal(ended.status, 200, JSON.stringify(ended.body));
   assert.equal(ended.body.data.end_date, DAY, 'End means today in India');
-  assert.equal(ended.body.data.is_current, true, 'the end date is inclusive: access lasts until midnight IST');
+  assert.deepEqual([ended.body.data.status, ended.body.data.is_current], ['ENDED', false], 'and takes effect at once');
+  assert.equal(await seesInpatient(), 403);
   await db().query('DELETE FROM nurse_ward_assignments WHERE assignment_id = ?', [res.body.data.assignment_id]);
 });
 

@@ -18,6 +18,9 @@ function now() {
   return Number.isNaN(fakeStart) ? new Date() : new Date(fakeStart + (Date.now() - bootedAt));
 }
 
+// Now as 'YYYY-MM-DD HH:MM:SS' UTC, for DATETIME columns (config/dbTime.js).
+const nowSqlUtc = () => toSqlUtc(now());
+
 // Today's IST date, 'YYYY-MM-DD'.
 const todayIst = () => istDate(now());
 
@@ -34,4 +37,4 @@ function istDayUtc(isoDate = todayIst()) {
   return [toSqlUtc(istToUtc(y, m - 1, d, 0, 0)), toSqlUtc(istToUtc(y, m - 1, d + 1, 0, 0))];
 }
 
-module.exports = { now, todayIst, addDays, istDayUtc };
+module.exports = { now, nowSqlUtc, todayIst, addDays, istDayUtc };

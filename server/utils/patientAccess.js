@@ -1,5 +1,5 @@
 const pool = require('../config/db');
-const { todayIst } = require('./clock');
+const { todayIst, nowSqlUtc } = require('./clock');
 
 // Patient-level access rules (report Section E, "Assigned Only"). Role gates live on the routes
 // (middleware/auth.js authorize); these functions decide which patients a permitted role may see.
@@ -18,12 +18,12 @@ const DOCTOR_CARE_SET_SQL = `
   UNION SELECT patient_id FROM encounters WHERE doctor_id = ?`;
 const doctorCareSetParams = (doctorId) => Array(6).fill(doctorId);
 
-// Wards with an assignment active today (IST; start and end dates inclusive).
-// Parameters: nurseWardsParams(nurseUserId).
+// Wards with an assignment active now: today (IST) within its dates (inclusive), and not ended
+// (ended_at, UTC: ending takes the ward away at once). Parameters: nurseWardsParams(nurseUserId).
 const NURSE_WARDS_SQL = `
   SELECT ward_id FROM nurse_ward_assignments
-  WHERE nurse_user_id = ? AND ? BETWEEN start_date AND COALESCE(end_date, '9999-12-31')`;
-const nurseWardsParams = (nurseUserId) => [nurseUserId, todayIst()];
+  WHERE nurse_user_id = ? AND ? BETWEEN start_date AND COALESCE(end_date, '9999-12-31') AND (ended_at IS NULL OR ended_at > ?)`;
+const nurseWardsParams = (nurseUserId) => [nurseUserId, todayIst(), nowSqlUtc()];
 
 const NURSE_PATIENTS_SQL = `
   SELECT a.patient_id FROM admissions a JOIN beds b ON b.bed_id = a.bed_id
