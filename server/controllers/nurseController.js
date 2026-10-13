@@ -105,14 +105,14 @@ exports.station = async (req, res) => {
     const [beds] = await pool.execute(`
       SELECT b.bed_id, b.bed_number, b.bed_type, b.status AS bed_status, b.ward_id, w.name AS ward_name,
              a.admission_id, a.admission_date, p.patient_id, p.name AS patient_name, p.gender, p.allergies,
-             TIMESTAMPDIFF(YEAR, p.date_of_birth, CURDATE()) AS age, p.date_of_birth, p.dob_estimated, d.name AS doctor_name
+             TIMESTAMPDIFF(YEAR, p.date_of_birth, ?) AS age, p.date_of_birth, p.dob_estimated, d.name AS doctor_name
       FROM beds b
       JOIN wards w ON w.ward_id = b.ward_id
       LEFT JOIN admissions a ON a.bed_id = b.bed_id AND a.status = 'ACTIVE'
       LEFT JOIN patients p ON p.patient_id = a.patient_id
       LEFT JOIN doctors d ON d.doctor_id = a.doctor_id
       WHERE b.ward_id IN (${NURSE_WARDS_SQL})
-      ORDER BY w.name, b.bed_number`, nurseWardsParams(req.user.user_id));
+      ORDER BY w.name, b.bed_number`, [todayIst(), ...nurseWardsParams(req.user.user_id)]);
     const [openVisits] = await pool.execute(`
       SELECT e.encounter_id, e.status, e.arrived_at, e.appointment_id, p.patient_id, p.name AS patient_name, d.name AS doctor_name,
              (SELECT DATE_FORMAT(MAX(v.recorded_at_utc), '%Y-%m-%d %H:%i:%s') FROM vital_signs v WHERE v.encounter_id = e.encounter_id) AS last_vitals_utc

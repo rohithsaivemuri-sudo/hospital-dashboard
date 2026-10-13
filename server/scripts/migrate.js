@@ -6,6 +6,7 @@ const mysql = require('mysql2/promise');
 const { MIGRATIONS_DIR, runSqlFile, listMigrations } = require('./lib/sql');
 const { backupDatabase } = require('./backup-db');
 const { adminCredentials } = require('./lib/admin-credentials');
+const { UTC_OPTIONS, utcSession } = require('../config/dbTime');
 
 const arg = (name) => {
   const i = process.argv.indexOf(name);
@@ -14,10 +15,10 @@ const arg = (name) => {
 
 // upTo: stop after this migration file (inclusive), e.g. '000_baseline.sql'.
 async function migrate(database, { dryRun = false, log = console.log, upTo } = {}) {
-  const conn = await mysql.createConnection({
+  const conn = await utcSession(await mysql.createConnection({
     host: process.env.DB_HOST, port: process.env.DB_PORT || 3306,
-    ...adminCredentials(), database,
-  });
+    ...adminCredentials(), database, ...UTC_OPTIONS,
+  }));
   try {
     const [[{ tableCount }]] = await conn.query(
       "SELECT COUNT(*) AS tableCount FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME <> 'schema_migrations'",

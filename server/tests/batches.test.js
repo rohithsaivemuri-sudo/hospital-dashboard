@@ -3,6 +3,7 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { USERS, api, login, db, closeDb, setStock, stockMismatches, visitInProgress } = require('./helpers');
+const { todayIst, addDays } = require('../utils/clock');
 
 after(closeDb);
 
@@ -26,13 +27,14 @@ const batches = async (med = MED) => (await db().query(
 async function assertInvariant(label) {
   assert.deepEqual(await stockMismatches(), [], `after ${label}: every medicine's total equals the sum of its batches`);
 }
-const daysFromNow = (n) => { const d = new Date(Date.now() + n * 86400000); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const daysFromNow = (n) => addDays(todayIst(), n);
+const TODAY_SQL = 'DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE)'; // today in India, whatever the MySQL time zone
 
 // Three lots for MED: one already expired (only reachable via direct setup), one expiring soon, one later.
 async function threeLots() {
   await setStock(MED, 0);
   await db().query(`INSERT INTO medicine_batches (medicine_id, batch_number, quantity, expiry_date) VALUES
-    (?, 'EXPIRED-LOT', 5, CURDATE() - INTERVAL 10 DAY), (?, 'SOON-LOT', 10, CURDATE() + INTERVAL 30 DAY), (?, 'LATER-LOT', 20, CURDATE() + INTERVAL 400 DAY)
+    (?, 'EXPIRED-LOT', 5, ${TODAY_SQL} - INTERVAL 10 DAY), (?, 'SOON-LOT', 10, ${TODAY_SQL} + INTERVAL 30 DAY), (?, 'LATER-LOT', 20, ${TODAY_SQL} + INTERVAL 400 DAY)
     ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), expiry_date = VALUES(expiry_date)`, [MED, MED, MED]);
   await db().query('UPDATE medicines SET stock_quantity = 35 WHERE medicine_id = ?', [MED]);
   await assertInvariant('setup');
@@ -56,7 +58,7 @@ test('migration 006: every medicine starts with total == sum of batches, and the
 
 test('the FEFO lock query uses idx_medicine_batches_fefo', async () => {
   const [plan] = await db().query(`EXPLAIN SELECT batch_id, batch_number, quantity, expiry_date FROM medicine_batches
-    WHERE medicine_id = ? AND quantity > 0 AND expiry_date >= CURDATE() ORDER BY expiry_date, batch_id FOR UPDATE`, [MED]);
+    WHERE medicine_id = ? AND quantity > 0 AND expiry_date >= ? ORDER BY expiry_date, batch_id FOR UPDATE`, [MED, todayIst()]);
   // MySQL 9 returns the plan as a tree ({ EXPLAIN: '...' }); older formats return a key column.
   const text = plan[0].EXPLAIN || JSON.stringify(plan);
   assert.match(text, /using idx_medicine_batches_fefo|"key":"idx_medicine_batches_fefo"/, text);
@@ -163,7 +165,7 @@ test('dispense takes unexpired stock earliest-expiry first, carrying over across
 
 test('two lines of the same medicine on one prescription draw from batches in sequence', async () => {
   await setStock(MED2, 0);
-  await db().query(`INSERT INTO medicine_batches (medicine_id, batch_number, quantity, expiry_date) VALUES (?, 'M2-A', 3, CURDATE() + INTERVAL 10 DAY), (?, 'M2-B', 10, CURDATE() + INTERVAL 20 DAY)
+  await db().query(`INSERT INTO medicine_batches (medicine_id, batch_number, quantity, expiry_date) VALUES (?, 'M2-A', 3, ${TODAY_SQL} + INTERVAL 10 DAY), (?, 'M2-B', 10, ${TODAY_SQL} + INTERVAL 20 DAY)
     ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), expiry_date = VALUES(expiry_date)`, [MED2, MED2]);
   await db().query('UPDATE medicines SET stock_quantity = 13 WHERE medicine_id = ?', [MED2]);
   const rx = await prescribe([[MED2, 2], [MED2, 4]]);

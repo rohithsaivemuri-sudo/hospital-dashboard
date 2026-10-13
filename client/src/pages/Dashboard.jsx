@@ -5,6 +5,7 @@ import { SocketContext } from '../context/SocketContext';
 import { FaUserMd, FaBed, FaAmbulance, FaChartLine } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { tint } from '../utils/colors';
+import { addDays, istToday } from '../utils/istDate';
 
 const StatCard = ({ title, value, icon, color }) => (
   <div style={{
@@ -130,7 +131,7 @@ export default function Dashboard() {
             <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Denied access (last 24 hours)</div>
             <div style={{ fontSize: '24px', fontWeight: 700, color: stats.deniedAccessLast24h ? 'var(--danger)' : 'var(--success)' }}>{stats.deniedAccessLast24h}</div>
           </div>
-          <Link to={`/audit?outcome=DENIED&from=${(() => { const d = new Date(Date.now() - 864e5); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })()}`}>Review in audit log</Link>
+          <Link to={`/audit?outcome=DENIED&from=${addDays(istToday(), -1)}`}>Review in audit log</Link>
         </div>
       )}
 

@@ -297,7 +297,7 @@ test('pharmacy prescription list and detail include patient name, age and allerg
   await db().query("UPDATE patients SET allergies = 'Penicillin' WHERE patient_id = ?", [P]);
   const rx = await api('POST', '/prescriptions', { token: doctor.token, body: { patient_id: P, doctor_id: doctor.user.doctor_id, items: [{ medicine_id: 1, dosage: '1 tablet', frequency: 'x', duration: '1', quantity: 1 }] } });
   const id = rx.body.data.id;
-  const [[p]] = await db().query('SELECT name, TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) age FROM patients WHERE patient_id = ?', [P]);
+  const [[p]] = await db().query('SELECT name, TIMESTAMPDIFF(YEAR, date_of_birth, ?) age FROM patients WHERE patient_id = ?', [todayIst(), P]);
 
   const row = (await api('GET', '/prescriptions', { token: tokens.PHARMACY })).body.data.find(r => r.prescription_id === id);
   assert.deepEqual([row.patientName, row.patient_age, row.patient_allergies], [p.name, p.age, 'Penicillin']);

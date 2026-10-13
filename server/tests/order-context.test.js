@@ -4,10 +4,11 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { USERS, api, login, db, closeDb } = require('./helpers');
+const { todayIst } = require('../utils/clock');
 
 after(closeDb);
 let reception, doctor, other, visitPatient, admittedPatient, bystander, encounterId, admissionId;
-const today = new Date().toISOString().slice(0, 10);
+const today = todayIst();
 const lab = (who, patient) => api('POST', '/lab/orders', { token: who.token, body: { patient_id: patient, doctor_id: who.user.doctor_id, tests: [{ test_id: 1 }] } });
 const rx = (who, patient) => api('POST', '/prescriptions', { token: who.token, body: { patient_id: patient, doctor_id: who.user.doctor_id, items: [{ medicine_id: 1, dosage: '1 tablet', frequency: 'Once daily', duration: '3 days', quantity: 3 }] } });
 

@@ -1,7 +1,8 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
+const { UTC_OPTIONS, utcSessions } = require('./dbTime');
 
-const pool = mysql.createPool({
+const pool = utcSessions(mysql.createPool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT || 3306,
   user: process.env.DB_USER,
@@ -11,7 +12,8 @@ const pool = mysql.createPool({
   connectionLimit: 20,
   queueLimit: 0,
   enableKeepAlive: true,
-  keepAliveInitialDelay: 0
-});
+  keepAliveInitialDelay: 0,
+  ...UTC_OPTIONS,
+}));
 
 module.exports = pool;

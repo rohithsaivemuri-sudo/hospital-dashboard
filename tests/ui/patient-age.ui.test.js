@@ -64,7 +64,7 @@ test('an age in years can be given instead; it is stored as an estimated date an
   await page.type('input[name="age_years"]', '40');
   assert.match(await preview(), /^Age: approx\. 40 yrs \(estimated date of birth .+\)$/);
   estimated = await register();
-  const [[row]] = await (await db()).query('SELECT dob_estimated, TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) AS age FROM patients WHERE patient_id = ?', [estimated]);
+  const [[row]] = await (await db()).query('SELECT dob_estimated, TIMESTAMPDIFF(YEAR, date_of_birth, DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE)) AS age FROM patients WHERE patient_id = ?', [estimated]);
   assert.deepEqual({ ...row }, { dob_estimated: 1, age: 40 });
   await page.waitForSelector('[data-testid="header-age"]');
   assert.match(await headerAge(), /^approx\. 40 yrs · /);

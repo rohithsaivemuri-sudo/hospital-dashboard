@@ -9,12 +9,12 @@ const { normalizeAbha, formatAbha } = require('../utils/abha');
 
 const textOrNull = (v) => (v == null || String(v).trim() === '' ? null : String(v).trim());
 // Date of birth: a real calendar date (YYYY-MM-DD), not after today in the hospital's time zone.
-const { istDate } = require('../utils/marTime');
+const { todayIst } = require('../utils/clock');
 function dobError(value) {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value ?? ''));
   const d = m && new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
   if (!m || d.getUTCFullYear() !== +m[1] || d.getUTCMonth() !== +m[2] - 1 || d.getUTCDate() !== +m[3]) return 'Date of birth must be a real date (YYYY-MM-DD)';
-  if (`${m[1]}-${m[2]}-${m[3]}` > istDate(new Date())) return 'Date of birth cannot be in the future';
+  if (`${m[1]}-${m[2]}-${m[3]}` > todayIst()) return 'Date of birth cannot be in the future';
   return null;
 }
 // The birth date to store: the date given (dob_estimated as sent, default not estimated), or for a
@@ -23,7 +23,7 @@ function birthFrom(body = {}) {
   if (body.age_years !== undefined && body.age_years !== null && body.age_years !== '') {
     const n = Number(body.age_years);
     if (!Number.isInteger(n) || n < 1 || n > 130) return { error: 'Age in years must be a whole number from 1 to 130' };
-    const [y, m, d] = istDate(new Date()).split('-').map(Number);
+    const [y, m, d] = todayIst().split('-').map(Number);
     const t = new Date(Date.UTC(y - n, m - 1, d));
     if (t.getUTCMonth() !== m - 1) t.setUTCDate(0); // 29 Feb -> 28 Feb
     return { date_of_birth: t.toISOString().slice(0, 10), dob_estimated: 1 };
@@ -148,7 +148,7 @@ exports.findDuplicates = async (req, res) => {
         phoneDigits && String(r.phone ?? '').replace(/\D/g, '') === phoneDigits && 'phone',
       ].filter(Boolean);
       // Anything else matched the name clause (SQL compares case- and accent-insensitively).
-      const dob = r.date_of_birth instanceof Date ? `${r.date_of_birth.getFullYear()}-${String(r.date_of_birth.getMonth() + 1).padStart(2, '0')}-${String(r.date_of_birth.getDate()).padStart(2, '0')}` : String(r.date_of_birth);
+      const dob = r.date_of_birth instanceof Date ? r.date_of_birth.toISOString().slice(0, 10) : String(r.date_of_birth); // DATE -> UTC midnight (config/dbTime.js)
       if (!matched_on.length || (textOrNull(name) && dob === String(date_of_birth).slice(0, 10) && r.name.toLowerCase() === textOrNull(name).toLowerCase())) matched_on.push('name_and_date_of_birth');
       return { ...r, matched_on: [...new Set(matched_on)] };
     });

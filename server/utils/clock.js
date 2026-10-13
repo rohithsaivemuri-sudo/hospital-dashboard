@@ -5,7 +5,7 @@
 //
 // HMS_FAKE_NOW (an ISO instant, tests only) starts the clock at that instant; it then runs at normal
 // speed. It is ignored in production.
-const { istDate } = require('./marTime');
+const { istDate, istToUtc, toSqlUtc } = require('./marTime');
 
 const DAY = 24 * 60 * 60 * 1000;
 const bootedAt = Date.now();
@@ -27,4 +27,11 @@ function addDays(isoDate, n) {
   return new Date(Date.UTC(y, m - 1, d) + n * DAY).toISOString().slice(0, 10);
 }
 
-module.exports = { now, todayIst, addDays };
+// An IST calendar day as a UTC range [start, end) of 'YYYY-MM-DD HH:MM:SS' strings, for DATETIME
+// columns (stored in UTC, config/dbTime.js): col >= start AND col < end.
+function istDayUtc(isoDate = todayIst()) {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return [toSqlUtc(istToUtc(y, m - 1, d, 0, 0)), toSqlUtc(istToUtc(y, m - 1, d + 1, 0, 0))];
+}
+
+module.exports = { now, todayIst, addDays, istDayUtc };

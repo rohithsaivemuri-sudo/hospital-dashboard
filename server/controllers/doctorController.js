@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { todayIst, istDayUtc } = require('../utils/clock');
 const { withTransaction, changedFields } = require('../utils/audit');
 exports.list = async (req, res) => {
   try {
@@ -83,71 +84,74 @@ exports.getTodayAnalytics = async (req, res) => {
   try {
     if (req.user.role !== 'DOCTOR') return res.status(403).json({ success: false, message: 'Forbidden' });
     const doctor_id = req.user.doctor_id;
+    // Today in India: appointment dates compare with the IST date; DATETIME columns (UTC) with its range.
+    const today = todayIst();
+    const [dayStart, dayEnd] = istDayUtc(today);
 
     // Calculate Analytics deterministically from authoritative tables
     
     // 1. Appointment patients today
     const [[{ appt_patients }]] = await pool.execute(
-      'SELECT COUNT(DISTINCT patient_id) as appt_patients FROM appointments WHERE doctor_id = ? AND appointment_date = CURDATE()',
-      [doctor_id]
+      'SELECT COUNT(DISTINCT patient_id) as appt_patients FROM appointments WHERE doctor_id = ? AND appointment_date = ?',
+      [doctor_id, today]
     );
 
     // 2. Emergency cases today
     const [[{ emergency_cases }]] = await pool.execute(
-      'SELECT COUNT(DISTINCT emergency_id) as emergency_cases FROM emergency_cases WHERE assigned_doctor_id = ? AND arrival_time >= CURDATE() AND arrival_time < CURDATE() + INTERVAL 1 DAY',
-      [doctor_id]
+      'SELECT COUNT(DISTINCT emergency_id) as emergency_cases FROM emergency_cases WHERE assigned_doctor_id = ? AND arrival_time >= ? AND arrival_time < ?',
+      [doctor_id, dayStart, dayEnd]
     );
 
     // 3. Patients seen (Unique patients from appointments, emergencies, and active/discharged admissions today)
     const [[{ patients_seen }]] = await pool.execute(`
       SELECT COUNT(DISTINCT patient_id) as patients_seen FROM (
-        SELECT patient_id FROM appointments WHERE doctor_id = ? AND appointment_date = CURDATE()
+        SELECT patient_id FROM appointments WHERE doctor_id = ? AND appointment_date = ?
         UNION
-        SELECT patient_id FROM emergency_cases WHERE assigned_doctor_id = ? AND arrival_time >= CURDATE() AND arrival_time < CURDATE() + INTERVAL 1 DAY
+        SELECT patient_id FROM emergency_cases WHERE assigned_doctor_id = ? AND arrival_time >= ? AND arrival_time < ?
         UNION
-        SELECT patient_id FROM admissions WHERE doctor_id = ? AND admission_date >= CURDATE() AND admission_date < CURDATE() + INTERVAL 1 DAY
+        SELECT patient_id FROM admissions WHERE doctor_id = ? AND admission_date >= ? AND admission_date < ?
       ) as t
-    `, [doctor_id, doctor_id, doctor_id]);
+    `, [doctor_id, today, doctor_id, dayStart, dayEnd, doctor_id, dayStart, dayEnd]);
 
     // 4. Patients treated (Unique patients with COMPLETED appointments, DISCHARGED/ADMITTED emergencies today)
     const [[{ patients_treated }]] = await pool.execute(`
       SELECT COUNT(DISTINCT patient_id) as patients_treated FROM (
-        SELECT patient_id FROM appointments WHERE doctor_id = ? AND appointment_date = CURDATE() AND status = 'COMPLETED'
+        SELECT patient_id FROM appointments WHERE doctor_id = ? AND appointment_date = ? AND status = 'COMPLETED'
         UNION
-        SELECT patient_id FROM emergency_cases WHERE assigned_doctor_id = ? AND arrival_time >= CURDATE() AND arrival_time < CURDATE() + INTERVAL 1 DAY AND status IN ('ADMITTED', 'DISCHARGED')
+        SELECT patient_id FROM emergency_cases WHERE assigned_doctor_id = ? AND arrival_time >= ? AND arrival_time < ? AND status IN ('ADMITTED', 'DISCHARGED')
         UNION
-        SELECT patient_id FROM admissions WHERE doctor_id = ? AND discharge_date >= CURDATE() AND discharge_date < CURDATE() + INTERVAL 1 DAY AND status = 'DISCHARGED'
+        SELECT patient_id FROM admissions WHERE doctor_id = ? AND discharge_date >= ? AND discharge_date < ? AND status = 'DISCHARGED'
       ) as t
-    `, [doctor_id, doctor_id, doctor_id]);
+    `, [doctor_id, today, doctor_id, dayStart, dayEnd, doctor_id, dayStart, dayEnd]);
 
     // 5. Cases Solved (Completed appointments + Admitted/Discharged emergencies)
     const [[{ cases_solved }]] = await pool.execute(`
       SELECT 
-        (SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_date = CURDATE() AND status = 'COMPLETED') +
-        (SELECT COUNT(*) FROM emergency_cases WHERE assigned_doctor_id = ? AND arrival_time >= CURDATE() AND arrival_time < CURDATE() + INTERVAL 1 DAY AND status IN ('ADMITTED', 'DISCHARGED'))
+        (SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_date = ? AND status = 'COMPLETED') +
+        (SELECT COUNT(*) FROM emergency_cases WHERE assigned_doctor_id = ? AND arrival_time >= ? AND arrival_time < ? AND status IN ('ADMITTED', 'DISCHARGED'))
       AS cases_solved
-    `, [doctor_id, doctor_id]);
+    `, [doctor_id, today, doctor_id, dayStart, dayEnd]);
 
     // 6. Cases Postponed (No-show or specifically flagged)
     const [[{ cases_postponed }]] = await pool.execute(`
-      SELECT COUNT(*) as cases_postponed FROM appointments WHERE doctor_id = ? AND appointment_date = CURDATE() AND status = 'NO_SHOW'
-    `, [doctor_id]);
+      SELECT COUNT(*) as cases_postponed FROM appointments WHERE doctor_id = ? AND appointment_date = ? AND status = 'NO_SHOW'
+    `, [doctor_id, today]);
 
     // 7. Cases Cancelled
     const [[{ cases_cancelled }]] = await pool.execute(`
       SELECT 
-        (SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_date = CURDATE() AND status = 'CANCELLED') +
-        (SELECT COUNT(*) FROM emergency_cases WHERE assigned_doctor_id = ? AND arrival_time >= CURDATE() AND arrival_time < CURDATE() + INTERVAL 1 DAY AND status = 'CANCELLED')
+        (SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_date = ? AND status = 'CANCELLED') +
+        (SELECT COUNT(*) FROM emergency_cases WHERE assigned_doctor_id = ? AND arrival_time >= ? AND arrival_time < ? AND status = 'CANCELLED')
       AS cases_cancelled
-    `, [doctor_id, doctor_id]);
+    `, [doctor_id, today, doctor_id, dayStart, dayEnd]);
 
     // 8. Cases Pending
     const [[{ cases_pending }]] = await pool.execute(`
       SELECT 
-        (SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_date = CURDATE() AND status IN ('BOOKED', 'CHECKED_IN', 'IN_PROGRESS')) +
-        (SELECT COUNT(*) FROM emergency_cases WHERE assigned_doctor_id = ? AND arrival_time >= CURDATE() AND arrival_time < CURDATE() + INTERVAL 1 DAY AND status IN ('WAITING', 'ALLOCATED'))
+        (SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_date = ? AND status IN ('BOOKED', 'CHECKED_IN', 'IN_PROGRESS')) +
+        (SELECT COUNT(*) FROM emergency_cases WHERE assigned_doctor_id = ? AND arrival_time >= ? AND arrival_time < ? AND status IN ('WAITING', 'ALLOCATED'))
       AS cases_pending
-    `, [doctor_id, doctor_id]);
+    `, [doctor_id, today, doctor_id, dayStart, dayEnd]);
 
     // Upsert into doctor_daily_analytics.
     // Not audited: this is a derived statistics cache recomputed from audited tables on every
@@ -155,7 +159,7 @@ exports.getTodayAnalytics = async (req, res) => {
     await pool.execute(`
       INSERT INTO doctor_daily_analytics 
       (doctor_id, analytics_date, patients_seen, emergency_cases, appointment_patients, patients_treated, cases_solved, cases_postponed, cases_cancelled, cases_pending)
-      VALUES (?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
       patients_seen = VALUES(patients_seen),
       emergency_cases = VALUES(emergency_cases),
@@ -166,15 +170,15 @@ exports.getTodayAnalytics = async (req, res) => {
       cases_cancelled = VALUES(cases_cancelled),
       cases_pending = VALUES(cases_pending)
     `, [
-      doctor_id, patients_seen, emergency_cases, appt_patients, patients_treated, 
+      doctor_id, today, patients_seen, emergency_cases, appt_patients, patients_treated,
       cases_solved, cases_postponed, cases_cancelled, cases_pending
     ]);
 
     // Fetch the updated row to return
-    const [analytics] = await pool.execute('SELECT * FROM doctor_daily_analytics WHERE doctor_id = ? AND analytics_date = CURDATE()', [doctor_id]);
+    const [analytics] = await pool.execute('SELECT * FROM doctor_daily_analytics WHERE doctor_id = ? AND analytics_date = ?', [doctor_id, today]);
     
     // Optionally fetch history (last 5 days excluding today)
-    const [history] = await pool.execute('SELECT * FROM doctor_daily_analytics WHERE doctor_id = ? AND analytics_date < CURDATE() ORDER BY analytics_date DESC LIMIT 5', [doctor_id]);
+    const [history] = await pool.execute('SELECT * FROM doctor_daily_analytics WHERE doctor_id = ? AND analytics_date < ? ORDER BY analytics_date DESC LIMIT 5', [doctor_id, today]);
 
     res.json({ success: true, data: { today: analytics[0] || {}, history } });
   } catch (error) { res.status(500).json({ success: false, message: error.message }); }

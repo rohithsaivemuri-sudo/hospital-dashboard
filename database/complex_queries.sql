@@ -7,7 +7,7 @@ ORDER BY current_workload DESC
 LIMIT 5;
 
 -- 2. Calculate average patient age by gender
-SELECT gender, ROUND(AVG(DATEDIFF(CURDATE(), date_of_birth) / 365.25), 1) as avg_age
+SELECT gender, ROUND(AVG(DATEDIFF(DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE), date_of_birth) / 365.25), 1) as avg_age
 FROM patients
 GROUP BY gender;
 
@@ -37,7 +37,7 @@ WHERE bed_type = 'VENTILATOR_ICU' AND has_ventilator = TRUE;
 SELECT d.doctor_id, d.name
 FROM doctors d
 LEFT JOIN appointments a ON d.doctor_id = a.doctor_id 
-    AND a.appointment_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+    AND a.appointment_date BETWEEN DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE) AND DATE_ADD(DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE), INTERVAL 7 DAY)
 WHERE a.appointment_id IS NULL;
 
 -- 7. Average wait time for emergency cases to be admitted
@@ -72,7 +72,7 @@ SELECT p.name, b.bill_id, b.bill_date, b.total_amount - b.paid_amount as pending
 FROM bills b
 JOIN patients p ON b.patient_id = p.patient_id
 WHERE b.status IN ('PENDING', 'PARTIAL') 
-AND b.bill_date < DATE_SUB(CURDATE(), INTERVAL 30 DAY);
+AND b.bill_date < DATE_SUB(DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE), INTERVAL 30 DAY);
 
 -- 11. Average bed occupancy duration by bed type
 SELECT 
@@ -110,10 +110,10 @@ GROUP BY a.ambulance_id;
 
 -- 16. CTE to find doctors handling both appointments and emergencies today
 WITH TodayAppointments AS (
-    SELECT DISTINCT doctor_id FROM appointments WHERE appointment_date = CURDATE()
+    SELECT DISTINCT doctor_id FROM appointments WHERE appointment_date = DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE)
 ),
 TodayEmergencies AS (
-    SELECT DISTINCT assigned_doctor_id FROM emergency_cases WHERE DATE(arrival_time) = CURDATE()
+    SELECT DISTINCT assigned_doctor_id FROM emergency_cases WHERE DATE(arrival_time + INTERVAL 330 MINUTE) = DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE)
 )
 SELECT d.name
 FROM doctors d

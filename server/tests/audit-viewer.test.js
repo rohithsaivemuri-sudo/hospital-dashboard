@@ -3,6 +3,7 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { USERS, api, rawRequest, login, db, closeDb } = require('./helpers');
+const { todayIst } = require('../utils/clock');
 
 after(closeDb);
 
@@ -12,7 +13,7 @@ before(async () => {
     [USERS.ADMIN, USERS.DOCTOR, USERS.NURSE, USERS.RECEPTIONIST, USERS.PHARMACY, USERS.LABORATORY].map(login));
 });
 
-const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const today = todayIst;
 const lastId = async () => (await db().query('SELECT MAX(audit_id) m FROM audit_logs'))[0][0].m;
 // Middleware rows are written after the response; give them a moment.
 const settle = () => new Promise(r => setTimeout(r, 150));

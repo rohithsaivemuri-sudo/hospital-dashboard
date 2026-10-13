@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getLabOrders, updateLabOrderStatus, addLabResult, getLabResult, uploadLabReport, downloadLabReport } from '../../services/api';
 import toast from 'react-hot-toast';
+import { istDate, istToday } from '../../utils/istDate';
 
 export default function LabDashboard() {
   const [orders, setOrders] = useState([]);
@@ -29,7 +30,7 @@ export default function LabDashboard() {
 
   const rows = useMemo(() => orders.filter(o => {
     if (status !== 'ALL' && o.status !== status) return false;
-    if (today && new Date(o.order_date).toDateString() !== new Date().toDateString()) return false;
+    if (today && istDate(o.order_date) !== istToday()) return false;
     const term = search.toLowerCase();
     return `${o.order_id} ${o.patient_name} ${o.test_name}`.toLowerCase().includes(term);
   }), [orders, status, today, search]);

@@ -12,6 +12,7 @@ const PASSWORD = 'password123';
 // The test server's stderr is copied here so tests can assert on logged failures.
 const SERVER_STDERR = path.join(require('os').tmpdir(), 'hms-test-server-stderr.log');
 const { adminCredentials } = require('../scripts/lib/admin-credentials');
+const { UTC_OPTIONS, utcSessions } = require('../config/dbTime');
 
 // Seeded users, one per role.
 const USERS = {
@@ -54,11 +55,11 @@ let pool;
 function db() {
   if (!TEST_DB.endsWith('_test')) throw new Error('helpers.db() only connects to a *_test database');
   if (!pool) {
-    pool = mysql.createPool({
+    pool = utcSessions(mysql.createPool({
       host: process.env.DB_HOST, port: process.env.DB_PORT || 3306,
       ...adminCredentials(), database: TEST_DB, // tests also create triggers and edit fixtures
-      connectionLimit: 5,
-    });
+      connectionLimit: 5, ...UTC_OPTIONS, // UTC like the app's pool (config/dbTime.js)
+    }));
   }
   return pool;
 }
