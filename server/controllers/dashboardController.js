@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { todayIst, istDayUtc } = require('../utils/clock');
 
 exports.getStats = async (req, res) => {
   try {
@@ -9,7 +10,7 @@ exports.getStats = async (req, res) => {
     const [[{ emergencyQueueCount }]] = await pool.execute('SELECT COUNT(*) as emergencyQueueCount FROM emergency_cases WHERE status = "WAITING"');
     const [[{ currentAdmissions }]] = await pool.execute('SELECT COUNT(*) as currentAdmissions FROM admissions WHERE status = "ACTIVE"');
     const [[{ incomingAmbulances }]] = await pool.execute('SELECT COUNT(*) as incomingAmbulances FROM ambulances WHERE status != "AVAILABLE"');
-    const [[{ todayAppointments }]] = await pool.execute('SELECT COUNT(*) as todayAppointments FROM appointments WHERE appointment_date = CURDATE()');
+    const [[{ todayAppointments }]] = await pool.execute('SELECT COUNT(*) as todayAppointments FROM appointments WHERE appointment_date = ?', [todayIst()]);
     
     // total beds for occupancy
     const [[{ totalBeds }]] = await pool.execute('SELECT COUNT(*) as totalBeds FROM beds');
@@ -26,9 +27,9 @@ exports.getStats = async (req, res) => {
     // Overdue: still open more than 24 hours after ordering (report Section C turnaround metric).
     const [[lab]] = await pool.execute(`
       SELECT SUM(status = 'ORDERED') AS ordered, SUM(status = 'PROCESSING') AS processing,
-             SUM(status = 'COMPLETED' AND updated_at >= CURDATE()) AS completedToday,
+             SUM(status = 'COMPLETED' AND updated_at >= ? AND updated_at < ?) AS completedToday,
              SUM(status IN ('ORDERED', 'SAMPLE_COLLECTED', 'PROCESSING') AND order_date < NOW() - INTERVAL 24 HOUR) AS overdue
-      FROM lab_orders`);
+      FROM lab_orders`, istDayUtc());
 
     // Security: requests refused with 401/403 in the last 24 hours (audit trail, report Section F.4).
     const [[{ deniedLast24h }]] = await pool.execute(

@@ -4,14 +4,15 @@ import { AuthContext } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FaCalendarAlt, FaSpinner, FaPlus } from 'react-icons/fa';
-import { appointmentStatus, visitStatus, hhmm, localIsoDate } from '../../utils/labels';
+import { appointmentStatus, visitStatus, hhmm } from '../../utils/labels';
+import { istToday } from '../../utils/istDate';
 
 export default function AppointmentList() {
   const { user } = useContext(AuthContext);
   const isFrontDesk = ['ADMIN', 'RECEPTIONIST'].includes(user?.role);
   const [appointments, setAppointments] = useState([]);
   const [openEarlier, setOpenEarlier] = useState([]);
-  const [date, setDate] = useState(localIsoDate());
+  const [date, setDate] = useState(istToday());
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
 
@@ -23,7 +24,7 @@ export default function AppointmentList() {
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      const [day, earlier] = await Promise.all([getAppointments({ date }), getAppointments({ open_before: localIsoDate() })]);
+      const [day, earlier] = await Promise.all([getAppointments({ date }), getAppointments({ open_before: istToday() })]);
       setAppointments(day.data.data || []);
       setOpenEarlier(earlier.data.data || []);
     } catch (err) {
@@ -86,7 +87,7 @@ export default function AppointmentList() {
             <label style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>Date
               <input type="date" name="appointment-date" value={date} onChange={e => e.target.value && setDate(e.target.value)} style={{ padding: '6px 8px', border: '1px solid var(--border)', borderRadius: '6px' }} />
             </label>
-            <button onClick={() => setDate(localIsoDate())} disabled={date === localIsoDate()} style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}>Today</button>
+            <button onClick={() => setDate(istToday())} disabled={date === istToday()} style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}>Today</button>
             {isFrontDesk && <Link to="/appointments/new" style={{ textDecoration: 'none' }}>
               <button style={{ backgroundColor: 'var(--primary)', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FaPlus /> New Appointment
@@ -121,7 +122,7 @@ export default function AppointmentList() {
         )}
 
         <div data-testid="appointments-day">
-          <h3 style={{ margin: '0 0 12px', fontSize: '16px' }}>{date === localIsoDate() ? 'Today' : longDate(`${date}T00:00:00`)} · {appointments.length} appointment{appointments.length === 1 ? '' : 's'}</h3>
+          <h3 style={{ margin: '0 0 12px', fontSize: '16px' }}>{date === istToday() ? 'Today' : longDate(`${date}T00:00:00`)} · {appointments.length} appointment{appointments.length === 1 ? '' : 's'}</h3>
           {loading ? <div style={{ padding: '24px', textAlign: 'center' }}><FaSpinner className="spin" size={24} /></div>
             : appointments.length === 0 ? <p>No appointments on this day.</p> : (
             <div style={{ overflowX: 'auto' }}>

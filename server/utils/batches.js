@@ -8,14 +8,17 @@
 // idx_medicine_batches_fefo (medicine_id, expiry_date, batch_id). Every writer of batches follows
 // medicines -> batches, so batch locks never form a cycle.
 
+const { todayIst } = require('./clock');
+
 // Locks a medicine's batches with stock, earliest expiry first. usableOnly skips expired batches
-// (dispensing); adjustments see every batch so expired stock can be written off.
+// (dispensing; a batch is usable through its expiry date, IST); adjustments see every batch so
+// expired stock can be written off.
 async function lockBatches(connection, medicineId, { usableOnly }) {
   const [rows] = await connection.execute(
     `SELECT batch_id, batch_number, quantity, expiry_date FROM medicine_batches
-     WHERE medicine_id = ? AND quantity > 0 ${usableOnly ? 'AND expiry_date >= CURDATE()' : ''}
+     WHERE medicine_id = ? AND quantity > 0 ${usableOnly ? 'AND expiry_date >= ?' : ''}
      ORDER BY expiry_date, batch_id FOR UPDATE`,
-    [medicineId]
+    usableOnly ? [medicineId, todayIst()] : [medicineId]
   );
   return rows;
 }

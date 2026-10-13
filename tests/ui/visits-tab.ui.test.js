@@ -4,11 +4,11 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
 const { diagnoseFailures, login, db, closeDb, open, call, tokenOf, clickButton } = require('./lib/harness');
+const { today, daysFromToday } = require('./lib/dates');
 
 let browser, page, patient, earlier, current;
 diagnoseFailures(() => page);
 const stamp = Date.now().toString(36);
-const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 before(async () => {
   const [rec, doc, nurse] = [await tokenOf('reception1'), await tokenOf('dr.smith'), await tokenOf('nurse1')];
   patient = (await call('POST', '/patients', rec, { name: `Visits Tab ${stamp}`, date_of_birth: '1979-07-07', gender: 'MALE', blood_group: null, phone: null, address: null, emergency_contact: null })).body.data.id;
@@ -16,12 +16,12 @@ before(async () => {
     const appt = (await call('POST', '/appointments', rec, { patient_id: patient, doctor_id: 1, appointment_date: date, appointment_time: time })).body.data.id;
     return (await call('POST', '/encounters', rec, { appointment_id: appt })).body.data.encounter_id;
   };
-  earlier = await visit(iso(new Date(Date.now() - 5 * 864e5)), '09:10:00');
+  earlier = await visit(daysFromToday(-5), '09:10:00');
   await call('POST', `/encounters/${earlier}/start`, doc);
   await call('POST', '/consultations', doc, { patient_id: patient, doctor_id: 1, symptoms: `Earlier visit cough ${stamp}`, diagnosis: 'Viral URTI' });
   await call('POST', `/encounters/${earlier}/finish`, doc);
 
-  current = await visit(iso(new Date()), '23:59:00');
+  current = await visit(today(), '23:59:00');
   await call('POST', '/vitals', nurse, { patient_id: patient, encounter_id: current, pulse_bpm: 88, temperature_c: 37.9, mark_triaged: true });
   await call('POST', `/encounters/${current}/start`, doc);
   await call('POST', '/consultations', doc, { patient_id: patient, doctor_id: 1, symptoms: `Current visit headache ${stamp}`, diagnosis: 'Tension headache' });

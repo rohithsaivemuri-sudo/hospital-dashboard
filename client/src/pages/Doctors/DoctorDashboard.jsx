@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FaUserMd, FaHospitalUser, FaExclamationTriangle, FaCalendarCheck, FaNotesMedical, FaUserInjured, FaBed, FaBell } from 'react-icons/fa';
 import { appointmentStatus, visitStatus, hhmm, plural } from '../../utils/labels';
+import { istToday } from '../../utils/istDate';
 
 // Open visits in plain words, and where each came from.
 const VISIT_STATUS = { ARRIVED: 'Waiting, not yet triaged', TRIAGED: 'Triaged, ready for you', IN_PROGRESS: 'With you now' };
@@ -41,8 +42,7 @@ export default function DoctorDashboard() {
       if (status === 'ARRIVED') toast('A patient has checked in', { icon: '🔔' });
       if (status === 'TRIAGED') toast('A patient has been triaged', { icon: '🩺' });
       try {
-        const d = new Date();
-        const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const today = istToday();
         const [apptRes, queueRes] = await Promise.all([getAppointments({ date: today }), getEncounterQueue()]);
         setAppointments(apptRes.data?.data || apptRes.data || []);
         setVisits(queueRes.data?.data || []);
@@ -70,9 +70,8 @@ export default function DoctorDashboard() {
       const analyticsRes = await getDoctorAnalytics();
       setAnalytics(analyticsRes.data?.data || analyticsRes.data);
       
-      // Use local date for Today string representation to avoid UTC shift
-      const d = new Date();
-      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      // Today in India, whatever the browser's time zone.
+      const today = istToday();
       
       const apptRes = await getAppointments({ date: today });
       setAppointments(apptRes.data?.data || apptRes.data || []);

@@ -106,8 +106,8 @@ async function withTransaction(req, fn) {
 function changedFields(before, after, fields) {
   const norm = (v) => {
     if (v === undefined || v === null || v === '') return null;
-    // mysql2 returns DATE columns as local-midnight Dates; compare as local YYYY-MM-DD.
-    if (v instanceof Date) return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`;
+    // mysql2 returns DATE columns as UTC-midnight Dates (config/dbTime.js); compare as YYYY-MM-DD.
+    if (v instanceof Date) return v.toISOString().slice(0, 10);
     return String(v);
   };
   return fields.filter(f => norm(before[f]) !== norm(after[f]));

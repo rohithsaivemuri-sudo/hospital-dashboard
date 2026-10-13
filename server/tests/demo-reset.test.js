@@ -51,7 +51,7 @@ test('a reset builds the demo with every role\'s workflow and new random passwor
     const audit = JSON.stringify(await q('SELECT details, path FROM audit_logs'));
     assert.ok(accounts.every(a => !audit.includes(a[2])), 'passwords are not in the audit log');
 
-    assert.ok((await q('SELECT COUNT(*) n FROM appointments WHERE appointment_date = CURDATE()'))[0].n >= 7, "today's appointments");
+    assert.ok((await q('SELECT COUNT(*) n FROM appointments WHERE appointment_date = DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE)'))[0].n >= 7, "today's appointments");
     const visits = Object.fromEntries((await q("SELECT status, COUNT(*) n FROM encounters WHERE status IN ('ARRIVED','TRIAGED','IN_PROGRESS') GROUP BY status")).map(v => [v.status, v.n]));
     assert.ok(visits.ARRIVED >= 2 && visits.TRIAGED >= 1 && visits.IN_PROGRESS >= 1, JSON.stringify(visits));
     const labs = Object.fromEntries((await q('SELECT status, COUNT(*) n FROM lab_orders GROUP BY status')).map(v => [v.status, v.n]));
@@ -60,6 +60,6 @@ test('a reset builds the demo with every role\'s workflow and new random passwor
     assert.ok((await q('SELECT COUNT(*) n FROM medication_administrations'))[0].n >= 1, 'a medication record for the ward nurse');
     assert.ok((await q('SELECT COUNT(*) n FROM vital_signs'))[0].n >= 1, 'vitals');
     assert.ok((await q("SELECT COUNT(*) n FROM emergency_cases WHERE status = 'WAITING' AND patient_id IS NULL"))[0].n >= 1, 'an unregistered emergency arrival');
-    assert.ok((await q("SELECT COUNT(*) n FROM consultations WHERE DATE(consultation_time) = CURDATE()"))[0].n >= 1, "a note on today's visit");
+    assert.ok((await q("SELECT COUNT(*) n FROM consultations WHERE DATE(consultation_time + INTERVAL 330 MINUTE) = DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE)"))[0].n >= 1, "a note on today's visit");
   } finally { await c.end(); }
 });

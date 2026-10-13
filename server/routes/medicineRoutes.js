@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const { todayIst, addDays } = require('../utils/clock');
 const { writeAudit } = require('../utils/audit');
 const { authorize } = require('../middleware/auth.js');
 const { lockBatches, allocate, decrementBatches } = require('../utils/batches');
@@ -12,9 +13,9 @@ router.get('/', authorize('ADMIN', 'DOCTOR', 'NURSE', 'PHARMACY'), async (req, r
     const [rows] = await pool.execute(`
       SELECT m.*, v.usable_quantity, v.expired_quantity, v.next_expiry,
              (SELECT COALESCE(SUM(b.quantity), 0) FROM medicine_batches b
-              WHERE b.medicine_id = m.medicine_id AND b.expiry_date BETWEEN CURDATE() AND CURDATE() + INTERVAL 90 DAY) AS expiring_soon_quantity
+              WHERE b.medicine_id = m.medicine_id AND b.expiry_date BETWEEN ? AND ?) AS expiring_soon_quantity
       FROM medicines m JOIN v_current_stock v ON v.medicine_id = m.medicine_id
-      ORDER BY m.medicine_id`);
+      ORDER BY m.medicine_id`, [todayIst(), addDays(todayIst(), 90)]);
     res.json({ success: true, data: rows.map(r => ({ ...r, usable_quantity: Number(r.usable_quantity), expired_quantity: Number(r.expired_quantity), expiring_soon_quantity: Number(r.expiring_soon_quantity) })) });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -25,8 +26,8 @@ router.get('/', authorize('ADMIN', 'DOCTOR', 'NURSE', 'PHARMACY'), async (req, r
 router.get('/:id/batches', authorize('ADMIN', 'PHARMACY'), async (req, res) => {
   try {
     const [rows] = await pool.execute(`
-      SELECT batch_id, batch_number, quantity, expiry_date, received_date, (expiry_date < CURDATE()) AS is_expired
-      FROM medicine_batches WHERE medicine_id = ? ORDER BY expiry_date, batch_id`, [req.params.id]);
+      SELECT batch_id, batch_number, quantity, expiry_date, received_date, (expiry_date < ?) AS is_expired
+      FROM medicine_batches WHERE medicine_id = ? ORDER BY expiry_date, batch_id`, [todayIst(), req.params.id]);
     res.json({ success: true, data: rows.map(r => ({ ...r, is_expired: Boolean(r.is_expired) })) });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -54,8 +55,8 @@ router.post('/:id/stock', authorize('PHARMACY'), async (req, res) => {
     let touched; // [{ batch_id, batch_number, quantity (signed) }]
     if (type === 'RECEIPT') {
       const [[{ expiry, expired }]] = await connection.execute(
-        'SELECT DATE_FORMAT(COALESCE(?, ?), "%Y-%m-%d") AS expiry, COALESCE(?, ?) < CURDATE() AS expired',
-        [expiry_date ?? null, medicine.expiry_date, expiry_date ?? null, medicine.expiry_date]
+        'SELECT DATE_FORMAT(COALESCE(?, ?), "%Y-%m-%d") AS expiry, COALESCE(?, ?) < ? AS expired',
+        [expiry_date ?? null, medicine.expiry_date, expiry_date ?? null, medicine.expiry_date, todayIst()]
       );
       if (expired) throw fail(400, 'Cannot receive stock that has already expired');
       const number = batch_number || `RCV-${expiry.replace(/-/g, '')}-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`;

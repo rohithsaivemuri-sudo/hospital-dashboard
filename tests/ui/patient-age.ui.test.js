@@ -5,12 +5,12 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
 const { diagnoseFailures, login, db, closeDb, open, call, tokenOf, visitInProgress } = require('./lib/harness');
+const { today, daysFromToday, ageOn } = require('./lib/dates');
 
 let browser, page, estimated, baby, admission;
 diagnoseFailures(() => page);
 const stamp = Date.now().toString(36);
-const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const daysAgo = (n) => ymd(new Date(Date.now() - n * 864e5));
+const daysAgo = (n) => daysFromToday(-n);
 before(async () => { browser = await launch(); page = await browser.newPage(); await login(page, 'reception1'); });
 after(async () => {
   if (admission) await call('POST', `/admissions/${admission}/discharge`, await tokenOf('dr.smith'), {});
@@ -32,14 +32,14 @@ test('the date of birth starts empty and is required; nothing defaults to today'
 });
 
 test('the age shows as soon as a date is entered, in months or days under one year', async () => {
-  const years = new Date().getFullYear() - 1990 - (ymd(new Date()).slice(5) < '06-15' ? 1 : 0);
+  const years = ageOn('1990-06-15');
   await setValue('input[name="date_of_birth"]', '1990-06-15');
   assert.equal(await preview(), `Age: ${years} yrs`);
   await setValue('input[name="date_of_birth"]', daysAgo(100));
   assert.equal(await preview(), 'Age: 3 months');
   await setValue('input[name="date_of_birth"]', daysAgo(12));
   assert.equal(await preview(), 'Age: 12 days');
-  await setValue('input[name="date_of_birth"]', ymd(new Date()));
+  await setValue('input[name="date_of_birth"]', today());
   assert.equal(await preview(), 'Age: 0 days', 'a date of today is obvious before saving');
 });
 
@@ -64,7 +64,7 @@ test('an age in years can be given instead; it is stored as an estimated date an
   await page.type('input[name="age_years"]', '40');
   assert.match(await preview(), /^Age: approx\. 40 yrs \(estimated date of birth .+\)$/);
   estimated = await register();
-  const [[row]] = await (await db()).query('SELECT dob_estimated, TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) AS age FROM patients WHERE patient_id = ?', [estimated]);
+  const [[row]] = await (await db()).query('SELECT dob_estimated, TIMESTAMPDIFF(YEAR, date_of_birth, DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE)) AS age FROM patients WHERE patient_id = ?', [estimated]);
   assert.deepEqual({ ...row }, { dob_estimated: 1, age: 40 });
   await page.waitForSelector('[data-testid="header-age"]');
   assert.match(await headerAge(), /^approx\. 40 yrs · /);
@@ -88,7 +88,7 @@ test('Edit details: the same rules, a real date replaces the estimate and the ag
   await page.click('input[name="dob-mode"][value="date"]');
   const dob = await page.$eval('input[name="date_of_birth"]', el => ({ value: el.value, required: el.required }));
   assert.deepEqual(dob, { value: '', required: true }, 'starts empty, not today or the estimate');
-  await setValue('input[name="date_of_birth"]', ymd(new Date(Date.now() + 5 * 864e5)));
+  await setValue('input[name="date_of_birth"]', daysFromToday(5));
   await page.waitForSelector('[data-testid="dob-error"]');
   await setValue('input[name="date_of_birth"]', daysAgo(45));
   assert.equal(await preview(), 'Age: 1 month');

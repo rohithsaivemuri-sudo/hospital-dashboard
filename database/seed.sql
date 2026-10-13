@@ -241,15 +241,15 @@ INSERT INTO doctor_schedules (doctor_id, day_of_week, start_time, end_time, is_a
 -- department_id is each doctor's department (doctors: 1=Cardiology 2, 2=Neurology 3, 5=Orthopedics 4,
 -- 6=Pediatrics 6, 7=Critical Care 7); the API reads it from the doctor.
 INSERT INTO appointments (patient_id, doctor_id, department_id, appointment_date, appointment_time, status, reason) VALUES
-(1,  1, 2, CURDATE(), '09:00:00', 'BOOKED',    'Routine cardiac checkup'),
-(2,  5, 4, CURDATE(), '10:00:00', 'BOOKED',    'Fever and body ache'),
-(4,  2, 3, CURDATE(), '10:30:00', 'CHECKED_IN','Persistent headaches'),
-(8,  1, 2, CURDATE(), '11:00:00', 'BOOKED',    'Follow-up ECG review'),
-(9,  6, 6, CURDATE(), '09:30:00', 'COMPLETED', 'Knee pain evaluation'),
-(10, 5, 4, CURDATE(), '14:00:00', 'BOOKED',    'Annual physical'),
-(14, 2, 3, DATE_ADD(CURDATE(), INTERVAL 1 DAY), '09:00:00', 'BOOKED', 'MRI review'),
-(16, 1, 2, DATE_ADD(CURDATE(), INTERVAL 1 DAY), '10:00:00', 'BOOKED', 'Stress test'),
-(22, 7, 7, CURDATE(), '11:30:00', 'BOOKED',    'Vaccination');
+(1,  1, 2, DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE), '09:00:00', 'BOOKED',    'Routine cardiac checkup'),
+(2,  5, 4, DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE), '10:00:00', 'BOOKED',    'Fever and body ache'),
+(4,  2, 3, DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE), '10:30:00', 'CHECKED_IN','Persistent headaches'),
+(8,  1, 2, DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE), '11:00:00', 'BOOKED',    'Follow-up ECG review'),
+(9,  6, 6, DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE), '09:30:00', 'COMPLETED', 'Knee pain evaluation'),
+(10, 5, 4, DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE), '14:00:00', 'BOOKED',    'Annual physical'),
+(14, 2, 3, DATE_ADD(DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE), INTERVAL 1 DAY), '09:00:00', 'BOOKED', 'MRI review'),
+(16, 1, 2, DATE_ADD(DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE), INTERVAL 1 DAY), '10:00:00', 'BOOKED', 'Stress test'),
+(22, 7, 7, DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE), '11:30:00', 'BOOKED',    'Vaccination');
 
 -- =====================================================
 -- EMERGENCY CASES (some waiting for the demo)

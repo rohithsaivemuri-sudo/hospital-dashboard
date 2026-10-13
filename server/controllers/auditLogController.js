@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { withTransaction } = require('../utils/audit');
+const { istDayUtc } = require('../utils/clock');
 
 // Admin audit viewer (report Section F.4, NIST AU-6): read-only, paginated, filtered.
 // Every search is itself written to the trail (VIEW_AUDIT_LOG) before the rows are read, in the same
@@ -34,8 +35,9 @@ function parseFilters(q) {
 
 function whereClause(f) {
   const clauses = []; const params = [];
-  if (f.from) { clauses.push('a.created_at >= ?'); params.push(`${f.from} 00:00:00`); }
-  if (f.to) { clauses.push('a.created_at < DATE_ADD(?, INTERVAL 1 DAY)'); params.push(f.to); }
+  // from/to are IST calendar days; created_at is UTC (config/dbTime.js).
+  if (f.from) { clauses.push('a.created_at >= ?'); params.push(istDayUtc(f.from)[0]); }
+  if (f.to) { clauses.push('a.created_at < ?'); params.push(istDayUtc(f.to)[1]); }
   if (f.until_id) { clauses.push('a.audit_id <= ?'); params.push(f.until_id); }
   for (const col of ['user_id', 'patient_id', 'action', 'status_code', 'outcome']) {
     if (f[col] !== undefined) { clauses.push(`a.${col} = ?`); params.push(f[col]); }

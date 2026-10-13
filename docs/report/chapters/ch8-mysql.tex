@@ -86,8 +86,8 @@ then its medicines in ascending id, then each medicine's batches by expiry date:
 START TRANSACTION;
 SELECT status, patient_id FROM prescriptions WHERE prescription_id = ? FOR UPDATE;
 SELECT medicine_id, stock_quantity FROM medicines WHERE medicine_id = ? FOR UPDATE;  -- each, ascending id
-SELECT batch_id, quantity, expiry_date FROM medicine_batches
-WHERE medicine_id = ? AND quantity > 0 AND expiry_date >= CURDATE()
+SELECT batch_id, batch_number, quantity, expiry_date FROM medicine_batches
+WHERE medicine_id = ? AND quantity > 0 AND expiry_date >= ?      -- today's date in India (IST)
 ORDER BY expiry_date, batch_id FOR UPDATE;                                          -- first expiry first out
 UPDATE prescription_items SET dispensed = TRUE, dispensed_at = NOW()
 WHERE item_id IN (?) AND dispensed = FALSE;              -- trigger after_prescription_dispense lowers the total

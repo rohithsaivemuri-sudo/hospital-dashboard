@@ -1,14 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FaUserNurse } from 'react-icons/fa';
-import { getNurseAssignments, createNurseAssignment, endNurseAssignment, getUsers, getWards, isForbidden } from '../../services/api';
+import { getNurseAssignments, createNurseAssignment, endNurseAssignment, cancelNurseAssignment, getUsers, getWards, isForbidden } from '../../services/api';
 import AccessDenied from '../../components/AccessDenied';
 import { staffName } from '../../utils/staff';
 
 const card = { background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)' };
 const input = { padding: '8px', border: '1px solid var(--border)', borderRadius: '6px' };
 const cell = { padding: '10px 12px', borderBottom: '1px solid var(--border)' };
-const day = (v) => (v ? new Date(v).toLocaleDateString() : '—');
+// Assignment dates arrive as IST calendar dates 'YYYY-MM-DD'; shown as DD/MM/YYYY without any time-zone shift.
+const day = (v) => (v ? String(v).slice(0, 10).split('-').reverse().join('/') : '—');
+// The moment an admin ended an assignment, in India time: "14/10/2026, 00:57 IST".
+const endedTime = (iso) => `${new Date(iso).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' })} IST`;
+const STATUS = { CURRENT: 'Current', UPCOMING: 'Not started yet', ENDED: 'Ended' };
+const rowBtn = { padding: '4px 10px', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' };
 
 // Admin: standing nurse-to-ward assignments. A nurse sees the patients in the wards they are
 // currently assigned to.
@@ -45,13 +50,25 @@ export default function NurseAssignments() {
   };
 
   const end = async (row) => {
-    if (!window.confirm(`End ${staffName(row.nurse_name, row.nurse_username)}'s assignment to ${row.ward_name} today?`)) return;
+    if (!window.confirm(`End ${staffName(row.nurse_name, row.nurse_username)}'s assignment to ${row.ward_name} now? They lose access to this ward's patients immediately.`)) return;
     try {
       await endNurseAssignment(row.assignment_id);
       toast.success('Assignment ended');
       await load();
     } catch (err) {
       if (!isForbidden(err)) toast.error(err.response?.data?.message || 'Could not end the assignment');
+    }
+  };
+
+  // Not started yet: removed altogether (it never applied).
+  const cancel = async (row) => {
+    if (!window.confirm(`Cancel ${staffName(row.nurse_name, row.nurse_username)}'s assignment to ${row.ward_name} starting ${day(row.start_date)}? It has not started, so it is removed.`)) return;
+    try {
+      await cancelNurseAssignment(row.assignment_id);
+      toast.success('Assignment cancelled');
+      await load();
+    } catch (err) {
+      if (!isForbidden(err)) toast.error(err.response?.data?.message || 'Could not cancel the assignment');
     }
   };
 
@@ -71,7 +88,7 @@ export default function NurseAssignments() {
             <option value="">Select…</option>{wards.map(w => <option key={w.ward_id} value={w.ward_id}>{w.name}</option>)}
           </select>
         </label>
-        <label style={{ display: 'grid' }}>Starts (default today)
+        <label style={{ display: 'grid' }}>Starts (default today, India time)
           <input type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} style={input} />
         </label>
         <button type="submit" style={{ padding: '9px 16px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Assign</button>
@@ -83,9 +100,12 @@ export default function NurseAssignments() {
             {rows.map(r => (
               <tr key={r.assignment_id}>
                 <td style={cell}>{staffName(r.nurse_name, r.nurse_username)}</td><td style={cell}>{r.ward_name}</td>
-                <td style={cell}>{day(r.start_date)}</td><td style={cell}>{r.end_date ? day(r.end_date) : 'Ongoing'}</td>
-                <td style={cell}>{r.is_current ? 'Current' : 'Not current'}</td>
-                <td style={cell}>{r.is_current && !r.end_date && <button onClick={() => end(r)} style={{ padding: '4px 10px', background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>End</button>}</td>
+                <td style={cell}>{day(r.start_date)}</td><td style={cell}>{r.ended_at ? `Ended ${endedTime(r.ended_at)}` : r.end_date ? day(r.end_date) : 'Ongoing'}</td>
+                <td style={cell}>{STATUS[r.status] || (r.is_current ? 'Current' : 'Not current')}</td>
+                <td style={cell}>
+                  {r.status === 'CURRENT' && <button onClick={() => end(r)} style={{ ...rowBtn, background: 'var(--danger)' }}>End</button>}
+                  {r.status === 'UPCOMING' && <button onClick={() => cancel(r)} style={{ ...rowBtn, background: 'var(--primary)' }}>Cancel</button>}
+                </td>
               </tr>
             ))}
             {rows.length === 0 && <tr><td colSpan="6" style={{ padding: '16px', textAlign: 'center' }}>No assignments yet.</td></tr>}

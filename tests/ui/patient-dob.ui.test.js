@@ -3,11 +3,12 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
 const { diagnoseFailures, login, closeDb, open, call, tokenOf, waitForText } = require('./lib/harness');
+const { daysFromToday } = require('./lib/dates');
 
 let browser, page, patient, sent = 0;
 diagnoseFailures(() => page);
-const d = new Date(Date.now() + 2 * 864e5);
-const future = { y: String(d.getFullYear()), m: String(d.getMonth() + 1).padStart(2, '0'), d: String(d.getDate()).padStart(2, '0') };
+const [fy, fm, fd] = daysFromToday(2).split('-');
+const future = { y: fy, m: fm, d: fd };
 before(async () => {
   patient = (await call('POST', '/patients', await tokenOf('reception1'), { name: `DOB Form ${Date.now().toString(36)}`, date_of_birth: '1992-02-02', gender: 'MALE', blood_group: null, phone: null, address: null, emergency_contact: null })).body.data.id;
   browser = await launch();

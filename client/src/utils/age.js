@@ -1,19 +1,22 @@
-// Age shown to staff. Dates of birth arrive as "YYYY-MM-DD" (forms) or as ISO timestamps (MySQL
-// DATE values); both are read as a local calendar date.
-const calendarDate = (v) => {
-  if (!v) return null;
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v));
-  const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(v);
-  return Number.isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+import { calendarDate, istToday } from './istDate.js';
+
+// Age shown to staff, counted on today's date in India whatever the browser's time zone. Dates of
+// birth arrive as "YYYY-MM-DD" (forms) or as UTC-midnight ISO timestamps (MySQL DATE values); both
+// are read as that calendar date. All arithmetic is on UTC midnights, so no time zone shifts a day.
+const utcDate = (iso) => {
+  if (!iso) return null;
+  const [y, m, d] = iso.split('-').map(Number);
+  const t = new Date(Date.UTC(y, m - 1, d));
+  return t.getUTCMonth() === m - 1 ? t : null;
 };
 
 // Whole years, months and days from the date of birth to `now`; null for no date or a future one.
 export function ageParts(dob, now = new Date()) {
-  const birth = calendarDate(dob);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const birth = utcDate(calendarDate(dob));
+  const today = utcDate(istToday(now));
   if (!birth || birth > today) return null;
-  let months = (today.getFullYear() - birth.getFullYear()) * 12 + today.getMonth() - birth.getMonth();
-  if (today.getDate() < birth.getDate()) months -= 1;
+  let months = (today.getUTCFullYear() - birth.getUTCFullYear()) * 12 + today.getUTCMonth() - birth.getUTCMonth();
+  if (today.getUTCDate() < birth.getUTCDate()) months -= 1;
   const days = Math.round((today - birth) / 864e5);
   return { years: Math.floor(months / 12), months, days };
 }
@@ -30,9 +33,10 @@ export function ageText(dob, estimated = false, now = new Date()) {
   return unit(a.days, 'day');
 }
 
-// Today, N years back, as YYYY-MM-DD (29 Feb -> 28 Feb), the same estimate the server stores.
+// Today (IST), N years back, as YYYY-MM-DD (29 Feb -> 28 Feb), the same estimate the server stores.
 export function estimatedBirthDate(years, now = new Date()) {
-  const d = new Date(now.getFullYear() - years, now.getMonth(), now.getDate());
-  if (d.getMonth() !== now.getMonth()) d.setDate(0);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const [y, m, d] = istToday(now).split('-').map(Number);
+  const t = new Date(Date.UTC(y - years, m - 1, d));
+  if (t.getUTCMonth() !== m - 1) t.setUTCDate(0);
+  return t.toISOString().slice(0, 10);
 }

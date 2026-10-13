@@ -4,11 +4,12 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
 const { diagnoseFailures, login, closeDb, open, call, tokenOf, clickButton, selectOption, waitForText } = require('./lib/harness');
+const { today } = require('./lib/dates');
 
 let browser, page, patient, visit, written;
 diagnoseFailures(() => page);
 const stamp = Date.now().toString(36);
-const d = new Date(); const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const iso = today();
 before(async () => {
   const [rec, doc] = [await tokenOf('reception1'), await tokenOf('dr.smith')];
   patient = (await call('POST', '/patients', rec, { name: `Rx Lines ${stamp}`, date_of_birth: '1981-01-11', gender: 'MALE', blood_group: null, phone: null, address: null, emergency_contact: null })).body.data.id;

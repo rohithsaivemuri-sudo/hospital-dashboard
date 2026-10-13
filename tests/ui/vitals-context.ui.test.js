@@ -5,12 +5,13 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { launch, violations } = require('./lib/readable');
 const { diagnoseFailures, login, db, closeDb, open, call, tokenOf, clickButton, waitForText } = require('./lib/harness');
+const { today } = require('./lib/dates');
 
 let browser, page, patient, encounter, admission, bedNumber;
 diagnoseFailures(() => page);
 const stamp = Date.now().toString(36);
 const name = `Vitals Context ${stamp}`;
-const d = new Date(); const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const iso = today();
 before(async () => {
   const rec = await tokenOf('reception1');
   patient = (await call('POST', '/patients', rec, { name, date_of_birth: '1970-03-03', gender: 'MALE', blood_group: null, phone: null, address: null, emergency_contact: null })).body.data.id;

@@ -5,14 +5,11 @@ import toast from 'react-hot-toast';
 import { FaConciergeBell, FaPlus, FaSearch, FaUserPlus } from 'react-icons/fa';
 import { getAppointments, getEncounterQueue, getPatients, checkInAppointment, updateAppointmentStatus, isForbidden } from '../../services/api';
 import AccessDenied from '../../components/AccessDenied';
+import { istToday } from '../../utils/istDate';
 
 const card = { background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)' };
 const cell = { padding: '10px 12px', borderBottom: '1px solid var(--border)' };
 const btn = (color) => ({ padding: '4px 10px', borderRadius: '6px', border: 'none', background: color, color: 'white', cursor: 'pointer', marginRight: '6px', fontSize: '12px' });
-const todayIso = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
 
 // Receptionist landing page: what needs the front desk right now.
 export default function FrontDesk() {
@@ -25,7 +22,7 @@ export default function FrontDesk() {
 
   const load = async () => {
     try {
-      const [apptRes, queueRes] = await Promise.all([getAppointments({ date: todayIso() }), getEncounterQueue()]);
+      const [apptRes, queueRes] = await Promise.all([getAppointments({ date: istToday() }), getEncounterQueue()]);
       setAppointments((apptRes.data.data || []).sort((a, b) => a.appointment_time.localeCompare(b.appointment_time)));
       setVisits(queueRes.data.data || []);
     } catch (err) {

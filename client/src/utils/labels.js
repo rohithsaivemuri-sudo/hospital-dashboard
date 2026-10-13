@@ -14,8 +14,5 @@ export const visitStatus = (code) => VISIT_STATUS[code] || words(code);
 // "09:35:00" -> "09:35"
 export const hhmm = (time) => (time ? String(time).slice(0, 5) : '');
 
-// Local calendar date as YYYY-MM-DD.
-export const localIsoDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
 // "1 active admission", "2 active admissions"
 export const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;

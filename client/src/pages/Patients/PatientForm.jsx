@@ -6,6 +6,7 @@ import { createPatient, updatePatient, getPatient, checkDuplicatePatients, isFor
 import { abhaError, abhaDigits, formatAbha, formatAbhaInput, NO_KNOWN_ALLERGIES } from '../../utils/patientIds';
 import AccessDenied from '../../components/AccessDenied';
 import { ageParts, ageText, estimatedBirthDate } from '../../utils/age';
+import { calendarDate, istToday } from '../../utils/istDate';
 
 const input = { width: '100%', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', boxSizing: 'border-box', fontFamily: 'inherit', fontSize: '14px' };
 const label = { display: 'block', marginBottom: '8px', fontWeight: 'bold' };
@@ -14,12 +15,8 @@ const label = { display: 'block', marginBottom: '8px', fontWeight: 'bold' };
 const EMPTY = { name: '', date_of_birth: '', dob_mode: 'date', age_years: '', gender: '', blood_group: '', phone: '', address: '', emergency_contact: '', abha_number: '', allergies: '', no_known_allergies: false };
 const MATCH_LABEL = { phone: 'same phone', name_and_date_of_birth: 'same name and date of birth', abha_number: 'same ABHA number' };
 
-// mysql DATE values arrive as ISO timestamps; the form needs the local calendar date.
-const localDate = (v) => {
-  if (!v) return '';
-  const d = new Date(v);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+// mysql DATE values arrive as UTC-midnight ISO timestamps; the form needs the calendar date.
+const localDate = (v) => calendarDate(v) || '';
 
 // Patient registration (front desk / admin) and editing of an existing record (/patients/:id/edit).
 // New registrations are checked for likely duplicates first; the receptionist can open the existing
@@ -95,7 +92,7 @@ export default function PatientForm() {
   };
 
   // Also checked by the server; not every browser enforces the date input's max.
-  const dobInFuture = form.dob_mode === 'date' && Boolean(form.date_of_birth) && form.date_of_birth > localDate(new Date());
+  const dobInFuture = form.dob_mode === 'date' && Boolean(form.date_of_birth) && form.date_of_birth > istToday();
   const ageInvalid = form.dob_mode === 'age' && form.age_years !== '' && !(Number.isInteger(Number(form.age_years)) && Number(form.age_years) >= 1 && Number(form.age_years) <= 130);
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -138,7 +135,7 @@ export default function PatientForm() {
               {form.dob_mode === 'date' ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                   <label style={{ ...label, marginBottom: 0 }}>Date of birth
-                    <input name="date_of_birth" type="date" required max={localDate(new Date())} value={form.date_of_birth} onChange={e => set('date_of_birth', e.target.value)} aria-invalid={dobInFuture} style={{ ...input, border: dobInFuture ? '1px solid var(--danger)' : input.border, fontWeight: 'normal', marginTop: '4px' }} />
+                    <input name="date_of_birth" type="date" required max={istToday()} value={form.date_of_birth} onChange={e => set('date_of_birth', e.target.value)} aria-invalid={dobInFuture} style={{ ...input, border: dobInFuture ? '1px solid var(--danger)' : input.border, fontWeight: 'normal', marginTop: '4px' }} />
                   </label>
                   {form.date_of_birth && !dobInFuture && <span data-testid="age-preview" aria-live="polite" style={{ fontWeight: 'bold' }}>Age: {ageText(form.date_of_birth)}</span>}
                 </div>

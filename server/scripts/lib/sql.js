@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
 const { adminCredentials } = require('./admin-credentials');
+const { UTC_SESSION_SQL } = require('../../config/dbTime');
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const MIGRATIONS_DIR = path.join(ROOT, 'database', 'migrations');
@@ -13,6 +14,7 @@ const connectionArgs = () => [
   '-h', process.env.DB_HOST || '127.0.0.1',
   '-P', String(process.env.DB_PORT || 3306),
   '-u', adminCredentials().user,
+  `--init-command=${UTC_SESSION_SQL}`, // NOW() and CURRENT_TIMESTAMP in UTC, as in the app (config/dbTime.js)
 ];
 
 // Password goes through the environment, never argv.

@@ -23,7 +23,8 @@ const API = `http://127.0.0.1:${PORT}/api`;
 const newPassword = () => crypto.randomBytes(12).toString('base64url');
 
 const pad = (n) => String(n).padStart(2, '0');
-function today() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+const { todayIst: today } = require('../utils/clock');
+const { UTC_OPTIONS, utcSession } = require('../config/dbTime');
 
 function assertDemoName(name) {
   if (!/^[a-z0-9_]+_demo$/.test(name) || name === 'hospital_db') {
@@ -38,7 +39,7 @@ const portFree = (port) => new Promise(resolve => {
 });
 
 async function adminConnection(database) {
-  return mysql.createConnection({ host: process.env.DB_HOST, port: process.env.DB_PORT || 3306, ...adminCredentials(), database });
+  return utcSession(await mysql.createConnection({ host: process.env.DB_HOST, port: process.env.DB_PORT || 3306, ...adminCredentials(), database, ...UTC_OPTIONS }));
 }
 
 // The app account gets the same five data privileges on the demo database as on hospital_db.
@@ -136,7 +137,7 @@ async function createActivity(conn, accounts) {
   const order = async (doctorToken, doctor, patientId, name) => (await call('POST', '/lab/orders', doctorToken, { patient_id: patientId, doctor_id: doctor, tests: [{ test_id: testId(name) }], notes: '' })).data.id;
   await order(doc, smith, inProgress.patient_id, 'Lipid Profile');
   await order(doc, smith, inProgress.patient_id, 'Blood Glucose Fasting');
-  const [meds] = await conn.query(`SELECT m.medicine_id FROM medicines m WHERE EXISTS (SELECT 1 FROM medicine_batches b WHERE b.medicine_id = m.medicine_id AND b.quantity >= 30 AND b.expiry_date > CURDATE()) ORDER BY m.medicine_id LIMIT 3`);
+  const [meds] = await conn.query(`SELECT m.medicine_id FROM medicines m WHERE EXISTS (SELECT 1 FROM medicine_batches b WHERE b.medicine_id = m.medicine_id AND b.quantity >= 30 AND b.expiry_date > ?) ORDER BY m.medicine_id LIMIT 3`, [today()]);
   if (meds.length < 2) throw new Error('not enough medicines in stock for the demo prescriptions');
   await call('POST', '/prescriptions', doc, { patient_id: inProgress.patient_id, doctor_id: smith, items: [
     { medicine_id: meds[0].medicine_id, dosage: '1 tablet', frequency: 'Once daily', duration: '30 days', quantity: 30, frequency_code: 'OD', duration_days: 30, route: 'ORAL' },

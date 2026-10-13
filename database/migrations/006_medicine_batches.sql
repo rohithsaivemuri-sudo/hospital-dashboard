@@ -60,7 +60,7 @@ BEGIN
   END IF;
   -- Stop before any data change if stock exists without a usable expiry date.
   IF EXISTS (SELECT 1 FROM medicines m
-             WHERE m.stock_quantity > 0 AND (m.expiry_date IS NULL OR m.expiry_date < CURDATE())
+             WHERE m.stock_quantity > 0 AND (m.expiry_date IS NULL OR m.expiry_date < DATE(UTC_TIMESTAMP() + INTERVAL 330 MINUTE))
                AND NOT EXISTS (SELECT 1 FROM medicine_batches b WHERE b.medicine_id = m.medicine_id)) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '006: medicines with stock have a NULL or past expiry_date; decide how to handle them before backfilling batches';
   END IF;

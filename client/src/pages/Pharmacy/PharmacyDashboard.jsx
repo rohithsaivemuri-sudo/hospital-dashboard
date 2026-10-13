@@ -4,6 +4,7 @@ import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { hasAllergies, allergyLabel } from '../../utils/patientIds';
 import { ageText } from '../../utils/age';
+import { istDate, istToday } from '../../utils/istDate';
 
 export default function PharmacyDashboard() {
   const { user } = useContext(AuthContext);
@@ -68,7 +69,7 @@ export default function PharmacyDashboard() {
 
   const stats = {
     pending: prescriptions.filter(p => p.status === 'CREATED').length,
-    dispensedToday: prescriptions.filter(p => p.status === 'DISPENSED' && new Date(p.prescription_date).toDateString() === new Date().toDateString()).length,
+    dispensedToday: prescriptions.filter(p => p.status === 'DISPENSED' && istDate(p.prescription_date) === istToday()).length,
     lowStock: medicines.filter(m => m.stock_quantity > 0 && m.stock_quantity <= m.reorder_level).length,
     outOfStock: medicines.filter(m => m.stock_quantity === 0).length
   };
